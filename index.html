@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/home.css">
 </head>
 <body>
 <div id="sky" aria-hidden="true">
@@ -22,7 +23,7 @@
   <div class="title-wrap">
     <div class="title-eggs" id="title-eggs"></div>
     <h1 class="logo"><span class="logo-sub">수학 친구 키우기</span>구름 둥지</h1>
-    <p class="tagline">문제를 풀면 내 친구가 무럭무럭 자라요</p>
+    <p class="tagline">내 친구의 바람을 들어주며 함께 자라요</p>
     <div class="title-btns">
       <button class="btn big primary" id="btn-start">시작하기</button>
     </div>
@@ -62,29 +63,67 @@
   </div>
 </section>
 
-<!-- 놀이 화면 -->
-<section id="scr-play" class="screen">
+<!-- 친구의 방 -->
+<section id="scr-home" class="screen">
   <header class="hud">
     <div class="hud-l">
       <div class="chip name-chip"><span id="hud-stage">1단계</span><b id="hud-name">몽실</b></div>
-      <div class="grow" aria-label="자라기 게이지"><div class="grow-bar"><i id="grow-fill"></i></div><span id="grow-txt">0 / 5</span></div>
+      <div class="grow" aria-label="자라기"><span class="glabel">자라기</span><div class="grow-bar"><i id="grow-fill"></i></div></div>
+      <div class="grow friend" aria-label="우정"><span class="glabel">우정 <b id="hud-flv">1</b></span><div class="grow-bar"><i id="friend-fill"></i></div></div>
     </div>
     <div class="hud-r">
       <div class="chip"><span class="ico candy"></span><b id="hud-candy">0</b></div>
-      <div class="chip"><span class="ico heart"></span><b id="hud-love">0</b></div>
-      <div class="chip combo" id="hud-combo-wrap">연속 <b id="hud-combo">0</b></div>
       <button class="icon-btn" id="btn-set" aria-label="설정"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
     </div>
   </header>
+  <main class="home">
+    <div class="room" id="room">
+      <div class="room-bg" id="room-bg"></div>
+      <div class="walker" id="walker">
+        <div class="think" id="think"></div>
+        <button class="pet" id="pet" aria-label="친구 쓰다듬기"></button>
+      </div>
+      <div class="bubble" id="bubble"><span id="bubble-txt"></span></div>
+      <div class="needs" id="needs"></div>
+      <div class="fx" id="fx"></div>
+    </div>
+    <aside class="panel">
+      <div class="wish-card">
+        <div class="wish-head"><b>오늘의 바람</b><span id="wish-count">0 / 3</span></div>
+        <div id="wish-list"></div>
+      </div>
+      <div class="go-btns">
+        <button class="go cook" id="btn-cook"><span class="gi" id="gi-cook"></span><span><b>간식 만들기</b><small>문제 5개</small></span></button>
+        <button class="go walk" id="btn-walk"><span class="gi" id="gi-walk"></span><span><b>산책 가기</b><small>문제 6개</small></span></button>
+      </div>
+      <div class="care-row" id="care-row"></div>
+      <div class="menu-row">
+        <button class="menu" id="btn-book"><span class="mi" id="mi-book"></span>친구 수첩</button>
+        <button class="menu" id="btn-closet"><span class="mi" id="mi-closet"></span>꾸미기</button>
+        <button class="menu" id="btn-diary"><span class="mi" id="mi-diary"></span>일기</button>
+      </div>
+    </aside>
+  </main>
+</section>
+
+<!-- 나들이 (간식 만들기 · 산책) -->
+<section id="scr-out" class="screen">
+  <header class="hud out-hud">
+    <div class="hud-l">
+      <button class="btn small" id="btn-home">← 집으로</button>
+      <div class="chip out-title" id="out-title">딸기 우유 만들기</div>
+    </div>
+    <div class="steps" id="steps"></div>
+    <div class="hud-r"><div class="chip combo" id="hud-combo-wrap">연속 <b id="hud-combo">0</b></div></div>
+  </header>
   <main class="play">
     <div class="stage" id="stage">
-      <div class="stage-sky"></div>
-      <div class="hill"></div>
-      <div class="bubble" id="bubble"><span id="bubble-txt"></span></div>
-      <button class="pet" id="pet" aria-label="친구 쓰다듬기"></button>
-      <div class="pet-shadow"></div>
-      <div class="trail" id="trail"></div>
-      <div class="fx" id="fx"></div>
+      <div class="stage-bg" id="stage-bg"></div>
+      <div class="step-label" id="step-label"></div>
+      <div class="bubble" id="obubble"><span id="obubble-txt"></span></div>
+      <div class="drop" id="drop"></div>
+      <div class="opet" id="opet"></div>
+      <div class="fx" id="ofx"></div>
     </div>
     <div class="board">
       <div class="qcard" id="qcard">
@@ -93,25 +132,21 @@
         <div class="qtext" id="qtext"></div>
       </div>
       <div class="choices" id="choices"></div>
-      <div class="board-foot">
-        <span id="act-left">같이 하기까지 8문제</span>
-        <span id="today">오늘 맞힌 문제 0</span>
-      </div>
     </div>
   </main>
 </section>
 
-<!-- 같이 하기 고르기 -->
-<div class="overlay" id="ov-pick">
-  <div class="sheet">
-    <h3 class="h3">같이 하기 시간!</h3>
-    <p class="sub" id="pick-sub">무엇을 같이 할까요?</p>
-    <div class="act-cards" id="act-cards"></div>
-    <button class="btn ghost" id="btn-act-skip">다음에 할래요</button>
+<!-- 나들이 고르기 -->
+<div class="overlay" id="ov-choose">
+  <div class="sheet wide">
+    <h3 class="h3" id="choose-title">무엇을 만들까요?</h3>
+    <p class="sub" id="choose-sub"></p>
+    <div class="pick-grid" id="pick-grid"></div>
+    <button class="btn ghost" data-close="ov-choose">닫기</button>
   </div>
 </div>
 
-<!-- 같이 하기 놀이 -->
+<!-- 같이 하기 (먹이기·목욕·놀이·낮잠) -->
 <div class="overlay" id="ov-act">
   <div class="act-room" id="act-room">
     <div class="act-top"><span id="act-title">간식 주기</span><span id="act-hint"></span></div>
@@ -124,14 +159,65 @@
   </div>
 </div>
 
+<!-- 결과 (나들이 끝) -->
+<div class="overlay" id="ov-result">
+  <div class="sheet">
+    <div class="res-art" id="res-art"></div>
+    <h3 class="h3" id="res-title"></h3>
+    <p class="sub" id="res-line"></p>
+    <div class="res-gets" id="res-gets"></div>
+    <div class="res-btns" id="res-btns"></div>
+  </div>
+</div>
+
 <!-- 자랐어요 -->
 <div class="overlay" id="ov-level">
   <div class="sheet level">
-    <div class="level-burst" id="level-burst"></div>
+    <div class="level-burst"></div>
     <div class="level-art" id="level-art"></div>
     <h3 class="h3" id="level-title">2단계 톡톡 알</h3>
     <p class="sub" id="level-line"></p>
     <button class="btn big primary" id="btn-level">좋아!</button>
+  </div>
+</div>
+
+<!-- 이야기 장면 -->
+<div class="overlay story-ov" id="ov-story">
+  <div class="story">
+    <div class="story-title" id="story-title"></div>
+    <div class="story-art" id="story-art"></div>
+    <div class="story-box" id="story-box"><p id="story-text"></p><span class="story-next">눌러서 계속 ▸</span></div>
+  </div>
+</div>
+
+<!-- 친구 수첩 -->
+<div class="overlay" id="ov-book">
+  <div class="sheet wide book">
+    <h3 class="h3" id="book-title">친구 수첩</h3>
+    <div class="book-body" id="book-body"></div>
+    <button class="btn big primary" data-close="ov-book">닫기</button>
+  </div>
+</div>
+
+<!-- 꾸미기 -->
+<div class="overlay" id="ov-closet">
+  <div class="sheet wide">
+    <h3 class="h3">꾸미기</h3>
+    <div class="tabs" id="closet-tabs">
+      <button class="tab on" data-tab="acc">친구 장식</button><button class="tab" data-tab="decor">방 꾸미기</button><button class="tab" data-tab="shop">주문하기</button>
+    </div>
+    <p class="sub" id="closet-sub"></p>
+    <div class="item-grid" id="item-grid"></div>
+    <button class="btn big primary" data-close="ov-closet">닫기</button>
+  </div>
+</div>
+
+<!-- 일기 -->
+<div class="overlay" id="ov-diary">
+  <div class="sheet wide diary">
+    <h3 class="h3" id="diary-title">일기</h3>
+    <div class="diary-body" id="diary-body"></div>
+    <button class="btn big primary" data-close="ov-diary">닫기</button>
   </div>
 </div>
 
@@ -152,6 +238,8 @@
 <script src="js/version.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/art.js"></script>
+<script src="js/data.js"></script>
+<script src="js/scene.js"></script>
 <script src="js/lines.js"></script>
 <script src="js/problems.js"></script>
 <script src="js/app.js"></script>

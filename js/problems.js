@@ -336,5 +336,28 @@ const Prob = (() => {
     }
     return make('u11', 0);
   }
-  return { make, UNITS, G };
+
+  // 돌아가며 내기: 11개 단원을 섞은 순서대로 한 바퀴씩 돌고,
+  // 단원 안에서도 문제 유형을 섞은 순서대로 돌아가며 낸다.
+  // 틀린 문제 종류는 몇 문제 뒤에 한 번 다시 끼워 넣는다(바로 앞 단원과 겹치지 않게).
+  // rot = { bag:[단원...], types:{단원:[유형...]}, last:'단원' } 은 저장 데이터에 들어간다.
+  function next(rot, review, total) {
+    const keys = Object.keys(G);
+    if (review && review.length) {
+      const i = review.findIndex(r => r.due <= total && r.unit !== rot.last);
+      if (i >= 0) { const r = review.splice(i, 1)[0]; rot.last = r.unit; return make(r.unit, r.type); }
+    }
+    if (!rot.bag || !rot.bag.length) {
+      let b; do { b = shuffle(keys); } while (b[0] === rot.last && keys.length > 1);
+      rot.bag = b;
+    }
+    const unit = rot.bag.shift();
+    rot.types = rot.types || {};
+    let tl = rot.types[unit];
+    if (!tl || !tl.length || tl.some(t => t >= G[unit].length)) tl = rot.types[unit] = shuffle(G[unit].map((_, i) => i));
+    const type = tl.shift();
+    rot.last = unit;
+    return make(unit, type);
+  }
+  return { make, next, UNITS, G };
 })();
