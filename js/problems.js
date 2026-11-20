@@ -56,6 +56,27 @@ const Prob = (() => {
   }
   const op = (s) => `<span class="op">${s}</span>`;
 
+  // 조사 고르기: 앞말을 소리 내어 읽었을 때 받침이 있는지 본다.
+  // 숫자(20 → 이십, 4,002 → 사천이), 소수(0.75 → 영 점 칠오), 분수(3/4 → 사 분의 삼), 단위(cm → 센티미터)까지 처리
+  function hasBatchim(word) {
+    let t = String(word).replace(/<span class="fr"><span>([^<]*)<\/span><span>[^<]*<\/span><\/span>/g, '$1').replace(/<[^>]+>/g, '').trim();
+    const c = t.charCodeAt(t.length - 1);
+    if (c >= 0xAC00 && c <= 0xD7A3) return (c - 0xAC00) % 28 > 0;
+    const unit = { 'cm': false, 'cm²': false, 'm': false, 'm²': false, 'L': false, 'kg': true, '°': false };
+    for (const u of ['cm²', 'm²', 'cm', 'kg', 'm', 'L', '°']) if (t.endsWith(u)) return unit[u];
+    const m = t.match(/([\d,]+(?:\.\d+)?)$/);
+    if (!m) return false;
+    const num = m[1].replace(/,/g, '');
+    const BAT = { 0: true, 1: true, 2: false, 3: true, 4: false, 5: false, 6: true, 7: true, 8: true, 9: false };
+    if (num.includes('.')) return BAT[num[num.length - 1]];
+    if (num === '0') return true;
+    if (/0$/.test(num)) return true; // 십·백·천·만은 모두 받침이 있다
+    return BAT[num[num.length - 1]];
+  }
+  const PAIR = { '을': ['을', '를'], '를': ['을', '를'], '이': ['이', '가'], '가': ['이', '가'], '은': ['은', '는'], '는': ['은', '는'], '과': ['과', '와'], '와': ['과', '와'],
+    '이었': ['이었', '였'], '였': ['이었', '였'], '이야': ['이야', '야'], '야': ['이야', '야'], '이래': ['이래', '래'], '래': ['이래', '래'], '이다': ['이다', '다'], '다': ['이다', '다'], '이에요': ['이에요', '예요'], '예요': ['이에요', '예요'] };
+  const jo = (word, p) => word + (hasBatchim(word) ? PAIR[p][0] : PAIR[p][1]);
+
   // ---------- 소수 (정수 v와 소수 자리 s로 표현: 1.25 = {v:125,s:2}) ----------
   const D = (v, s) => ({ v, s });
   const dval = (x) => x.v / Math.pow(10, x.s);
@@ -144,9 +165,9 @@ const Prob = (() => {
       const c = new Set([right, mul ? `△ = □ + ${k}` : `△ = □ × ${k}`, mul ? `△ = □ × ${k + 1}` : `△ = □ + ${k + 1}`, mul ? `△ = □ + ${k * 2 - 1 > k ? k * 2 - 1 : k + 3}` : `△ = □ × ${k + 1}`]);
       let extra = 2; while (c.size < 4) { c.add(`△ = □ + ${k + extra}`); extra++; }
       return { fig: tbl, q: '□와 △ 사이의 대응 관계를 식으로 나타내면?', ans: right, choices: [...c], txt: true }; },
-    () => { const ctx = pick([['의자', '다리', 4, '개'], ['세발자전거', '바퀴', 3, '개'], ['문어', '다리', 8, '개'], ['오리', '다리', 2, '개'], ['육각형', '꼭짓점', 6, '개'], ['상자', '구슬', 5, '개']]);
-      const n = R(6, 14), ans = n * ctx[2];
-      return { q: `${ctx[0]} 1개에 ${ctx[1]}가 ${ctx[2]}${ctx[3]}씩 있어요. ${ctx[0]} ${n}개에는 ${ctx[1]}가 모두 몇 ${ctx[3]}일까요?`, ...numChoices(ans, [n + ctx[2], ans - ctx[2], ans + ctx[2]], ctx[3]), txt: true }; },
+    () => { const [thing, u1, part, k, u2] = pick([['의자', '개', '다리', 4, '개'], ['세발자전거', '대', '바퀴', 3, '개'], ['문어', '마리', '다리', 8, '개'], ['오리', '마리', '다리', 2, '개'], ['육각형', '개', '꼭짓점', 6, '개'], ['상자', '개', '구슬', 5, '개'], ['꽃', '송이', '꽃잎', 5, '장']]);
+      const n = R(6, 14), ans = n * k;
+      return { q: `${thing} 1${u1}에 ${jo(part, '이')} ${k}${u2}씩 있어요. ${thing} ${n}${u1}에는 ${jo(part, '이')} 모두 몇 ${u2}일까요?`, ...numChoices(ans, [n + k, ans - k, ans + k], u2), txt: true }; },
     () => { const k = R(2, 6), n = R(9, 14), ans = n + k;
       return { q: `언니는 나보다 ${k}살 많아요. 내가 ${n}살일 때 언니는 몇 살일까요?`, ...numChoices(ans, [n - k, n * k > 60 ? ans + 1 : n * k, ans + 1], '살'), txt: true }; }
   ];
@@ -157,20 +178,20 @@ const Prob = (() => {
       const cands = [{ n: b.n + 1, d: b.d }, { n: b.n, d: b.d + 1 }, { n: n - 1 > 0 ? n - 1 : n + 1, d }];
       const r = fracChoices(b, cands, false);
       if (k >= 4 && k % 2 === 0) r.choices[3] = fraw(n / 2, d / 2); // 덜 약분한 분수(값은 같지만 기약분수가 아님)
-      return { q: `${fraw(n, d)} 를 기약분수로 나타내면?`, ...r }; },
+      return { q: `${jo(fraw(n, d), '를')} 기약분수로 나타내면?`, ...r }; },
     () => { let a, b; do { a = properRand(2, 9); b = properRand(2, 9); } while (feq(a, b) || a.d === b.d);
       const big = a.n * b.d > b.n * a.d ? a : b;
-      return { q: `${fh(a)} 와 ${fh(b)} 중 더 큰 분수는?`, ans: fh(big), choices: [fh(a), fh(b), '크기가 같아요'] }; },
+      return { q: `${jo(fh(a), '와')} ${fh(b)} 중 더 큰 분수는?`, ans: fh(big), choices: [fh(a), fh(b), '크기가 같아요'] }; },
     () => { let d1, d2; do { d1 = R(2, 9); d2 = R(2, 9); } while (d1 === d2 || lcm(d1, d2) === d1 * d2 && Math.random() < .5);
       const a = { n: R(1, d1 - 1), d: d1 }, b = { n: R(1, d2 - 1), d: d2 }; const L = lcm(d1, d2);
-      return { q: `${fraw(a.n, d1)} 과 ${fraw(b.n, d2)} 를 가장 작은 공통분모로 통분할 때, 공통분모는?`, ...numChoices(L, [d1 * d2 === L ? L * 2 : d1 * d2, d1 + d2, Math.max(d1, d2)]) }; },
+      return { q: `${jo(fraw(a.n, d1), '과')} ${jo(fraw(b.n, d2), '를')} 가장 작은 공통분모로 통분할 때, 공통분모는?`, ...numChoices(L, [d1 * d2 === L ? L * 2 : d1 * d2, d1 + d2, Math.max(d1, d2)]) }; },
     () => { const set = []; while (set.length < 4) { const f = properRand(2, 9); if (!set.some(x => feq(x, f))) set.push(f); }
       const big = set.reduce((m, f) => (f.n * m.d > m.n * f.d ? f : m));
       return { q: '다음 중 가장 큰 분수는?', ans: fh(big), choices: set.map(f => fh(f)) }; },
     () => { const d = pick([2, 4, 5, 10]); let n = R(1, d - 1); while (gcd(n, d) !== 1) n = R(1, d - 1);
       // 분모 2, 5, 10은 소수 한 자리, 4는 두 자리
       const val = d === 4 ? D(n * 25, 2) : D(n * (10 / d), 1);
-      return { q: `${fraw(n, d)} 를 소수로 나타내면?`, ...decChoices(val, [D(n * 10 + d, 1), dshift(val, -1), dshift(val, 1)]) }; }
+      return { q: `${jo(fraw(n, d), '를')} 소수로 나타내면?`, ...decChoices(val, [D(n * 10 + d, 1), dshift(val, -1), dshift(val, 1)]) }; }
   ];
 
   // 5-1 5단원 분수의 덧셈과 뺄셈
@@ -217,7 +238,7 @@ const Prob = (() => {
       const up = Math.ceil(x / p) * p, dn = Math.floor(x / p) * p, ro = Math.floor((x + p / 2) / p) * p;
       const m = pick(['올림', '버림', '반올림']); const ans = m === '올림' ? up : m === '버림' ? dn : ro;
       const p2 = p === 1000 ? 100 : p * 10;
-      return { q: `${x.toLocaleString()}을 ${m}하여 ${placeName[p]}의 자리까지 나타내면?`, ...numChoices(ans, [up, dn, Math.floor((x + p2 / 2) / p2) * p2, ans + p]) }; },
+      return { q: `${jo(x.toLocaleString(), '을')} ${m}하여 ${placeName[p]}의 자리까지 나타내면?`, ...numChoices(ans, [up, dn, Math.floor((x + p2 / 2) / p2) * p2, ans + p]) }; },
     () => { const lo = R(20, 60), hi = lo + R(4, 8);
       const kind = pick([['이상', '이하', true, true], ['이상', '미만', true, false], ['초과', '이하', false, true], ['초과', '미만', false, false]]);
       const inR = (v) => (kind[2] ? v >= lo : v > lo) && (kind[3] ? v <= hi : v < hi);
@@ -316,7 +337,7 @@ const Prob = (() => {
   G.u26 = [
     () => { const n = pick([4, 5]), m = R(5, 30); let v; do { v = Array.from({ length: n - 1 }, () => m + R(-4, 4)); } while (Math.abs(n * m - v.reduce((s, x) => s + x, 0) - m) > 4);
       v.push(n * m - v.reduce((s, x) => s + x, 0)); v = shuffle(v); const sum = v.reduce((s, x) => s + x, 0);
-      return { q: `${v.join(', ')} 의 평균은 얼마일까요?`, ...numChoices(m, [m + 1, m - 1, sum]) }; },
+      return { q: `${v.join(', ')}의 평균은 얼마일까요?`, ...numChoices(m, [m + 1, m - 1, sum]) }; },
     () => { const m = R(70, 90), a = m + R(-8, 8), b = m + R(-8, 8), c = m + R(-8, 8); const x = 4 * m - a - b - c;
       if (x < 50 || x > 100) return G.u26[0]();
       return { q: `네 사람의 점수 평균이 ${m}점이에요. 세 사람이 ${a}점, ${b}점, ${c}점일 때 나머지 한 사람은 몇 점일까요?`, ...numChoices(x, [m, x + 4, x - 4], '점'), txt: true }; },
@@ -378,5 +399,5 @@ const Prob = (() => {
     rot.last = unit;
     return make(unit, type);
   }
-  return { make, next, UNITS, G };
+  return { make, next, UNITS, G, jo, hasBatchim };
 })();

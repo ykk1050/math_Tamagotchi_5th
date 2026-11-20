@@ -68,9 +68,14 @@
       const neg = ['cookNo', 'walkNo', 'no'].includes(cat);
       t = lineFrom(neg ? pack.no : POS.includes(cat) ? (cat === 'poke' ? pack.poke : pack.ok) : pack.idle, lv + cat);
     }
-    if (v.x != null) t = t.split('{x}').join(v.x);
-    if (v.a != null) { if (t.includes('{a}')) t = t.replace('{a}', v.a); else t += `<br><small style="font-size:.8em;color:#7A6283">정답은 ${v.a}</small>`; }
+    if (v.x != null) t = fillJo(t, '{x}', v.x);
+    if (v.a != null) { if (t.includes('{a}')) t = fillJo(t, '{a}', v.a); else t += `<br><small style="font-size:.8em;color:#7A6283">정답은 ${v.a}</small>`; }
     return t;
+  }
+  // '{x}는', '{a}였대'처럼 자리표시 바로 뒤의 조사를 앞말 받침에 맞게 바꿔 끼운다
+  function fillJo(t, key, word) {
+    const re = new RegExp(key.replace(/[{}]/g, '\\$&') + '(이었|였|이야|야|이래|래|이다|다|은|는|이|가|을|를|과|와)?', 'g');
+    return t.replace(re, (m, p) => (p ? Prob.jo(word, p) : word));
   }
   function speak(where, html, opt = {}) {
     const b = $(where === 'out' ? 'obubble' : 'bubble'), tx = $(where === 'out' ? 'obubble-txt' : 'bubble-txt');
@@ -387,7 +392,7 @@
         const ts = TASTE[S.kind].food[foodId]; S.known.food[foodId] = ts;
         addNeed('full', ts === 'love' ? 45 : 35); addNeed('mood', ts === 'love' ? 25 : ts === 'hate' ? 0 : 12);
         addFriend(ts === 'love' ? 8 : ts === 'hate' ? 1 : 4); if (ts === 'hate') mood = 'sad';
-        ln = level() === 'talk' ? lineFrom(TASTE_LINE[S.kind].food[ts], 'tf' + ts).split('{x}').join(FOODS[foodId].name) : L3(ts === 'hate' ? 'yuck' : 'yum');
+        ln = level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].food[ts], 'tf' + ts), '{x}', FOODS[foodId].name) : L3(ts === 'hate' ? 'yuck' : 'yum');
         if (level() !== 'talk' && ts === 'love') ln += '<br><small style="font-size:.8em;color:#7A6283">엄청 좋아하는 것 같아요!</small>';
         if (level() !== 'talk' && ts === 'hate') ln += '<br><small style="font-size:.8em;color:#7A6283">별로 안 좋아하는 것 같아요</small>';
         S.foods[foodId]--; S.log.push({ e: 'feed', id: foodId, ts }); fulfill('food', foodId, 'act');
@@ -599,7 +604,7 @@
   const BUB_RULES = [
     () => { // 크기가 같은 분수 (약분과 통분)
       const [a, b] = pick([[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5]]);
-      return { title: `${frh(a, b)} 과 크기가 같은 분수`, gen: (ok) => { const m = R(2, 5); if (ok) return frh(a * m, b * m); let n = a * m + (Math.random() < .5 ? 1 : -1); if (n <= 0) n = a * m + 1; return Math.random() < .5 ? frh(n, b * m) : frh(a * m, b * m + 1); } };
+      return { title: `${Prob.jo(frh(a, b), '과')} 크기가 같은 분수`, gen: (ok) => { const m = R(2, 5); if (ok) return frh(a * m, b * m); let n = a * m + (Math.random() < .5 ? 1 : -1); if (n <= 0) n = a * m + 1; return Math.random() < .5 ? frh(n, b * m) : frh(a * m, b * m + 1); } };
     },
     () => ({ // 기약분수 (약분과 통분)
       title: '기약분수', gen: (ok) => { if (ok) { let d = R(3, 12), n = R(1, d - 1); while (gcd2(n, d) !== 1) n = R(1, d - 1); return frh(n, d); } let d = R(2, 6), n = R(1, d - 1), k = R(2, 3); return frh(n * k, d * k); }
@@ -813,7 +818,7 @@
       S.log.push({ e: 'walk', id: o.id, good, finds: o.finds.slice() });
       $('res-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
       $('res-title').textContent = `${P.name} 도착!`;
-      $('res-line').innerHTML = level() === 'talk' ? lineFrom(TASTE_LINE[S.kind].place[ts], 'tp').split('{x}').join(P.name) : line('arrive');
+      $('res-line').innerHTML = level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].place[ts], 'tp'), '{x}', P.name) : line('arrive');
       gets = [`맞힌 문제 ${good} / ${o.n}`, ...o.finds.map(f => `${ITEMS[f].name} 얻음`)];
       if (first) gets.push('처음 와 본 곳!');
       $('res-gets').innerHTML = gets.map(g => `<span>${g}</span>`).join('');
@@ -917,7 +922,7 @@
         S.acc = k; const ts = TASTE[S.kind].acc[k]; const first = !S.known.acc[k]; S.known.acc[k] = ts;
         if (first) addFriend(ts === 'love' ? 6 : 2);
         overlay('ov-closet', false); renderHome(); react(ts === 'hate' ? 'sad' : 'happy', ts === 'hate' ? 'shake' : 'hop');
-        speak('home', level() === 'talk' ? lineFrom(TASTE_LINE[S.kind].acc[ts], 'ta').split('{x}').join(I.name) : (ts === 'hate' ? line('no') : line('ok')));
+        speak('home', level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].acc[ts], 'ta'), '{x}', I.name) : (ts === 'hate' ? line('no') : line('ok')));
         S.log.push({ e: 'wear', id: k }); save(); return;
       }
     } else {
