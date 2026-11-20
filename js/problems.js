@@ -176,15 +176,15 @@ const Prob = (() => {
   // 5-1 6단원 다각형의 둘레와 넓이
   G.u16 = [
     () => { const a = R(5, 15), b = R(3, 12); const ans = 2 * (a + b);
-      return { fig: shapeSVG('rect', a, b), q: '직사각형의 둘레는 몇 cm일까요?', ...numChoices(ans, [a + b, a * b, ans + 2], ' cm') }; },
+      return { fig: shapeSVG('rect', a, b), q: `가로 ${a} cm, 세로 ${b} cm인 직사각형의 둘레는 몇 cm일까요?`, ...numChoices(ans, [a + b, a * b, ans + 2], ' cm') }; },
     () => { const a = R(6, 15), h = R(3, 10);
-      return { fig: shapeSVG('para', a, 0, h), q: '평행사변형의 넓이는 몇 cm²일까요?', ...numChoices(a * h, [a * h / 2 % 1 ? a * h + a : a * h / 2, 2 * (a + h), a * h + h], ' cm²') }; },
+      return { fig: shapeSVG('para', a, 0, h), q: `밑변 ${a} cm, 높이 ${h} cm인 평행사변형의 넓이는 몇 cm²일까요?`, ...numChoices(a * h, [a * h / 2 % 1 ? a * h + a : a * h / 2, 2 * (a + h), a * h + h], ' cm²') }; },
     () => { let a, h; do { a = R(4, 16); h = R(3, 12); } while ((a * h) % 2);
-      return { fig: shapeSVG('tri', a, 0, h), q: '삼각형의 넓이는 몇 cm²일까요?', ...numChoices(a * h / 2, [a * h, a + h, a * h / 2 + h], ' cm²') }; },
+      return { fig: shapeSVG('tri', a, 0, h), q: `밑변 ${a} cm, 높이 ${h} cm인 삼각형의 넓이는 몇 cm²일까요?`, ...numChoices(a * h / 2, [a * h, a + h, a * h / 2 + h], ' cm²') }; },
     () => { let a, b, h; do { a = R(3, 9); b = R(a + 2, 16); h = R(3, 10); } while (((a + b) * h) % 2);
-      return { fig: shapeSVG('trap', a, b, h), q: '사다리꼴의 넓이는 몇 cm²일까요?', ...numChoices((a + b) * h / 2, [(a + b) * h, a * b * h % 2 ? a * h + b : a * b * h / 2 > 400 ? (a + b) * h / 2 + h : a * b * h / 2, (a + b) * h / 2 + a], ' cm²') }; },
+      return { fig: shapeSVG('trap', a, b, h), q: `윗변 ${a} cm, 아랫변 ${b} cm, 높이 ${h} cm인 사다리꼴의 넓이는 몇 cm²일까요?`, ...numChoices((a + b) * h / 2, [(a + b) * h, a * b * h % 2 ? a * h + b : a * b * h / 2 > 400 ? (a + b) * h / 2 + h : a * b * h / 2, (a + b) * h / 2 + a], ' cm²') }; },
     () => { let a, b; do { a = R(6, 16); b = R(4, 14); } while ((a * b) % 2);
-      return { fig: shapeSVG('rhom', a, b), q: '두 대각선의 길이가 그림과 같은 마름모의 넓이는 몇 cm²일까요?', ...numChoices(a * b / 2, [a * b, a + b, 2 * (a + b)], ' cm²') }; },
+      return { fig: shapeSVG('rhom', a, b), q: `두 대각선이 ${a} cm, ${b} cm인 마름모의 넓이는 몇 cm²일까요?`, ...numChoices(a * b / 2, [a * b, a + b, 2 * (a + b)], ' cm²') }; },
     () => { const p = pick([['정오각형', 5], ['정육각형', 6], ['정팔각형', 8], ['정삼각형', 3]]), s = R(4, 15);
       return { q: `한 변이 ${s} cm인 ${p[0]}의 둘레는 몇 cm일까요?`, ...numChoices(p[1] * s, [(p[1] - 1) * s, (p[1] + 1) * s, p[1] + s], ' cm'), txt: true }; },
     () => { const m = R(2, 9);

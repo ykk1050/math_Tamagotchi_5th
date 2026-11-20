@@ -178,7 +178,8 @@ body.lowfx .anim-float,body.lowfx .anim-breathe,body.lowfx .anim-egg,body.lowfx 
 .tbl th{background:var(--lilac-l);color:var(--lilac-d);font-weight:400;border-left:0}
 .tbl tr:first-child td{background:#FFF7FA}
 .tbl tr:first-child th,.tbl tr:first-child td{border-bottom:2px solid #F3D3E2}
-.qfig svg{max-width:300px;max-height:150px}
+.qfig{width:100%;display:flex;justify-content:center}
+.qfig svg{width:min(340px,100%);height:auto;max-height:170px;display:block}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .choices.c3{grid-template-columns:1fr 1fr 1fr}
 .choices.long{grid-template-columns:1fr 1fr}
