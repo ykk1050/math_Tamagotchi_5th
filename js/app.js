@@ -382,7 +382,7 @@
         const ts = TASTE[S.kind].food[foodId]; S.known.food[foodId] = ts;
         addNeed('full', ts === 'love' ? 45 : 35); addNeed('mood', ts === 'love' ? 25 : ts === 'hate' ? 0 : 12);
         addFriend(ts === 'love' ? 8 : ts === 'hate' ? 1 : 4); if (ts === 'hate') mood = 'sad';
-        ln = level() === 'talk' ? lineFrom(TASTE_LINE[S.kind].food[ts], 'tf' + ts).split('{x}').join(FOODS[foodId].name) : (ts === 'hate' ? line('no') : line('ok'));
+        ln = level() === 'talk' ? lineFrom(TASTE_LINE[S.kind].food[ts], 'tf' + ts).split('{x}').join(FOODS[foodId].name) : L3(ts === 'hate' ? 'yuck' : 'yum');
         if (level() !== 'talk' && ts === 'love') ln += '<br><small style="font-size:.8em;color:#7A6283">엄청 좋아하는 것 같아요!</small>';
         if (level() !== 'talk' && ts === 'hate') ln += '<br><small style="font-size:.8em;color:#7A6283">별로 안 좋아하는 것 같아요</small>';
         S.foods[foodId]--; S.log.push({ e: 'feed', id: foodId, ts }); fulfill('food', foodId, 'act');
@@ -390,7 +390,7 @@
         if (id === 'bath') addNeed('clean', 100); if (id === 'nap') addNeed('energy', 100);
         if (id === 'play') { addNeed('mood', 25); addNeed('energy', -10); } if (id === 'pet') addNeed('mood', 15);
         addFriend(3); S.log.push({ e: 'care', id }); fulfill('care', id, 'act');
-        ln = level() === 'talk' ? lineFrom(LINES[S.kind].talk.act[{ bath: 'bubble', play: 'bubble', nap: 'nap', pet: 'pet' }[id]], 'act' + id) : line('ok');
+        ln = level() === 'talk' ? lineFrom(LINES[S.kind].talk.act[{ bath: 'bubble', play: 'bubble', nap: 'nap', pet: 'pet' }[id]], 'act' + id) : L3('care');
         if (id === 'play' && actGot) { S.candy += actGot; ln += `<br><small style="font-size:.8em;color:#7A6283">규칙에 맞는 방울 ${actGot}개! 별사탕 +${actGot}</small>`; }
         if (id === 'bath' && level() === 'talk') ln = S.kind === 'bunny' ? '뽀송뽀송! 털이 보들보들해졌어!' : '뽀송뽀송! 하얀 구름으로 돌아왔어!';
       }
@@ -400,7 +400,7 @@
       setTimeout(() => { overlay('ov-act', false); sleeping = false; renderHome(); react(mood, mood === 'happy' ? 'hop' : null); }, 2600);
     };
     const tm = setTimeout(finish, id === 'play' ? 60000 : 40000); actClean.push(() => clearTimeout(tm));
-    ({ feed: actFeed, pet: actRub, bath: actScrub, play: actMathBubble, nap: actNap })[id](field, bottom, finish, id, foodId);
+    ({ feed: actFeed, pet: actRub, bath: actBath, play: actMathBubble, nap: actNap })[id](field, bottom, finish, id, foodId);
   }
   function actFeed(field, bottom, finish, id, foodId) {
     $('act-hint').textContent = '간식을 끌어서 입에 쏙 넣어 줘요';
@@ -479,54 +479,78 @@
     }
   }
 
-  // ---------- 뽀득뽀득 목욕: 얼룩을 문질러 거품을 내고, 샤워로 헹군다 ----------
-  function actScrub(field, bottom, finish) {
+  // ---------- 뽀득뽀득 목욕: ① 샤워기로 적시기 → ② 비누로 문질러 거품 → ③ 샤워기로 헹구기 (모두 직접 끌어서) ----------
+  const SHOWER = `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M50 60 C50 40 46 30 34 26" fill="none" stroke="#A9B9D3" stroke-width="6" stroke-linecap="round"/><path d="M12 14 a20 20 0 0 1 36 6 l-4 6 h-28 z" fill="#DCE6F5" stroke="#8EA0BF" stroke-width="2.4" stroke-linejoin="round"/><g fill="#7FB0EA"><circle cx="20" cy="22" r="1.8"/><circle cx="27" cy="23" r="1.8"/><circle cx="34" cy="23" r="1.8"/><circle cx="41" cy="22" r="1.8"/></g></svg>`;
+  const SOAP = `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="20" width="44" height="30" rx="12" fill="#FFC7D9" stroke="#E5679A" stroke-width="2.6"/><path d="M18 28 q6 -4 12 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><g fill="#fff" stroke="#C9BDF3" stroke-width="1.4"><circle cx="46" cy="16" r="6"/><circle cx="54" cy="10" r="4"/><circle cx="38" cy="10" r="3.4"/></g></svg>`;
+  function actBath(field, bottom, finish) {
     actPet('sad');
-    const fr = field.getBoundingClientRect(), pr = $('act-pet').getBoundingClientRect();
-    const spots = [];
+    const fr0 = field.getBoundingClientRect(), pr0 = $('act-pet').getBoundingClientRect();
+    // 연한 얼룩(먼지·흙물 자국)
+    const smudges = [];
     for (let i = 0; i < 6; i++) {
-      const d = document.createElement('div'); d.className = 'dirt';
-      const sz = R(34, 52); d.style.width = sz + 'px'; d.style.height = sz * .8 + 'px';
-      d.style.left = (pr.left - fr.left + pr.width * (.24 + Math.random() * .52) - sz / 2) + 'px';
-      d.style.top = (pr.top - fr.top + pr.height * (.32 + Math.random() * .5) - sz * .4) + 'px';
-      d.style.borderRadius = `${R(35, 60)}% ${R(40, 65)}% ${R(35, 60)}% ${R(40, 65)}%`;
-      field.appendChild(d); spots.push({ d, hp: 100 });
+      const d = document.createElement('div'); d.className = 'smudge'; const sz = R(40, 64);
+      Object.assign(d.style, { width: sz + 'px', height: sz * .75 + 'px', left: (pr0.left - fr0.left + pr0.width * (.32 + Math.random() * .36) - sz / 2) + 'px', top: (pr0.top - fr0.top + pr0.height * (.5 + Math.random() * .3) - sz * .37) + 'px' });
+      d.style.setProperty('--c', pick(['rgba(92,70,58,.42)', 'rgba(70,62,70,.36)', 'rgba(120,88,60,.38)']));
+      field.appendChild(d); smudges.push(d);
     }
-    let left = spots.length; const hint = () => { $('act-hint').textContent = left ? `손가락으로 얼룩을 문질러요 · ${left}개 남음` : '깨끗해졌어요! 샤워로 헹궈요'; };
-    hint();
-    let on = false, lx = 0, ly = 0, foamAcc = 0, popAcc = 0;
-    const down = (e) => { on = true; lx = e.clientX; ly = e.clientY; e.preventDefault(); };
+    const STEPS = [
+      { tool: 'shower', need: 520, hint: '① 샤워기를 끌어서 몸을 물로 적셔요' },
+      { tool: 'soap', need: 1100, hint: '② 비누를 끌어서 문질러 거품을 내요' },
+      { tool: 'shower', need: 700, hint: '③ 샤워기로 거품을 깨끗이 헹궈요' }
+    ];
+    let step = 0, prog = 0;
+    const meter = $('act-meter'); meter.style.display = 'block';
+    const setHint = () => { $('act-hint').textContent = STEPS[step].hint; meter.firstElementChild.style.width = Math.min(100, prog / STEPS[step].need * 100) + '%'; };
+    const tray = {};
+    [['shower', SHOWER, '샤워기'], ['soap', SOAP, '비누']].forEach(([k, svg, nm]) => {
+      const t = document.createElement('div'); t.className = 'tool'; t.dataset.tool = k; t.innerHTML = svg + `<span>${nm}</span>`;
+      bottom.appendChild(t); tray[k] = t;
+    });
+    const syncTray = () => Object.keys(tray).forEach(k => tray[k].classList.toggle('off', k !== STEPS[step].tool));
+    setHint(); syncTray();
+    let held = null, lx = 0, ly = 0, acc = 0;
+    const inPet = (x, y) => { const p = $('act-pet').getBoundingClientRect(); return x > p.left + p.width * .1 && x < p.right - p.width * .1 && y > p.top + p.height * .2 && y < p.bottom; };
+    const place = (x, y) => { const f = field.getBoundingClientRect(); held.style.left = (x - f.left) + 'px'; held.style.top = (y - f.top) + 'px'; };
+    Object.values(tray).forEach(t => t.addEventListener('pointerdown', (e) => {
+      if (t.classList.contains('off')) { Snd.no(); return; }
+      e.preventDefault(); held = document.createElement('div'); held.className = 'tool held ' + t.dataset.tool; held.innerHTML = t.dataset.tool === 'soap' ? SOAP : SHOWER;
+      field.appendChild(held); t.classList.add('using'); lx = e.clientX; ly = e.clientY; place(lx, ly);
+      try { t.setPointerCapture(e.pointerId); } catch (x) {}
+    }));
     const move = (e) => {
-      if (!on || !left) return;
-      const dist = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY;
+      if (!held) return; place(e.clientX, e.clientY);
+      const d = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY;
+      if (!inPet(e.clientX, e.clientY + (STEPS[step].tool === 'shower' ? 70 : 0))) return;
+      prog += d; acc += d;
       const f = field.getBoundingClientRect(), x = e.clientX - f.left, y = e.clientY - f.top;
-      foamAcc += dist; popAcc += dist;
-      if (foamAcc > 26) { foamAcc = 0; const fo = document.createElement('i'); fo.className = 'foam'; fo.style.left = (x + R(-14, 14)) + 'px'; fo.style.top = (y + R(-14, 14)) + 'px'; fo.style.setProperty('--s', R(14, 30) + 'px'); field.appendChild(fo); setTimeout(() => fo.remove(), 2600); }
-      if (popAcc > 140) { popAcc = 0; Snd.pop(); }
-      spots.forEach(sp => {
-        if (sp.hp <= 0) return; const r = sp.d.getBoundingClientRect();
-        if (Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) < 50) {
-          sp.hp -= dist * .32; sp.d.style.opacity = Math.max(0, sp.hp / 100);
-          if (sp.hp <= 0) { sp.d.remove(); left--; Snd.heart(); sparks(field, 6, x, y); actPet(left ? 'idle' : 'happy'); hint(); if (!left) rinse(); }
-        }
-      });
+      if (STEPS[step].tool === 'shower' && acc > 14) {
+        acc = 0;
+        for (let i = 0; i < 3; i++) { const w = document.createElement('i'); w.className = 'water'; w.style.left = (x + R(-22, 22)) + 'px'; w.style.top = (y + 18) + 'px'; field.appendChild(w); setTimeout(() => w.remove(), 700); }
+        if (step === 2) { const fs = field.querySelectorAll('.foam.stay'); const n = Math.ceil(fs.length * Math.min(1, d / 120)); [...fs].slice(0, n).forEach(fo => { fo.classList.add('gone'); setTimeout(() => fo.remove(), 400); }); }
+        if (step === 0) smudges.forEach(s => (s.style.opacity = Math.max(.75, 1 - prog / 2000)));
+      }
+      if (STEPS[step].tool === 'soap' && acc > 22) {
+        acc = 0; Snd.pop();
+        const fo = document.createElement('i'); fo.className = 'foam stay'; fo.style.left = (x + R(-18, 18)) + 'px'; fo.style.top = (y + R(-18, 18)) + 'px'; fo.style.setProperty('--s', R(16, 34) + 'px'); field.appendChild(fo);
+        smudges.forEach(s => (s.style.opacity = Math.max(0, .75 * (1 - prog / STEPS[1].need))));
+        actPet('happy');
+      }
+      meter.firstElementChild.style.width = Math.min(100, prog / STEPS[step].need * 100) + '%';
+      if (prog >= STEPS[step].need) next();
     };
-    const up = () => { on = false; };
-    field.addEventListener('pointerdown', down); field.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
-    actClean.push(() => { field.removeEventListener('pointerdown', down); field.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); field.querySelectorAll('.dirt,.foam,.shower').forEach(e => e.remove()); });
-    function rinse() {
-      const b = document.createElement('button'); b.className = 'btn big primary'; b.textContent = '샤워로 헹구기';
-      b.onclick = () => {
-        b.remove(); const p = $('act-pet').getBoundingClientRect(), f = field.getBoundingClientRect();
-        const sh = document.createElement('div'); sh.className = 'shower';
-        sh.style.left = (p.left - f.left + p.width * .1) + 'px'; sh.style.width = (p.width * .8) + 'px'; sh.style.top = '0'; sh.style.height = (p.top - f.top + p.height * .9) + 'px';
-        sh.innerHTML = '<span class="head"></span>' + Array.from({ length: 14 }, (_, i) => `<i style="left:${4 + i * 7}%;animation-delay:${(i % 5) * .08}s"></i>`).join('');
-        field.appendChild(sh); Snd.lullaby && [0, 200, 400, 600, 800].forEach(t => setTimeout(() => Snd.pop(), t));
-        setTimeout(() => { field.querySelectorAll('.foam').forEach(e => e.remove()); actPet('happy'); sparks(field, 18); }, 1300);
-        setTimeout(() => { sh.remove(); finish(); }, 1900);
-      };
-      bottom.appendChild(b);
+    const up = () => { if (!held) return; held.remove(); held = null; Object.values(tray).forEach(t => t.classList.remove('using')); };
+    function next() {
+      up(); Snd.heart(); sparks(field, 8); prog = 0; step++;
+      if (step === 1) { actPet('idle'); if (level() === 'talk') actSay(S.kind === 'bunny' ? '시원하다! 이제 비누칠!' : '촉촉해졌어! 이제 비누 거품!'); }
+      if (step === 2) { smudges.forEach(s => s.remove()); if (level() === 'talk') actSay(S.kind === 'bunny' ? '거품이 보글보글! 간지러워!' : '거품 구름이 됐어! 헤헤.'); }
+      if (step >= STEPS.length) {
+        field.querySelectorAll('.foam').forEach(fo => fo.remove()); meter.style.display = 'none';
+        actPet('happy'); sparks(field, 18); setTimeout(finish, 500); return;
+      }
+      setHint(); syncTray();
     }
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    actClean.push(() => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); field.querySelectorAll('.smudge,.foam,.water,.tool.held').forEach(e => e.remove()); });
   }
 
   // ---------- 수수께끼 방울 놀이: 친구가 낸 규칙에 맞는 방울만 터뜨린다 (수학) ----------
@@ -664,7 +688,7 @@
     const tag = $('qtag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
     $('qfig').innerHTML = cur.fig; $('qtext').innerHTML = cur.q;
     $('qtext').classList.toggle('long', cur.q.replace(/<[^>]+>/g, '').length > 34 || !!cur.fig);
-    const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (cur.choices.length === 3 ? ' c3' : '');
+    const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (cur.choices.length === 3 ? ' three' : '');
     cur.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (cur.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => answer(b, c); box.appendChild(b); });
     const qc = $('qcard'); qc.classList.remove('in'); void qc.offsetWidth; qc.classList.add('in');
     lock = false; renderOut(); save();

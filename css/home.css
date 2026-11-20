@@ -294,3 +294,18 @@ body.lowfx .cfx{animation-duration:.01s!important}
 .quilt.drag{z-index:9;filter:drop-shadow(0 14px 22px rgba(122,82,140,.35))}
 .quilt-on{position:absolute;z-index:5;pointer-events:none;animation:qdrop .35s cubic-bezier(.3,1.5,.5,1)}
 @keyframes qdrop{from{transform:translateY(-30px) scale(1.1);opacity:.4}to{transform:none;opacity:1}}
+
+/* 목욕: 연한 얼룩, 샤워기·비누 끌기 */
+.smudge{position:absolute;z-index:4;pointer-events:none;border-radius:50%;background:radial-gradient(ellipse at center,var(--c) 0%,var(--c) 35%,transparent 72%);filter:blur(1.5px);transition:opacity .15s}
+.tool{width:96px;min-height:96px;border-radius:24px;background:#fff;box-shadow:0 5px 0 #EADBEA,var(--shadow-s);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;touch-action:none;cursor:grab;font-size:14px;color:var(--ink-2)}
+.tool svg{width:56px;height:56px}
+.tool.off{opacity:.4;filter:grayscale(.6)}
+.tool.using{opacity:.25}
+.tool.held{position:absolute;z-index:9;width:110px;min-height:0;background:none;box-shadow:none;transform:translate(-50%,-50%) rotate(-12deg);pointer-events:none}
+.tool.held svg{width:110px;height:110px;filter:drop-shadow(0 8px 12px rgba(122,82,140,.3))}
+.tool.held.shower{transform:translate(-50%,-70%) rotate(-8deg)}
+.water{position:absolute;z-index:6;width:5px;height:16px;border-radius:5px;background:#8EC5FF;pointer-events:none;animation:water .65s ease-in forwards}
+@keyframes water{from{transform:translateY(0);opacity:.95}to{transform:translateY(90px);opacity:0}}
+.foam.stay{animation:foamin .3s ease-out forwards}
+@keyframes foamin{from{transform:scale(.3)}to{transform:scale(1)}}
+.foam.gone{transition:opacity .35s,transform .35s;opacity:0;transform:translateY(20px) scale(.6)}

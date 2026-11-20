@@ -1,2 +1,2 @@
 // 버전: 고칠 때마다 +0.001
-const VERSION = 'v1.006';
+const VERSION = 'v1.007';
