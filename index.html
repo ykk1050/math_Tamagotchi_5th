@@ -83,6 +83,8 @@
         <div class="think" id="think"></div>
         <button class="pet" id="pet" aria-label="친구 쓰다듬기"></button>
       </div>
+      <div class="hots" id="hots"></div>
+      <div class="ball" id="ball" aria-label="공"></div>
       <div class="bubble" id="bubble"><span id="bubble-txt"></span></div>
       <div class="needs" id="needs"></div>
       <div class="fx" id="fx"></div>
@@ -143,6 +145,16 @@
     <p class="sub" id="choose-sub"></p>
     <div class="pick-grid" id="pick-grid"></div>
     <button class="btn ghost" data-close="ov-choose">닫기</button>
+  </div>
+</div>
+
+<!-- 책 속 수수께끼 -->
+<div class="overlay" id="ov-riddle">
+  <div class="sheet wide riddle">
+    <div class="riddle-top"><span class="riddle-pet" id="riddle-pet"></span><div class="bubble riddle-say" id="riddle-say"><span></span></div></div>
+    <div class="qcard small" id="rq-card"><div class="qtag" id="rq-tag"></div><div class="qfig" id="rq-fig"></div><div class="qtext" id="rq-text"></div></div>
+    <div class="choices" id="rq-choices"></div>
+    <div class="res-btns"><button class="btn" id="rq-close">책 덮기</button><button class="btn primary" id="rq-more" style="display:none">한 권 더 읽기</button></div>
   </div>
 </div>
 

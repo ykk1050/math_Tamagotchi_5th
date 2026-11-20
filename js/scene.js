@@ -38,7 +38,7 @@ const Scene = (() => {
   const need = (k) => svg('0 0 32 32', NEED[k]);
 
   // ---------- 친구의 방 ----------
-  function room(kind, decor, night) {
+  function room(kind, decor, night, weather = 'sun') {
     const wall = kind === 'bunny' ? ['#FFF1F5', '#FFE4EE'] : ['#F4F0FF', '#E9E2FF'];
     const dot = kind === 'bunny' ? '#FBD3E1' : '#DCD3FB';
     const sky = night ? ['#4E4A8C', '#8E7CC4'] : ['#BFE3FF', '#EAF6FF'];
@@ -61,6 +61,12 @@ const Scene = (() => {
       <rect x="606" y="86" width="218" height="168" rx="18" fill="url(#rs)"/>
       ${night ? `<circle cx="780" cy="128" r="18" fill="#FFF3B0"/><circle cx="772" cy="122" r="16" fill="url(#rs)"/>${[[650, 120], [700, 170], [740, 110], [800, 200], [668, 210]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#fff"/>`).join('')}`
         : `<circle cx="780" cy="130" r="20" fill="#FFE59A"/><g fill="#fff"><circle cx="660" cy="190" r="16"/><circle cx="682" cy="180" r="20"/><circle cx="704" cy="192" r="15"/></g>`}
+      <clipPath id="wclip"><rect x="606" y="86" width="218" height="168" rx="18"/></clipPath>
+      <g clip-path="url(#wclip)">
+        ${weather === 'rain' ? `<rect x="600" y="80" width="230" height="180" fill="#8E9BBD" opacity=".55"/><g fill="#fff" opacity=".9"><circle cx="650" cy="110" r="22"/><circle cx="680" cy="100" r="26"/><circle cx="712" cy="112" r="20"/><circle cx="760" cy="104" r="18"/><circle cx="786" cy="112" r="20"/></g><g class="wrain" stroke="#DCEBFF" stroke-width="3" stroke-linecap="round">${[620, 645, 670, 695, 720, 745, 770, 795, 815].map((x, i) => `<path d="M${x} ${120 + (i % 3) * 30} l-6 16"/>`).join('')}</g>` : ''}
+        ${weather === 'snow' ? `<rect x="600" y="80" width="230" height="180" fill="#C9D6F0" opacity=".45"/><g class="wsnow" fill="#fff">${[[625, 110], [660, 150], [690, 105], [720, 180], [750, 125], [790, 160], [640, 210], [770, 220], [705, 230], [815, 120]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4"/>`).join('')}</g><path d="M606 244 q60 -14 110 -4 t108 -6 v20 h-218z" fill="#fff"/>` : ''}
+        ${weather === 'rainbow' ? `<g fill="none" stroke-width="9" opacity=".9"><path d="M620 250 a95 95 0 0 1 190 0" stroke="#F7A0C1"/><path d="M632 250 a83 83 0 0 1 166 0" stroke="#FFD36E"/><path d="M644 250 a71 71 0 0 1 142 0" stroke="#8FE0C9"/><path d="M656 250 a59 59 0 0 1 118 0" stroke="#9EC2F2"/></g>` : ''}
+      </g>
       <path d="M715 86 V254 M606 170 H824" stroke="#fff" stroke-width="8"/>
       <path d="M580 64 h270" stroke="${bedS}" stroke-width="8" stroke-linecap="round" opacity=".5"/>
       <path d="M584 68 q20 80 -2 200 q40 -60 30 -200z" fill="${bedC}" opacity=".9"/>
@@ -134,5 +140,7 @@ const Scene = (() => {
   }
   const pathNodes = (W, steps) => Array.from({ length: steps }, (_, i) => W * .17 + i * (W * .66 / (steps - 1)));
 
-  return { food, item, need, room, kitchen, path, pathNodes };
+  // 공
+  const ball = () => svg('0 0 64 64', `<circle cx="32" cy="32" r="26" fill="#FFF4F8" stroke="#E5679A" stroke-width="3"/><path d="M8 30 q24 -14 48 0 M10 42 q22 12 44 0" fill="none" stroke="#8FE0C9" stroke-width="5"/><path d="M26 7 q-10 25 2 50" fill="none" stroke="#FFD36E" stroke-width="5"/><circle cx="22" cy="20" r="5" fill="#fff"/>`);
+  return { food, item, need, room, kitchen, path, pathNodes, ball };
 })();

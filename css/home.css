@@ -353,3 +353,30 @@ body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}
 @keyframes shr{0%{left:50%}100%{left:78%;top:40%;transform:translateX(-50%) rotate(40deg);opacity:0}}
 .yolk{left:50%;top:56%;width:26%;aspect-ratio:1;transform:translateX(-50%);animation:yolk .7s cubic-bezier(.5,0,.8,.5) forwards}
 @keyframes yolk{0%{top:56%;transform:translateX(-50%) scale(.6,.8)}80%{top:72%;transform:translateX(-50%) scale(1,.9);opacity:1}100%{top:74%;transform:translateX(-50%) scale(1.2,.5);opacity:0}}
+
+/* 방 안 물건 놀이 */
+.hots{position:absolute;inset:0;z-index:2;pointer-events:none}
+.hot{position:absolute;pointer-events:auto;border-radius:18px;background:transparent;touch-action:manipulation}
+.hot:active{background:rgba(255,255,255,.25)}
+.ball{position:absolute;left:0;top:0;z-index:4;touch-action:none;cursor:grab;will-change:transform}
+.ball svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 4px rgba(110,80,140,.2))}
+.walker.go{transition-property:left;transition-timing-function:ease-in-out}
+.walker .pet.roll svg{animation:roll2 .55s ease-in-out 4}
+@keyframes roll2{0%,100%{transform:rotate(0)}25%{transform:rotate(-28deg) translateX(-8px)}75%{transform:rotate(28deg) translateX(8px)}}
+.walker .pet.boing svg{animation:boing .42s cubic-bezier(.3,1.6,.5,1) 3}
+@keyframes boing{0%,100%{transform:translateY(0) scale(1)}20%{transform:translateY(0) scale(1.12,.86)}55%{transform:translateY(-38px) scale(.94,1.08)}}
+.wrain{animation:wrain .5s linear infinite}
+@keyframes wrain{from{transform:translateY(-20px)}to{transform:translateY(30px)}}
+.wsnow{animation:wsnow 3s linear infinite}
+@keyframes wsnow{from{transform:translateY(-30px)}to{transform:translateY(30px)}}
+
+/* 책 속 수수께끼 */
+.sheet.riddle{gap:10px;background:linear-gradient(180deg,#FFF9F2,#FFF3F7)}
+.riddle-top{display:flex;align-items:center;gap:10px;width:100%}
+.riddle-pet{width:96px;height:94px;flex:none}.riddle-pet svg{width:100%;height:100%}
+.riddle-say{position:relative;top:auto;left:auto;right:auto;flex:1;font-size:18px;min-height:56px}
+.riddle-say::after{left:-12px;bottom:auto;top:50%;margin:-10px 0 0;border:10px solid transparent;border-right-color:#fff;border-left:0}
+.qcard.small{width:100%;min-height:150px;flex:none;padding:16px}
+.qcard.small .qtext{font-size:26px}.qcard.small .qtext.long{font-size:22px}
+.sheet.riddle .choices{width:100%}
+.sheet.riddle .ch{min-height:64px}
