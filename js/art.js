@@ -181,11 +181,12 @@ const Art = (() => {
     crown: () => `<g><path d="M-11 4 L-11 -6 L-5.5 -1 L0 -10 L5.5 -1 L11 -6 L11 4 Z" fill="url(#cn-star)" stroke="#D9962E" stroke-width="1.4" stroke-linejoin="round"/><circle cx="0" cy="0" r="1.8" fill="#F28DB2"/><circle cx="-6" cy="1.5" r="1.2" fill="#8FD8C8"/><circle cx="6" cy="1.5" r="1.2" fill="#8FD8C8"/></g>`,
     berryhat: () => `<g><path d="M-19 3 C-19 -14 19 -14 19 3 Z" fill="#F2678F" stroke="#C9466F" stroke-width="1.6"/><path d="M-21 3 h42" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round"/><g fill="#FFE29A"><circle cx="-9" cy="-4" r="1"/><circle cx="-2" cy="-8" r="1"/><circle cx="6" cy="-5" r="1"/><circle cx="11" cy="-1" r="1"/><circle cx="-12" cy="0" r="1"/></g><path d="M-5 -11 l3 -4 2 3 3 -4 1 5z" fill="#7FCF95" stroke="#4FAA6C" stroke-width="1"/></g>`,
     scarf: () => `<g><rect x="-20" y="-4.5" width="40" height="9" rx="4.5" fill="#9FD9F2" stroke="#5DB3D8" stroke-width="1.4"/><path d="M8 3 l5 11 l6 -2 l-4 -10z" fill="#9FD9F2" stroke="#5DB3D8" stroke-width="1.4" stroke-linejoin="round"/><path d="M-12 -4 v9 M-4 -4 v9 M4 -4 v9" stroke="#fff" stroke-width="1.6" opacity=".8"/></g>`,
+    phat: () => `<g><path d="M-10 4 L0 -22 L10 4 Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.4" stroke-linejoin="round"/><path d="M-6.5 -4 L5 -9 M-8.5 1 L7.5 -4.5" stroke="#FFD36E" stroke-width="2.6"/><circle cx="0" cy="-23" r="3.6" fill="#F7A0C1"/><path d="M-11 4 h22" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></g>`,
     bow: () => `<g><path d="M0 0 C-6 -9 -13 -7 -12 0 C-13 7 -6 9 0 0 Z M0 0 C6 -9 13 -7 12 0 C13 7 6 9 0 0 Z" fill="url(#cn-rib)" stroke="#C9578A" stroke-width="1.3"/><circle r="3.2" fill="#D9628E"/></g>`
   };
   const ACC_POS = {
-    cloud: { flower: [-16, -24, 1], crown: [0, -33, 1.1], berryhat: [0, -24, 1.05], scarf: [0, 22, 1.25], bow: [-16, -25, .9] },
-    bunny: { flower: [-14, -14, .9], crown: [0, -21, .95], berryhat: [0, -15, 1], scarf: [0, 17, .9], bow: [13, -18, 1] }
+    cloud: { phat: [-6, -28, 1.05], flower: [-16, -24, 1], crown: [0, -33, 1.1], berryhat: [0, -24, 1.05], scarf: [0, 22, 1.25], bow: [-16, -25, .9] },
+    bunny: { phat: [0, -20, .95], flower: [-14, -14, .9], crown: [0, -21, .95], berryhat: [0, -15, 1], scarf: [0, 17, .9], bow: [13, -18, 1] }
   };
   function accSVG(kind, acc) {
     if (!acc || !ACC[acc]) return '';

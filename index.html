@@ -90,6 +90,7 @@
       <div class="fx" id="fx"></div>
     </div>
     <aside class="panel">
+      <div class="party-card" id="party-card" style="display:none"></div>
       <div class="wish-card">
         <div class="wish-head"><b>오늘의 바람</b><span id="wish-count">0 / 3</span></div>
         <div id="wish-list"></div>
@@ -103,6 +104,7 @@
         <button class="menu" id="btn-book"><span class="mi" id="mi-book"></span>친구 수첩</button>
         <button class="menu" id="btn-closet"><span class="mi" id="mi-closet"></span>꾸미기</button>
         <button class="menu" id="btn-diary"><span class="mi" id="mi-diary"></span>일기</button>
+        <button class="menu" id="btn-garden"><span class="mi" id="mi-garden"></span>텃밭</button>
       </div>
     </aside>
   </main>
@@ -155,6 +157,33 @@
     <div class="qcard small" id="rq-card"><div class="qtag" id="rq-tag"></div><div class="qfig" id="rq-fig"></div><div class="qtext" id="rq-text"></div></div>
     <div class="choices" id="rq-choices"></div>
     <div class="res-btns"><button class="btn" id="rq-close">책 덮기</button><button class="btn primary" id="rq-more" style="display:none">한 권 더 읽기</button></div>
+  </div>
+</div>
+
+<!-- 텃밭 -->
+<div class="overlay" id="ov-garden">
+  <div class="sheet wide garden">
+    <h3 class="h3">우리 텃밭</h3>
+    <div class="pantry" id="garden-pantry"></div>
+    <div class="plots" id="garden-plots"></div>
+    <div class="gquiz" id="garden-quiz" style="display:none">
+      <p class="sub" id="gq-msg"></p>
+      <div class="qcard small"><div class="qtag" id="gq-tag"></div><div class="qfig" id="gq-fig"></div><div class="qtext" id="gq-text"></div></div>
+      <div class="choices" id="gq-choices"></div>
+    </div>
+    <button class="btn big primary" id="garden-close">방으로</button>
+  </div>
+</div>
+
+<!-- 생일 파티 -->
+<div class="overlay" id="ov-party">
+  <div class="sheet party">
+    <div class="party-fx" id="party-fx"></div>
+    <div class="level-art" id="party-art"></div>
+    <h3 class="h3">생일 축하해!</h3>
+    <p class="sub" id="party-line"></p>
+    <div class="res-gets"><span>생일 고깔모자 선물</span><span>별사탕 +20</span><span>우정 +20</span></div>
+    <button class="btn big primary" id="party-ok">고마워!</button>
   </div>
 </div>
 

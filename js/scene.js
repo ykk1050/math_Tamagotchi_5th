@@ -89,6 +89,7 @@ const Scene = (() => {
         <path d="M70 100 h184" stroke="#fff" stroke-width="5" stroke-dasharray="10 10" opacity=".8"/>
         <rect x="10" y="150" width="20" height="26" rx="6" fill="${bedS}" opacity=".6"/><rect x="222" y="150" width="20" height="26" rx="6" fill="${bedS}" opacity=".6"/>
       </g>
+      ${has('balloons') ? [['#F7A0C1', 470, 80], ['#FFD36E', 500, 60], ['#9EC2F2', 530, 86]].map(([c, x, y]) => `<g transform="translate(${x} ${y})"><path d="M0 60 q-6 18 4 40" fill="none" stroke="#B9A7C4" stroke-width="2"/><ellipse cx="0" cy="30" rx="22" ry="28" fill="${c}"/><ellipse cx="-8" cy="20" rx="5" ry="8" fill="#fff" opacity=".5"/></g>`).join('') + '<path d="M420 60 q90 40 180 0" fill="none" stroke="#F7A0C1" stroke-width="4"/>' + [440, 470, 500, 530, 560, 590].map((x, i) => `<path d="M${x} ${70 + Math.sin(i) * 6} l10 22 l10 -22z" fill="${['#FFD36E', '#8FE0C9', '#B9A7F5'][i % 3]}"/>`).join('') : ''}
       ${has('plant') ? it('plant', 712, 336, 1.45) : ''}
       ${has('cushion') ? it('cushion', 620, 476, 1.5) : ''}
       ${night ? '<rect width="1000" height="640" fill="#3E3570" opacity=".22"/>' : ''}

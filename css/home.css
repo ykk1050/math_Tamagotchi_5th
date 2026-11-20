@@ -57,7 +57,7 @@
 .care:active{transform:translateY(3px)}
 .care .ci{width:32px;height:32px}.care .ci svg{width:100%;height:100%}
 .care.want::after{content:"!";position:absolute;top:-4px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--rose);color:#fff;font-family:var(--fh);font-size:15px;display:grid;place-items:center}
-.menu-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.menu-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .menu{min-height:72px;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:var(--shadow-s);font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .menu .mi{width:26px;height:26px}.menu .mi svg{width:100%;height:100%}
 .menu.new::after{content:"새 이야기";position:absolute;transform:translate(26px,-26px);background:var(--rose);color:#fff;font-size:11px;padding:2px 6px;border-radius:999px}
@@ -380,3 +380,48 @@ body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}
 .qcard.small .qtext{font-size:26px}.qcard.small .qtext.long{font-size:22px}
 .sheet.riddle .choices{width:100%}
 .sheet.riddle .ch{min-height:64px}
+
+/* 텃밭 */
+.sheet.garden{background:linear-gradient(180deg,#F2FBF4,#FFF9F2);gap:10px}
+.pantry{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pan{display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:4px 14px 4px 6px;box-shadow:var(--shadow-s);font-size:15px}
+.pan .pi{width:30px;height:30px}.pan .pi svg{width:100%;height:100%}
+.pan b{font-family:var(--fh);font-weight:400;font-size:18px;color:var(--rose-d)}
+.plots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%}
+.plot{background:#fff;border-radius:22px;box-shadow:var(--shadow-s);padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:210px;position:relative;overflow:hidden}
+.plot .pa{width:100%;max-width:120px;aspect-ratio:1}.plot .pa svg{width:100%;height:100%}
+.plot b{font-size:14px;text-align:center;font-weight:700;color:var(--ink)}
+.plot .btn{min-height:46px;font-size:15px;padding:0 12px;margin-top:auto}
+.plot .wait{margin-top:auto;color:var(--ink-3);font-size:13px;padding:12px 0}
+.plot.wet .pa{filter:saturate(1.2)}
+.plot.wet::before{content:"";position:absolute;left:18%;right:18%;top:52%;height:14px;border-radius:50%;background:rgba(110,160,230,.25)}
+.pbar{width:80%;height:8px;border-radius:999px;background:#EAF3E6;overflow:hidden}.pbar i{display:block;height:100%;background:var(--mint)}
+.plot.watering::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 14px,rgba(126,176,240,.55) 14px 17px);animation:wateranim 1.3s linear forwards}
+@keyframes wateranim{0%{opacity:0;transform:translateY(-40px)}20%{opacity:1}100%{opacity:0;transform:translateY(30px)}}
+.seed-pick{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.seed-pick .sub{grid-column:1/-1;margin:0}
+.seed-pick .pick .pa{width:84px;height:84px}
+.gquiz{width:100%;display:flex;flex-direction:column;gap:10px}
+.gquiz .sub{margin:0}
+@media (max-width:820px){.plots{grid-template-columns:repeat(2,1fr)}}
+
+/* 생일 */
+.party-card{background:linear-gradient(135deg,#FFF0F6,#FFF8E0);border-radius:24px;padding:12px;box-shadow:var(--shadow);border:2px solid #FFD3E4}
+.party-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 6px}
+.party-head b{font-family:var(--fh);font-weight:400;font-size:19px;color:var(--rose-d)}
+.party-head small{color:var(--ink-3)}
+.pm{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;text-align:left;padding:4px 6px;border-top:1.5px dashed #F7D3E2;font-size:15px}
+.pm small{display:block;color:var(--ink-3);font-size:12px}
+.pm .wc{width:28px;height:28px;border-radius:50%;border:2.5px solid #EBD7E3;display:grid;place-items:center;color:#fff;flex:none}
+.pm.done .wc{background:var(--mint);border-color:var(--mint)}.pm.done{color:var(--ink-3);text-decoration:line-through}
+.balloon{width:70px;touch-action:none;position:relative;z-index:6;cursor:grab}
+.balloon svg{width:100%;display:block}
+.balloon.drag{z-index:9}
+.balloon.stuck{position:absolute;pointer-events:none;animation:sway 2.4s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes sway{50%{transform:rotate(5deg)}}
+.sheet.party{position:relative;overflow:hidden}
+.party-fx{position:absolute;inset:0;pointer-events:none;z-index:3}
+.confetti{position:absolute;top:-20px;width:10px;height:14px;border-radius:2px;animation:confetti 2.6s linear forwards}
+@keyframes confetti{to{transform:translateY(560px) rotate(540deg);opacity:.6}}
+.pm{min-height:40px;padding:2px 6px;font-size:14px}.pm small{display:none}.pm .wc{width:24px;height:24px}
+.party-card{padding:8px 10px}.party-head{padding:0 4px 2px}.party-head b{font-size:17px}

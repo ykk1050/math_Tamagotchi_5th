@@ -27,7 +27,8 @@ const DATA = (() => {
     lamp:     { name: '별 조명',      kind: 'decor', slot: 'shelf', price: 20 },
     cushion:  { name: '구름 쿠션',    kind: 'decor', slot: 'floorR', price: 20 },
     rug:      { name: '딸기 러그',    kind: 'decor', slot: 'rug', price: 25 },
-    frame:    { name: '우리 사진 액자', kind: 'decor', slot: 'wall', price: 15 }
+    frame:    { name: '우리 사진 액자', kind: 'decor', slot: 'wall', price: 15 },
+    phat:     { name: '생일 고깔모자', kind: 'acc', price: 0, gift: true }
   };
   const CARE = {
     pet:    { name: '쓰다듬기',   wish: '쓰다듬어 줬으면 좋겠어…' },
@@ -40,12 +41,12 @@ const DATA = (() => {
     cloud: {
       food: { cotton: 'love', pudding: 'love', milk: 'like', cookie: 'like', pancake: 'like', cake: 'hate' },
       place: { hill: 'love', beach: 'like', garden: 'like', berry: 'like' },
-      acc: { crown: 'love', scarf: 'like', flower: 'like', bow: 'like', berryhat: 'hate' }
+      acc: { crown: 'love', scarf: 'like', flower: 'like', bow: 'like', berryhat: 'hate', phat: 'love' }
     },
     bunny: {
       food: { cake: 'love', milk: 'love', cookie: 'like', pudding: 'like', pancake: 'like', cotton: 'hate' },
       place: { berry: 'love', garden: 'like', beach: 'like', hill: 'like' },
-      acc: { flower: 'love', berryhat: 'like', bow: 'like', scarf: 'like', crown: 'hate' }
+      acc: { flower: 'love', berryhat: 'like', bow: 'like', scarf: 'like', crown: 'hate', phat: 'love' }
     }
   };
   const TASTE_LINE = {
