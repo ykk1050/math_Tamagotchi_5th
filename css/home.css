@@ -180,3 +180,23 @@
   .panel{gap:8px}
   .walker{width:min(34%,150px)}
 }
+
+/* 세로로 세운 패드(갤럭시 탭 800×1200대, 아이패드 820×1180): 문제 글자를 크게 */
+@media (orientation:portrait) and (min-width:700px){
+  .qtext{font-size:34px}.qtext.long{font-size:28px}
+  .ch{min-height:84px;font-size:30px}.ch.txt{font-size:22px}
+  .play{grid-template-rows:minmax(0,.8fr) minmax(0,1.2fr)}
+}
+/* 가로로 낮은 화면(갤럭시 탭 크롬 1280×700 안팎) */
+@media (orientation:landscape) and (max-height:760px){
+  .hud{margin-bottom:8px}
+  .ch{min-height:70px}
+  .go{min-height:104px}.care{min-height:76px}.menu{min-height:64px}
+  .wish{min-height:50px;padding:6px}
+}
+/* 가로 화면에서 남는 세로 공간은 나들이 버튼이 채운다 */
+@media (orientation:landscape){
+  .go-btns{flex:1 1 auto;max-height:200px}
+  .go{height:100%}
+}
+@media (orientation:landscape) and (min-width:1240px){ .home{grid-template-columns:minmax(0,1fr) 360px} }
