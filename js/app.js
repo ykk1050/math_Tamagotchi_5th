@@ -761,7 +761,7 @@
       if (S.review.length > 12) S.review.shift();
       Snd.no(); speak('out', line(OUT.type === 'cook' ? 'cookNo' : 'walkNo', { a: cur.ans })); outReact('sad', 'shake');
     }
-    OUT.res[OUT.step] = ok; OUT.step++;
+    OUT.res[OUT.step] = ok; OUT.step++; if (OUT.type === 'cook') OUT.anim = true; // 답을 고른 순간부터 애니메이션이 끝날 때까지 단계 이름을 바꾸지 않는다
     save(); renderOut();
     setTimeout(advance, ok ? 1300 : 2400);
   }
