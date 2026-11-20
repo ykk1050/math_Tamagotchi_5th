@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F6E7F2">
+<title>구름 둥지 · 수학 친구 키우기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="sky" aria-hidden="true">
+  <div class="cl c1"></div><div class="cl c2"></div><div class="cl c3"></div>
+  <div class="tw t1"></div><div class="tw t2"></div><div class="tw t3"></div><div class="tw t4"></div><div class="tw t5"></div>
+</div>
+
+<!-- 시작 화면 -->
+<section id="scr-title" class="screen on">
+  <div class="title-wrap">
+    <div class="title-eggs" id="title-eggs"></div>
+    <h1 class="logo"><span class="logo-sub">수학 친구 키우기</span>구름 둥지</h1>
+    <p class="tagline">문제를 풀면 내 친구가 무럭무럭 자라요</p>
+    <div class="title-btns">
+      <button class="btn big primary" id="btn-start">시작하기</button>
+    </div>
+  </div>
+  <footer class="foot"><a href="credits.html" target="_blank" rel="noopener">출처와 라이선스</a><span class="dot">·</span><span class="made">Created by gamtudyssam using AI · <span class="ver"></span></span></footer>
+</section>
+
+<!-- 알 고르기 -->
+<section id="scr-choose" class="screen">
+  <div class="choose-wrap">
+    <h2 class="h2">구름 둥지에 알이 두 개 있어요</h2>
+    <p class="sub">알을 눌러 보고, 함께 자랄 친구를 골라요</p>
+    <div class="egg-cards">
+      <button class="egg-card" data-kind="cloud" id="card-cloud">
+        <div class="egg-art" id="egg-cloud"></div>
+        <div class="egg-name">별빛 알</div>
+        <div class="egg-desc">구름 요정이 잠들어 있어요<br>느긋하고 다정한 친구</div>
+      </button>
+      <button class="egg-card" data-kind="bunny" id="card-bunny">
+        <div class="egg-art" id="egg-bunny"></div>
+        <div class="egg-name">딸기 알</div>
+        <div class="egg-desc">아기 토끼가 콩콩 움직여요<br>활발하고 애교 많은 친구</div>
+      </button>
+    </div>
+    <button class="btn big primary" id="btn-pick" disabled>이 알로 할래요</button>
+  </div>
+</section>
+
+<!-- 이름 고르기 -->
+<section id="scr-name" class="screen">
+  <div class="choose-wrap">
+    <div class="name-art" id="name-art"></div>
+    <h2 class="h2">이름을 지어 주세요</h2>
+    <div class="name-chips" id="name-chips"></div>
+    <button class="btn big primary" id="btn-name" disabled>이 이름으로 할래요</button>
+    <button class="btn ghost" id="btn-name-back">알 다시 고르기</button>
+  </div>
+</section>
+
+<!-- 놀이 화면 -->
+<section id="scr-play" class="screen">
+  <header class="hud">
+    <div class="hud-l">
+      <div class="chip name-chip"><span id="hud-stage">1단계</span><b id="hud-name">몽실</b></div>
+      <div class="grow" aria-label="자라기 게이지"><div class="grow-bar"><i id="grow-fill"></i></div><span id="grow-txt">0 / 5</span></div>
+    </div>
+    <div class="hud-r">
+      <div class="chip"><span class="ico candy"></span><b id="hud-candy">0</b></div>
+      <div class="chip"><span class="ico heart"></span><b id="hud-love">0</b></div>
+      <div class="chip combo" id="hud-combo-wrap">연속 <b id="hud-combo">0</b></div>
+      <button class="icon-btn" id="btn-set" aria-label="설정"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+    </div>
+  </header>
+  <main class="play">
+    <div class="stage" id="stage">
+      <div class="stage-sky"></div>
+      <div class="hill"></div>
+      <div class="bubble" id="bubble"><span id="bubble-txt"></span></div>
+      <button class="pet" id="pet" aria-label="친구 쓰다듬기"></button>
+      <div class="pet-shadow"></div>
+      <div class="trail" id="trail"></div>
+      <div class="fx" id="fx"></div>
+    </div>
+    <div class="board">
+      <div class="qcard" id="qcard">
+        <div class="qtag" id="qtag"></div>
+        <div class="qfig" id="qfig"></div>
+        <div class="qtext" id="qtext"></div>
+      </div>
+      <div class="choices" id="choices"></div>
+      <div class="board-foot">
+        <span id="act-left">같이 하기까지 8문제</span>
+        <span id="today">오늘 맞힌 문제 0</span>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- 같이 하기 고르기 -->
+<div class="overlay" id="ov-pick">
+  <div class="sheet">
+    <h3 class="h3">같이 하기 시간!</h3>
+    <p class="sub" id="pick-sub">무엇을 같이 할까요?</p>
+    <div class="act-cards" id="act-cards"></div>
+    <button class="btn ghost" id="btn-act-skip">다음에 할래요</button>
+  </div>
+</div>
+
+<!-- 같이 하기 놀이 -->
+<div class="overlay" id="ov-act">
+  <div class="act-room" id="act-room">
+    <div class="act-top"><span id="act-title">간식 주기</span><span id="act-hint"></span></div>
+    <div class="act-field" id="act-field">
+      <div class="act-pet" id="act-pet"></div>
+      <div class="meter" id="act-meter"><i></i></div>
+    </div>
+    <div class="act-bottom" id="act-bottom"></div>
+    <div class="bubble act-bubble" id="act-bubble"><span></span></div>
+  </div>
+</div>
+
+<!-- 자랐어요 -->
+<div class="overlay" id="ov-level">
+  <div class="sheet level">
+    <div class="level-burst" id="level-burst"></div>
+    <div class="level-art" id="level-art"></div>
+    <h3 class="h3" id="level-title">2단계 톡톡 알</h3>
+    <p class="sub" id="level-line"></p>
+    <button class="btn big primary" id="btn-level">좋아!</button>
+  </div>
+</div>
+
+<!-- 설정 -->
+<div class="overlay" id="ov-set">
+  <div class="sheet set">
+    <h3 class="h3">설정</h3>
+    <div class="set-row"><span>소리</span><button class="toggle" id="t-sound" aria-pressed="true"></button></div>
+    <div class="set-row"><span>움직이는 효과 줄이기</span><button class="toggle" id="t-lowfx" aria-pressed="false"></button></div>
+    <div class="set-row"><span>처음부터 다시 하기</span><button class="btn small danger" id="btn-reset">다시 하기</button></div>
+    <button class="btn big primary" id="btn-set-close">닫기</button>
+    <footer class="foot in"><a href="credits.html" target="_blank" rel="noopener">출처와 라이선스</a><span class="dot">·</span><span class="made">Created by gamtudyssam using AI · <span class="ver"></span></span></footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/version.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/art.js"></script>
+<script src="js/lines.js"></script>
+<script src="js/problems.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

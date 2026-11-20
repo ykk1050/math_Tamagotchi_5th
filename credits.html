@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>출처와 라이선스 · 구름 둥지</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#4A3552;--ink2:#7A6283}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(180deg,#E9E2FF,#F7E6F3 50%,#FFEFE6);color:var(--ink);font-family:"Gowun Dodum",system-ui,sans-serif;
+  padding:calc(20px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom));line-height:1.7}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-family:"Jua",sans-serif;font-weight:400;font-size:38px;margin:10px 0 4px;text-align:center}
+.lead{text-align:center;color:var(--ink2);margin:0 0 22px}
+.card{background:#fff;border-radius:24px;padding:18px 22px;margin:0 0 14px;box-shadow:0 8px 24px rgba(122,82,140,.12)}
+h2{font-family:"Jua",sans-serif;font-weight:400;font-size:24px;margin:0 0 8px;color:#7C67D6}
+.item{padding:8px 0;border-top:1px dashed #EBDDEB}.item:first-of-type{border-top:0}
+.item b{font-size:18px}.item div{color:var(--ink2);font-size:16px}
+a{color:#D9628E}
+.back{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;border-radius:999px;border:0;background:linear-gradient(180deg,#F7A0C1,#EC7FA9);
+  color:#fff;font-family:"Jua",sans-serif;font-size:20px;box-shadow:0 5px 0 #C9578A;cursor:pointer}
+.top{display:flex;justify-content:flex-start}
+.foot{text-align:center;color:#A893AE;font-size:13px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><button class="back" id="back">← 게임으로</button></div>
+  <h1>출처와 라이선스</h1>
+  <p class="lead">이 게임을 만드는 데 쓴 것들과 만든 사람이에요.</p>
+
+  <div class="card"><h2>그림 · 캐릭터</h2>
+    <div class="item"><b>몽실이(구름 요정), 콩이(아기 토끼), 알, 배경, 아이콘</b><div>코드(SVG)로 직접 만듦 · 이 게임과 함께 배포</div></div>
+  </div>
+
+  <div class="card"><h2>소리 · 음악</h2>
+    <div class="item"><b>효과음, 옹알이 소리, 자장가</b><div>Web Audio로 코드에서 직접 만듦 · 소리 파일을 쓰지 않았어요</div></div>
+  </div>
+
+  <div class="card"><h2>글꼴</h2>
+    <div class="item"><b>Jua (주아체)</b><div>만든 사람: Woowahan Brothers · SIL Open Font License 1.1 · <a href="https://fonts.google.com/specimen/Jua" target="_blank" rel="noopener">원본</a></div></div>
+    <div class="item"><b>Gowun Dodum (고운돋움)</b><div>만든 사람: Yanghee Ryu · SIL Open Font License 1.1 · <a href="https://fonts.google.com/specimen/Gowun+Dodum" target="_blank" rel="noopener">원본</a></div></div>
+  </div>
+
+  <div class="card"><h2>프로그램 라이브러리</h2>
+    <div class="item"><b>없음</b><div>게임 코드는 모두 직접 작성했어요</div></div>
+  </div>
+
+  <div class="card"><h2>도구 결과물 · AI로 만든 그림</h2>
+    <div class="item"><b>없음</b><div>게임 코드와 문제, 대사는 AI(Claude)의 도움을 받아 만들었어요</div></div>
+  </div>
+
+  <div class="card"><h2>문제 내용</h2>
+    <div class="item"><b>5학년 1·2학기 수학</b><div>교과서 단원 내용을 바탕으로 숫자를 매번 새로 만들어 내는 문제예요. 교과서 문제를 그대로 옮기지 않았어요.</div></div>
+  </div>
+
+  <div class="card"><h2>라이선스 전문</h2>
+    <div class="item"><a href="THIRD-PARTY-NOTICES.txt" target="_blank" rel="noopener">THIRD-PARTY-NOTICES.txt 보기</a></div>
+  </div>
+
+  <p class="foot">Created by gamtudyssam using AI · <span id="ver"></span></p>
+</div>
+<script src="js/version.js"></script>
+<script>
+document.getElementById("ver").textContent = VERSION;
+document.getElementById('back').onclick = () => {
+  if (window.opener || history.length <= 1) { window.close(); setTimeout(() => { location.href = 'index.html'; }, 300); }
+  else history.back();
+};
+</script>
+</body>
+</html>
