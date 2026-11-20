@@ -78,17 +78,36 @@ const Prob = (() => {
   }
 
   // ---------- 도형 그림 ----------
+  // 도형 그림: 주어진 길이의 비율 그대로 그린다 (300×150 안에 맞춤)
   function shapeSVG(kind, a, b, h) {
-    const lab = (x, y, t, anchor = 'middle') => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="15" fill="#7A6283" font-family="Jua,sans-serif">${t}</text>`;
+    const lab = (x, y, t, anchor = 'middle') => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" font-size="15" fill="#7A6283" font-family="Quicksand,Jua,sans-serif" font-weight="700">${t}</text>`;
     const st = 'fill="#FCE3EE" stroke="#E38DB0" stroke-width="3" stroke-linejoin="round"';
     const dash = 'stroke="#A996F0" stroke-width="2" stroke-dasharray="5 4"';
+    const right = (x, y) => `<path d="M${x} ${y - 10} h10 v10" fill="none" stroke="#A996F0" stroke-width="1.6"/>`;
+    // 도형의 실제 너비·높이(cm)를 받아 비율을 지키며 맞추는 배율
+    const fit = (w, hh) => Math.min(210 / w, 100 / hh);
     let body = '';
-    if (kind === 'rect') body = `<rect x="60" y="20" width="180" height="90" rx="4" ${st}/>${lab(150, 132, a + ' cm')}${lab(252, 70, b + ' cm', 'start')}`;
-    if (kind === 'para') body = `<path d="M90 110 L250 110 L210 20 L50 20 Z" ${st}/><line x1="210" y1="20" x2="210" y2="110" ${dash}/>${lab(170, 132, a + ' cm')}${lab(218, 70, h + ' cm', 'start')}`;
-    if (kind === 'tri') body = `<path d="M50 110 L250 110 L170 20 Z" ${st}/><line x1="170" y1="20" x2="170" y2="110" ${dash}/>${lab(150, 132, a + ' cm')}${lab(178, 72, h + ' cm', 'start')}`;
-    if (kind === 'trap') body = `<path d="M50 110 L250 110 L200 20 L100 20 Z" ${st}/><line x1="100" y1="20" x2="100" y2="110" ${dash}/>${lab(150, 14, a + ' cm')}${lab(150, 132, b + ' cm')}${lab(92, 70, h + ' cm', 'end')}`;
-    if (kind === 'rhom') body = `<path d="M150 10 L240 65 L150 120 L60 65 Z" ${st}/><line x1="60" y1="65" x2="240" y2="65" ${dash}/><line x1="150" y1="10" x2="150" y2="120" ${dash}/>${lab(205, 60, a + ' cm')}${lab(158, 100, b + ' cm', 'start')}`;
-    return `<svg viewBox="0 0 300 140" aria-hidden="true">${body}</svg>`;
+    if (kind === 'rect') {
+      const k = fit(a, b), W = a * k, H = b * k, x0 = 150 - W / 2, y0 = 70 - H / 2;
+      body = `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" rx="3" ${st}/>${lab(150, y0 + H + 20, a + ' cm')}${lab(x0 + W + 8, 75, b + ' cm', 'start')}`;
+    }
+    if (kind === 'para') {
+      const off = Math.min(a * .35, h * .7), k = fit(a + off, h), W = a * k, O = off * k, H = h * k, x0 = 150 - (W + O) / 2, y0 = 70 - H / 2;
+      body = `<path d="M${x0} ${y0 + H} L${x0 + W} ${y0 + H} L${x0 + W + O} ${y0} L${x0 + O} ${y0} Z" ${st}/><line x1="${x0 + O}" y1="${y0}" x2="${x0 + O}" y2="${y0 + H}" ${dash}/>${right(x0 + O, y0 + H)}${lab(x0 + W / 2, y0 + H + 20, a + ' cm')}${lab(x0 + O + 6, y0 + H / 2 + 5, h + ' cm', 'start')}`;
+    }
+    if (kind === 'tri') {
+      const k = fit(a, h), W = a * k, H = h * k, x0 = 150 - W / 2, y0 = 70 - H / 2, ax = x0 + W * .62;
+      body = `<path d="M${x0} ${y0 + H} L${x0 + W} ${y0 + H} L${ax} ${y0} Z" ${st}/><line x1="${ax}" y1="${y0}" x2="${ax}" y2="${y0 + H}" ${dash}/>${right(ax, y0 + H)}${lab(150, y0 + H + 20, a + ' cm')}${lab(ax + 6, y0 + H / 2 + 5, h + ' cm', 'start')}`;
+    }
+    if (kind === 'trap') {
+      const k = fit(b, h), B = b * k, A = a * k, H = h * k, x0 = 150 - B / 2, y0 = 70 - H / 2, tx = x0 + (B - A) * .35;
+      body = `<path d="M${x0} ${y0 + H} L${x0 + B} ${y0 + H} L${tx + A} ${y0} L${tx} ${y0} Z" ${st}/><line x1="${tx}" y1="${y0}" x2="${tx}" y2="${y0 + H}" ${dash}/>${right(tx, y0 + H)}${lab(tx + A / 2, y0 - 7, a + ' cm')}${lab(150, y0 + H + 20, b + ' cm')}${lab(tx + 6, y0 + H / 2 + 5, h + ' cm', 'start')}`;
+    }
+    if (kind === 'rhom') {
+      const k = fit(a, b), W = a * k, H = b * k, cx = 150, cy = 72;
+      body = `<path d="M${cx} ${cy - H / 2} L${cx + W / 2} ${cy} L${cx} ${cy + H / 2} L${cx - W / 2} ${cy} Z" ${st}/><line x1="${cx - W / 2}" y1="${cy}" x2="${cx + W / 2}" y2="${cy}" ${dash}/><line x1="${cx}" y1="${cy - H / 2}" x2="${cx}" y2="${cy + H / 2}" ${dash}/>${lab(cx + W / 4, cy - 6, a + ' cm')}${lab(cx + 6, cy + H / 4 + 6, b + ' cm', 'start')}`;
+    }
+    return `<svg viewBox="0 -8 300 158" aria-hidden="true">${body}</svg>`;
   }
 
   // =====================================================================

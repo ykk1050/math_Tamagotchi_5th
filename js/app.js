@@ -185,8 +185,10 @@
   $('gi-cook').innerHTML = ICON.cook; $('gi-walk').innerHTML = ICON.walk;
   $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-diary').innerHTML = ICON.diary;
   const wishIcon = (w) => w.t === 'food' ? Scene.food(w.id) : w.t === 'place' ? ICON.walk.replace(/#fff/g, '#55C3A3') : ICON[w.id];
-  const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', nap: '낮잠을 자고 싶어 해요' }[w.id];
-  const wishSay = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : CARE[w.id].wish;
+  const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
+  const napName = () => (isNight() ? '밤잠 재우기' : '낮잠 재우기');
+  const careName = (id) => (id === 'nap' ? napName() : CARE[id].name);
+  const wishSay = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : w.id === 'nap' && isNight() ? '하암… 밤이 깊었어. 이제 자고 싶어' : CARE[w.id].wish;
 
   function enterHome(mode) {
     applyTime(); newDay(); tickNeeds(); save();
@@ -230,10 +232,10 @@
     $('wish-count').textContent = `${done} / ${S.wishes.length}`;
     $('wish-list').innerHTML = S.wishes.map((w, i) => `<div class="wish ${w.done ? 'done' : ''}" data-i="${i}"><span class="wi">${wishIcon(w)}</span><span class="wt">${NM()}는 ${wishText(w)}<small>${w.t === 'food' ? '간식 만들기 → 먹이기' : w.t === 'place' ? '산책 가기' : '돌보기'}</small></span><span class="wc">${w.done ? '✓' : ''}</span></div>`).join('');
     const w = S.wishes.find(x => !x.done);
-    $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : CARE[w.id].name}</span>` : '';
+    $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
   }
   function renderCare() {
-    const items = [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '낮잠']];
+    const items = [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']];
     const want = { feed: S.needs.full < 40 || S.wishes.some(w => !w.done && w.t === 'food' && S.foods[w.id]), bath: S.needs.clean < 40, nap: S.needs.energy < 35, play: S.needs.mood < 45 };
     S.wishes.forEach(w => { if (!w.done && w.t === 'care' && w.id !== 'pet') want[w.id] = true; });
     $('care-row').innerHTML = items.map(([k, n]) => `<button class="care ${want[k] ? 'want' : ''}" data-care="${k}"><span class="ci">${ICON[k]}</span>${n}</button>`).join('');
@@ -370,7 +372,7 @@
     field.querySelectorAll('.bub,.zz,.spark,.float-heart').forEach(e => e.remove());
     const meter = $('act-meter'); meter.style.display = 'none'; meter.firstElementChild.style.width = '0';
     actPet('idle');
-    $('act-title').textContent = id === 'feed' ? `${FOODS[foodId].name} 먹이기` : id === 'pet' && S.stage <= 2 ? '알 데우기' : CARE[id].name;
+    $('act-title').textContent = id === 'feed' ? `${FOODS[foodId].name} 먹이기` : id === 'pet' && S.stage <= 2 ? '알 데우기' : careName(id);
     overlay('ov-act', true);
     let done = false;
     const finish = () => {
@@ -446,16 +448,35 @@
     };
     spawn(); const iv = setInterval(spawn, 650); actClean.push(() => clearInterval(iv));
   }
+  // 이불을 끌어다 친구 위에 놓으면 덮이고, 자장가를 들으며 잠든다
+  const QUILT = `<svg viewBox="0 0 120 80" aria-hidden="true"><rect x="4" y="6" width="112" height="68" rx="18" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="3"/><path d="M4 30 h112 M4 52 h112 M42 6 v68 M80 6 v68" stroke="#fff" stroke-width="2.4" stroke-dasharray="6 6" opacity=".8"/><g fill="#FFE29A"><path d="M23 18 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/><path d="M61 40 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/><path d="M99 62 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/></g><rect x="4" y="6" width="112" height="16" rx="10" fill="#fff" opacity=".9"/></svg>`;
   function actNap(field, bottom, finish) {
-    $('act-hint').textContent = '이불을 덮어 재워 줘요';
-    const b = document.createElement('button'); b.className = 'btn big'; b.innerHTML = `<span style="display:inline-flex;width:34px;height:34px;vertical-align:middle;margin-right:8px">${Art.icon('moon')}</span>이불 덮어 주기`;
-    b.onclick = () => {
-      b.remove(); $('act-room').classList.add('dark'); actPet('sleep'); Snd.lullaby(); $('act-hint').textContent = '쉿, 새근새근…';
-      const p = $('act-pet').getBoundingClientRect(), fr = field.getBoundingClientRect(); let k = 0;
+    $('act-hint').textContent = isNight() ? '이불을 끌어다 덮어 주세요. 이제 잘 시간이에요' : '이불을 끌어다 덮어 주세요';
+    if (isNight()) $('act-room').classList.add('dark');
+    actPet(level() === 'egg' ? 'idle' : 'sad');
+    const q = document.createElement('div'); q.className = 'quilt'; q.innerHTML = QUILT;
+    let sx = 0, sy = 0, on = false;
+    q.addEventListener('pointerdown', (e) => { on = true; sx = e.clientX; sy = e.clientY; q.classList.add('drag'); try { q.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    q.addEventListener('pointermove', (e) => { if (on) q.style.transform = `translate(${e.clientX - sx}px,${e.clientY - sy}px) scale(1.15)`; });
+    const up = () => {
+      if (!on) return; on = false; q.classList.remove('drag');
+      const a = q.getBoundingClientRect(), p = $('act-pet').getBoundingClientRect();
+      if (Math.hypot(a.left + a.width / 2 - (p.left + p.width / 2), a.top + a.height / 2 - (p.top + p.height * .6)) < p.width * .55) cover();
+      else q.style.transform = '';
+    };
+    q.addEventListener('pointerup', up); q.addEventListener('pointercancel', up);
+    bottom.appendChild(q);
+    function cover() {
+      q.remove(); Snd.heart();
+      const p = $('act-pet').getBoundingClientRect(), fr = field.getBoundingClientRect();
+      const on2 = document.createElement('div'); on2.className = 'quilt-on'; on2.innerHTML = QUILT;
+      Object.assign(on2.style, { left: (p.left - fr.left + p.width * .08) + 'px', top: (p.top - fr.top + p.height * .7) + 'px', width: (p.width * .84) + 'px' });
+      field.appendChild(on2); actClean.push(() => on2.remove());
+      $('act-room').classList.add('dark'); actPet('sleep'); Snd.lullaby(); $('act-hint').textContent = '쉿, 새근새근…';
+      let k = 0;
       const iv = setInterval(() => { const z = document.createElement('div'); z.className = 'zz'; z.textContent = 'z'; z.style.left = (p.left - fr.left + p.width * .62) + 'px'; z.style.top = (p.top - fr.top + p.height * .2) + 'px'; field.appendChild(z); setTimeout(() => z.remove(), 2500); if (++k > 6) clearInterval(iv); }, 650);
       actClean.push(() => clearInterval(iv)); const t = setTimeout(finish, 5000); actClean.push(() => clearTimeout(t));
-    };
-    bottom.appendChild(b);
+    }
   }
 
   // ---------- 뽀득뽀득 목욕: 얼룩을 문질러 거품을 내고, 샤워로 헹군다 ----------
@@ -591,7 +612,7 @@
     openPick('어디로 산책 갈까요?', '한 걸음마다 문제를 풀며 걸어가요', Object.keys(PLACES).map(k => ({ id: k, art: Scene.path(k, 6, false, 2.65), name: PLACES[k].name, small: S.known.place[k] ? '가 본 곳' : '처음 가 봐요', badge: wishBadge('place', k) || tasteBadge('place', k) })), startWalk, true);
   }
   $('btn-cook').onclick = () => { Snd.tap(); poked(); openCook(); };
-  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 15 && S.stage >= 3) { speak('home', level() === 'talk' ? line('sleepy') : line('idle')); toast('너무 졸려 해요. <b>낮잠</b>을 먼저 재워 줄까요?'); return; } openWalk(); };
+  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 15 && S.stage >= 3) { speak('home', level() === 'talk' ? line('sleepy') : line('idle')); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } openWalk(); };
 
   function startCook(id) { OUT = { type: 'cook', id, step: 0, n: 5, res: [], finds: [] }; beginOut(); }
   function startWalk(id) { OUT = { type: 'walk', id, step: 0, n: 6, res: [], finds: [] }; beginOut(); }

@@ -287,3 +287,10 @@ body.lowfx .cfx{animation-duration:.01s!important}
 .star-fly{position:absolute;z-index:7;width:24px;height:24px;pointer-events:none;background:#FFD36E;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:starfly .7s cubic-bezier(.5,0,.5,1) forwards}
 @keyframes starfly{0%{transform:translate(0,0) scale(1.4) rotate(0)}100%{transform:translate(var(--tx),var(--ty)) scale(.6) rotate(270deg);opacity:.6}}
 @media (max-width:560px){.rule-card{font-size:17px}.rule-card b{font-size:20px}.mbub span{font-size:22px}}
+
+/* 이불 끌어서 덮기 */
+.quilt{width:150px;touch-action:none;position:relative;z-index:6;cursor:grab;filter:drop-shadow(0 6px 10px rgba(122,82,140,.25))}
+.quilt svg,.quilt-on svg{width:100%;display:block}
+.quilt.drag{z-index:9;filter:drop-shadow(0 14px 22px rgba(122,82,140,.35))}
+.quilt-on{position:absolute;z-index:5;pointer-events:none;animation:qdrop .35s cubic-bezier(.3,1.5,.5,1)}
+@keyframes qdrop{from{transform:translateY(-30px) scale(1.1);opacity:.4}to{transform:none;opacity:1}}
