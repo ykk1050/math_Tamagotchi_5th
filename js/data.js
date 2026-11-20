@@ -6,8 +6,8 @@ const DATA = (() => {
     cake:    { name: '당근 케이크', color: '#FFB27A', steps: [['당근 넣기', 'drop', 'carrot'], ['밀가루 넣기', 'pour', 'flour'], ['반죽 섞기', 'stir'], ['오븐에 굽기', 'bake'], ['크림 올리기', 'top', 'cream']] },
     cotton:  { name: '솜사탕',      color: '#C9B8FF', steps: [['설탕 붓기', 'pour', 'sugar'], ['기계 켜기', 'spin'], ['빙글빙글 감기', 'stir'], ['색 가루 뿌리기', 'sprinkle'], ['막대 꽂기', 'drop', 'stick']] },
     cookie:  { name: '별 쿠키',     color: '#FFD36E', steps: [['버터 넣기', 'drop', 'butter'], ['반죽하기', 'stir'], ['별 모양 찍기', 'mash'], ['오븐에 굽기', 'bake'], ['반짝 가루', 'sprinkle']] },
-    pudding: { name: '구름 푸딩',   color: '#FFF1C9', steps: [['우유 붓기', 'pour', 'milk'], ['달걀 톡', 'drop', 'egg'], ['살살 섞기', 'stir'], ['찜기에 찌기', 'bake'], ['구름 크림', 'top', 'cream']] },
-    pancake: { name: '꿀 팬케이크', color: '#F2C27B', steps: [['밀가루 넣기', 'pour', 'flour'], ['달걀 톡', 'drop', 'egg'], ['반죽 섞기', 'stir'], ['휙 뒤집기', 'flip'], ['꿀 뿌리기', 'pour', 'honey']] }
+    pudding: { name: '구름 푸딩',   color: '#FFF1C9', steps: [['우유 붓기', 'pour', 'milk'], ['달걀 톡', 'crack', 'egg'], ['살살 섞기', 'stir'], ['찜기에 찌기', 'bake'], ['구름 크림', 'top', 'cream']] },
+    pancake: { name: '꿀 팬케이크', color: '#F2C27B', steps: [['밀가루 넣기', 'pour', 'flour'], ['달걀 톡', 'crack', 'egg'], ['반죽 섞기', 'stir'], ['휙 뒤집기', 'flip'], ['꿀 뿌리기', 'pour', 'honey']] }
   };
   const PLACES = {
     garden: { name: '꽃밭',     sky: ['#DDF1FF', '#F3FBFF'], ground: '#BFE8C8', finds: ['flower', 'plant'], sights: ['나비가 팔랑팔랑 날아가요', '꽃향기가 솔솔 나요', '무당벌레가 인사해요'] },

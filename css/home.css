@@ -340,3 +340,16 @@ body.lowfx .cfx{animation-duration:.01s!important}
 @keyframes flybob{50%{transform:translateY(-8px) rotate(3deg)}}
 .walker.flying::after{content:"";position:absolute;left:50%;bottom:-40%;width:50%;height:12px;margin-left:-25%;border-radius:50%;background:rgba(110,80,140,.12)}
 body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}
+
+/* 달걀 톡: 두드리고 → 갈라지고 → 노른자 */
+.egg-tap{left:50%;top:-4%;width:30%;transform:translateX(-50%);animation:eggtap .82s ease-in forwards}
+@keyframes eggtap{0%{top:-4%;transform:translateX(-50%) rotate(0)}30%{top:56%;transform:translateX(-50%) rotate(-18deg)}42%{top:47%;transform:translateX(-50%) rotate(-10deg)}62%{top:56%;transform:translateX(-50%) rotate(-18deg)}74%{top:47%}100%{top:54%;transform:translateX(-50%) rotate(0)}}
+.tok{left:66%;top:48%;font-family:var(--fh);font-size:22px;color:#C98A3D;text-shadow:0 2px 0 #fff;animation:cding .3s ease forwards}
+.tok.t2{left:72%;top:42%}
+.shell{top:52%;width:30%}
+.shell.sl{left:35%;transform:translateX(-50%);animation:shl .8s ease-out forwards}
+.shell.sr{left:65%;transform:translateX(-50%);animation:shr .8s ease-out forwards}
+@keyframes shl{0%{left:50%}100%{left:22%;top:40%;transform:translateX(-50%) rotate(-40deg);opacity:0}}
+@keyframes shr{0%{left:50%}100%{left:78%;top:40%;transform:translateX(-50%) rotate(40deg);opacity:0}}
+.yolk{left:50%;top:56%;width:26%;aspect-ratio:1;transform:translateX(-50%);animation:yolk .7s cubic-bezier(.5,0,.8,.5) forwards}
+@keyframes yolk{0%{top:56%;transform:translateX(-50%) scale(.6,.8)}80%{top:72%;transform:translateX(-50%) scale(1,.9);opacity:1}100%{top:74%;transform:translateX(-50%) scale(1.2,.5);opacity:0}}

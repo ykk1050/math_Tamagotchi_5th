@@ -23,6 +23,11 @@ const CookFX = (() => {
   const ing = (id) => S('0 0 64 64', ING[id] || '');
   const COLORS = { berry: '#F2678F', carrot: '#FFA05A', egg: '#FFE38A', butter: '#FFD866', milk: '#FFFFFF', honey: '#FFC54D', flour: '#FFF1DE', sugar: '#FFFFFF', cream: '#FFFFFF' };
 
+  // 반으로 갈라진 달걀 껍데기 (가운데 지그재그)
+  const SHELL_L = `<path d="M32 13 C20 13 16 26 16 36 C16 48 22 55 30 55 L30 46 L26 42 L31 37 L27 32 L32 27 Z" fill="#FFF9EC" stroke="#E2C99A" stroke-width="2.4" stroke-linejoin="round"/>`;
+  const SHELL_R = `<path d="M32 13 C44 13 48 26 48 36 C48 48 42 55 34 55 L34 46 L38 42 L33 37 L37 32 L32 27 Z" fill="#FFF9EC" stroke="#E2C99A" stroke-width="2.4" stroke-linejoin="round"/>`;
+  // 재료가 그릇에 닿는 시점(애니메이션 길이 대비 비율)
+  const land = (action) => ({ drop: .62, pour: .5, crack: .8, top: .58 }[action] || .5);
   function el(cls, html, style = '') { const d = document.createElement('div'); d.className = 'cfx ' + cls; d.innerHTML = html; if (style) d.style.cssText = style; return d; }
   function splash(host, color, n = 6, wide = false) {
     for (let i = 0; i < n; i++) {
@@ -35,7 +40,7 @@ const CookFX = (() => {
   function play(host, bg, action, id, color, ok) {
     host.innerHTML = '';
     const c = COLORS[id] || color;
-    const T = { drop: 1100, pour: 1500, stir: 1500, mash: 1400, bake: 1900, shake: 1200, sprinkle: 1400, spin: 1500, top: 1100, flip: 1400 }[action] || 1100;
+    const T = { crack: 1700, drop: 1100, pour: 1500, stir: 1500, mash: 1400, bake: 1900, shake: 1200, sprinkle: 1400, spin: 1500, top: 1100, flip: 1400 }[action] || 1100;
     if (action === 'drop') {
       const n = id === 'berry' ? 3 : 1;
       for (let i = 0; i < n; i++) {
@@ -43,6 +48,18 @@ const CookFX = (() => {
         host.appendChild(d);
       }
       setTimeout(() => splash(host, c === '#FFFFFF' ? '#DCEBFF' : c, 7), 520 + (n - 1) * 180);
+    } else if (action === 'crack') {
+      // 그릇 가장자리에 톡톡 → 껍질이 둘로 갈라지고 노른자가 쏙
+      const egg = el('ing egg-tap', ing('egg')); host.appendChild(egg);
+      setTimeout(() => host.appendChild(el('tok', '톡!')), 330);
+      setTimeout(() => host.appendChild(el('tok t2', '톡!')), 640);
+      setTimeout(() => {
+        egg.remove();
+        host.appendChild(el('ing shell sl', S('0 0 64 64', SHELL_L)));
+        host.appendChild(el('ing shell sr', S('0 0 64 64', SHELL_R)));
+        host.appendChild(el('yolk', S('0 0 64 64', '<ellipse cx="32" cy="34" rx="22" ry="16" fill="#fff" opacity=".9"/><circle cx="32" cy="32" r="11" fill="#FFC23D" stroke="#F0A51E" stroke-width="2"/><circle cx="28" cy="28" r="3" fill="#FFE59A"/>')));
+      }, 820);
+      setTimeout(() => splash(host, '#FFD866', 5), 1300);
     } else if (action === 'pour') {
       host.appendChild(el('ing pouring', ing(id)));
       host.appendChild(el('stream', '', `background:linear-gradient(${c},${c === '#FFFFFF' ? '#EAF2FF' : c})`));
@@ -85,5 +102,5 @@ const CookFX = (() => {
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; host.appendChild(el('drop-p star-p', '', `background:${cols[i % 4]};--dx:${Math.cos(a) * 90}px;--dy:${Math.sin(a) * 70 - 40}px;animation-delay:.5s`)); }
     return 1300;
   }
-  return { play, done, ing };
+  return { play, done, ing, land };
 })();

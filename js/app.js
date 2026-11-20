@@ -677,7 +677,13 @@
   $('btn-cook').onclick = () => { Snd.tap(); poked(); openCook(); };
   $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 15 && S.stage >= 3) { speak('home', level() === 'talk' ? line('sleepy') : line('idle')); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } openWalk(); };
 
-  function startCook(id) { OUT = { type: 'cook', id, step: 0, n: 5, res: [], finds: [] }; beginOut(); }
+  const ADDS = ['drop', 'pour', 'crack', 'top'];
+  function startCook(id) { OUT = { type: 'cook', id, step: 0, n: 5, res: [], finds: [], fill: 0, anim: false, adds: FOODS[id].steps.filter(st => ADDS.includes(st[1])).length }; beginOut(); }
+  function setFill() {
+    const r = document.getElementById('bowlfill'); if (!r || !OUT || OUT.type !== 'cook') return;
+    const h = 54 * Math.min(1, OUT.fill / Math.max(1, OUT.adds));
+    r.setAttribute('y', 340 - h); r.setAttribute('height', h + 2);
+  }
   function startWalk(id) { OUT = { type: 'walk', id, step: 0, n: 6, res: [], finds: [] }; beginOut(); }
   function beginOut() {
     clearTimeout(wanderT); clearTimeout(idleT); if (sulking) { sulking = false; clearTimeout(sulkT); $('walker').classList.remove('sulk'); }
@@ -692,8 +698,11 @@
   function renderOut() {
     if (OUT.type === 'cook') {
       const F = FOODS[OUT.id];
-      $('stage-bg').innerHTML = Scene.kitchen(OUT.step / OUT.n, F.color, OUT.step >= OUT.n);
-      $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${F.steps[OUT.step][0]}` : '완성!';
+      // 부엌은 한 번만 그리고, 그릇 내용물은 재료가 실제로 들어간 만큼만 채운다
+      if ($('stage-bg').dataset.place !== 'cook-' + OUT.id) { $('stage-bg').innerHTML = Scene.kitchen(0, F.color, false); $('stage-bg').dataset.place = 'cook-' + OUT.id; }
+      setFill();
+      // 애니메이션이 도는 동안에는 지금 단계 이름을 그대로 둔다
+      if (!OUT.anim) $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${F.steps[OUT.step][0]}` : '완성!';
     } else if ($('stage-bg').dataset.place !== OUT.id) {
       const r = $('stage').getBoundingClientRect();
       $('stage-bg').innerHTML = Scene.path(OUT.id, OUT.n, false, r.width / Math.max(1, r.height)); $('stage-bg').dataset.place = OUT.id;
@@ -761,11 +770,12 @@
     if (OUT.type === 'cook') {
       // 방금 푼 단계의 동작을 보여 준 뒤 그릇을 채우고 다음 단계로
       const F = FOODS[OUT.id], st = F.steps[OUT.step - 1]; placeCookFx();
-      $('step-label').textContent = `${OUT.step}. ${st[0]}`;
+      OUT.anim = true; $('step-label').textContent = `${OUT.step}. ${st[0]}`;
       const T = CookFX.play($('cook-fx'), $('stage-bg'), st[1], st[2], F.color, OUT.res[OUT.step - 1]);
-      setTimeout(() => Snd.pop(), Math.min(700, T * .5));
+      // 재료가 그릇에 닿는 순간에 내용물이 늘어난다
+      if (ADDS.includes(st[1])) setTimeout(() => { OUT.fill++; setFill(); Snd.pop(); }, T * CookFX.land(st[1]));
       setTimeout(() => {
-        renderOut();
+        OUT.anim = false; renderOut();
         if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); setTimeout(finishOut, CookFX.done($('cook-fx'), Scene.food(OUT.id))); }
         else nextQ();
       }, T);

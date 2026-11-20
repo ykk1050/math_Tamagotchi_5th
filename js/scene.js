@@ -103,7 +103,7 @@ const Scene = (() => {
       <rect x="0" y="300" width="600" height="120" fill="#F7D9C4"/><rect x="0" y="292" width="600" height="18" rx="6" fill="#fff"/>
       <g class="bowlg"><g transform="translate(360 300) scale(.66) translate(-300 -300)"><ellipse cx="300" cy="352" rx="100" ry="14" fill="#E9C2A9" opacity=".7"/>
       <path d="M220 270 h160 a80 70 0 0 1 -160 0z" fill="#EAF4FF" stroke="#9EC2F2" stroke-width="5"/>
-      <rect x="220" y="${340 - h}" width="160" height="${h + 2}" fill="${color}" clip-path="url(#kb)" opacity=".9"/>
+      <rect id="bowlfill" x="220" y="${340 - h}" width="160" height="${h + 2}" fill="${color}" clip-path="url(#kb)" opacity=".9"/>
       <path d="M210 270 h180" stroke="#9EC2F2" stroke-width="10" stroke-linecap="round"/>
       ${done ? '<g fill="#FFD36E"><circle cx="250" cy="240" r="5"/><circle cx="350" cy="236" r="6"/><circle cx="300" cy="222" r="4"/></g>' : ''}</g></g>
     `, 'xMidYMax slice');
