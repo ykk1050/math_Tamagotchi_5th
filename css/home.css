@@ -425,3 +425,14 @@ body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}
 @keyframes confetti{to{transform:translateY(560px) rotate(540deg);opacity:.6}}
 .pm{min-height:40px;padding:2px 6px;font-size:14px}.pm small{display:none}.pm .wc{width:24px;height:24px}
 .party-card{padding:8px 10px}.party-head{padding:0 4px 2px}.party-head b{font-size:17px}
+
+/* 산책길 이웃 */
+.sheet.neighbor{background:linear-gradient(180deg,#F1FAF3,#FFF8F2)}
+.nb-art{width:110px;height:110px;flex:none}.nb-art svg{width:100%;height:100%}
+.nb-name{font-family:var(--fh);font-size:18px;color:var(--mint-d);margin:0 0 4px 8px}
+.neighbor .riddle-top > div{flex:1}
+.visitor{position:absolute;z-index:3;left:72%;bottom:7%;width:min(11%,96px);aspect-ratio:1;background:none;animation:visit 3.2s ease-in-out infinite}
+.visitor svg{width:100%;height:100%;filter:drop-shadow(0 4px 4px rgba(110,80,140,.18))}
+.visitor.hop{animation:hop .5s cubic-bezier(.3,1.5,.5,1) 2}
+@keyframes visit{50%{transform:translateY(-6px)}}
+.bi .bic svg{width:100%;height:100%}

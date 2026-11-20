@@ -79,6 +79,7 @@
   <main class="home">
     <div class="room" id="room">
       <div class="room-bg" id="room-bg"></div>
+      <button class="visitor" id="visitor" style="display:none" aria-label="놀러 온 이웃"></button>
       <div class="walker" id="walker">
         <div class="think" id="think"></div>
         <button class="pet" id="pet" aria-label="친구 쓰다듬기"></button>
@@ -208,6 +209,16 @@
     <p class="sub" id="res-line"></p>
     <div class="res-gets" id="res-gets"></div>
     <div class="res-btns" id="res-btns"></div>
+  </div>
+</div>
+
+<!-- 산책길 이웃의 부탁 -->
+<div class="overlay" id="ov-neighbor">
+  <div class="sheet wide riddle neighbor">
+    <div class="riddle-top"><span class="nb-art" id="nb-art"></span><div><div class="nb-name" id="nb-name"></div><div class="bubble riddle-say" id="nb-say"><span></span></div></div></div>
+    <div class="qcard small"><div class="qtag" id="nq-tag"></div><div class="qtext" id="nq-text"></div></div>
+    <div class="choices" id="nq-choices"></div>
+    <button class="btn big primary" id="nb-ok" style="display:none">또 만나!</button>
   </div>
 </div>
 

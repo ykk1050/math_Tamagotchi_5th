@@ -377,6 +377,54 @@ const Prob = (() => {
     return make('u11', 0);
   }
 
+
+  // ---------- 이웃 동물의 부탁: 이야기가 있는 문장제 ----------
+  const STORY_GEN = {
+    squirrel: [
+      () => { const m = R(8, 16); let v; do { v = [m + R(-4, 4), m + R(-4, 4), m + R(-4, 4)]; } while (Math.abs(4 * m - v[0] - v[1] - v[2] - m) > 4); v.push(4 * m - v[0] - v[1] - v[2]);
+        return { q: `우리 네 형제가 주운 도토리가 ${v.join('개, ')}개야. 똑같이 나누면 한 마리에 몇 개씩 가질 수 있을까?`, ...numChoices(m, [m + 1, m - 1, 4 * m], '개'), unit: 'u26' }; },
+      () => { const a = R(4, 9), b = R(3, 6), c = R(2, 9); const ans = a * b - c;
+        return { q: `도토리를 한 바구니에 ${a}개씩 ${b}바구니 모았는데, 배가 고파서 ${c}개를 먹었어. 남은 도토리는 몇 개일까?`, ...numChoices(ans, [(a * (b - c)) > 0 ? a * (b - c) : ans + c, a * b + c, ans - 1], '개'), unit: 'u11' }; },
+      () => { const k = R(3, 8), d = R(6, 12);
+        return { q: `나는 하루에 도토리를 ${k}개씩 모아. 겨울잠 자기 전까지 ${d}일 동안 모으면 모두 몇 개일까?`, ...numChoices(k * d, [k + d, k * (d - 1), k * d + k], '개'), unit: 'u13' }; }
+    ],
+    penguin: [
+      () => { const a = properRand(3, 8), n = R(2, 6); const ans = fmul(a, { n, d: 1 });
+        return { q: `물고기를 한 마리에 ${fh(a)} kg씩 ${n}마리 잡았어. 모두 몇 kg일까?`, ...fracChoices(ans, [{ n: a.n, d: a.d * n }, { n: a.n + n, d: a.d }, fadd(ans, { n: 1, d: a.d })]), unit: 'u22' }; },
+      () => { const w = D(R(11, 29), 1), n = R(3, 8); const ans = dmul(w, D(n, 0));
+        return { q: `얼음 조각 한 개의 무게가 ${dstr(w)} kg이야. ${n}개를 쌓으면 모두 몇 kg일까?`, ...decChoices(ans, [dshift(ans, 1), dshift(ans, -1)], ' kg'), unit: 'u24' }; },
+      () => { const k = pick([3, 4, 5, 6]); let n; do { n = R(17, 40); } while (n % k === 0);
+        return { q: `펭귄 친구 ${n}마리가 썰매 한 대에 ${k}마리씩 타려고 해. 모두 타려면 썰매는 적어도 몇 대 있어야 할까?`, ...numChoices(Math.ceil(n / k), [Math.floor(n / k), Math.ceil(n / k) + 1, n - k], '대'), unit: 'u21' }; }
+    ],
+    hedgehog: [
+      () => { const a = R(4, 12), b = R(3, 9);
+        return { q: `내 딸기밭은 가로 ${a} m, 세로 ${b} m인 직사각형이야. 딸기밭의 넓이는 몇 m²일까?`, ...numChoices(a * b, [2 * (a + b), a + b, a * b + a], ' m²'), unit: 'u16' }; },
+      () => { const a = R(5, 14), b = R(3, 9);
+        return { q: `가로 ${a} m, 세로 ${b} m인 딸기밭 둘레에 울타리를 치려고 해. 울타리는 몇 m 필요할까?`, ...numChoices(2 * (a + b), [a + b, a * b, 2 * a + b], ' m'), unit: 'u16' }; },
+      () => { let a, b; do { a = properRand(2, 6); b = properRand(2, 6); } while (a.d === b.d); const ans = fadd(a, b);
+        return { q: `아침에 딸기를 ${fh(a)} 바구니, 저녁에 ${fh(b)} 바구니 땄어. 모두 몇 바구니일까?`, ...fracChoices(ans, [{ n: a.n + b.n, d: a.d + b.d }, fadd(ans, { n: 1, d: lcm(a.d, b.d) })]), unit: 'u15' }; }
+    ],
+    owl: [
+      () => { const x = R(1000, 9999); const p = 100; const ans = Math.floor((x + 50) / 100) * 100;
+        return { q: `어젯밤 망원경으로 본 별이 ${x.toLocaleString()}개야. 반올림하여 백의 자리까지 나타내면 몇 개일까?`, ...numChoices(ans, [Math.floor(x / 100) * 100 === ans ? ans + 100 : Math.floor(x / 100) * 100, Math.round(x / 1000) * 1000, ans + 10], '개'), unit: 'u21' }; },
+      () => { const a = R(10, 30), b = R(5, 15), c = R(5, 15); const s = a + b + c;
+        return { q: `내 망원경 상자는 가로 ${a} cm, 세로 ${b} cm, 높이 ${c} cm인 직육면체야. 모든 모서리 길이의 합은 몇 cm일까?`, ...numChoices(4 * s, [2 * s, s, 3 * s], ' cm'), unit: 'u25' }; },
+      () => pick([
+        { q: '별사탕만 10개 들어 있는 주머니에서 하나를 꺼낼 때, 별사탕일 가능성은 어떨까?', ans: '확실하다', choices: ['확실하다', '반반이다', '~아닐 것 같다', '불가능하다'], txt: true, unit: 'u26' },
+        { q: '동전을 던져서 숫자 면이 나올 가능성은 어떨까?', ans: '반반이다', choices: ['반반이다', '확실하다', '불가능하다', '~일 것 같다'], txt: true, unit: 'u26' },
+        { q: '별자리 그림을 반으로 접었더니 완전히 겹쳤어. 대응점끼리 이은 선분은 접은 선(대칭축)과 몇 도로 만날까?', ...numChoices(90, [45, 180, 60], '°'), unit: 'u23' }
+      ])
+    ]
+  };
+  function story(nid) {
+    for (let tries = 0; tries < 20; tries++) {
+      const p = pick(STORY_GEN[nid])(); const uniq = [...new Set(p.choices)];
+      if (uniq.length < 3 || uniq.filter(c => c === p.ans).length !== 1) continue;
+      return { unit: p.unit, type: -1, q: p.q, fig: '', ans: p.ans, choices: shuffle(uniq), txt: !!p.txt };
+    }
+    return make('u11', 0);
+  }
+
   // 돌아가며 내기: 11개 단원을 섞은 순서대로 한 바퀴씩 돌고,
   // 단원 안에서도 문제 유형을 섞은 순서대로 돌아가며 낸다.
   // 틀린 문제 종류는 몇 문제 뒤에 한 번 다시 끼워 넣는다(바로 앞 단원과 겹치지 않게).
@@ -399,5 +447,5 @@ const Prob = (() => {
     rot.last = unit;
     return make(unit, type);
   }
-  return { make, next, UNITS, G, jo, hasBatchim };
+  return { make, next, story, UNITS, G, jo, hasBatchim };
 })();

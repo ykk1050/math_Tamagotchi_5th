@@ -198,7 +198,7 @@
 
   function enterHome(mode) {
     applyTime(); newDay(); tickNeeds(); growGarden(); const bday = checkBirthday(); save();
-    show('scr-home'); renderHome();
+    show('scr-home'); renderHome(); neighborVisit();
     if (bday) setTimeout(() => { toast(`오늘은 <b>${NM()}의 생일</b>이에요! 파티를 준비해 줘요`); Snd.level(); }, 900);
     clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); }, 60000);
     setTimeout(() => {
@@ -680,6 +680,70 @@
     actClean.push(() => field.querySelectorAll('.balloon').forEach(e => e.remove()));
   }
   const BALLOON = (c) => `<svg viewBox="0 0 60 110" aria-hidden="true"><path d="M30 70 q-6 14 4 24 q-8 8 -2 16" fill="none" stroke="#B9A7C4" stroke-width="2"/><ellipse cx="30" cy="34" rx="24" ry="30" fill="${c}"/><path d="M26 64 h8 l-4 6z" fill="${c}"/><ellipse cx="21" cy="22" rx="6" ry="9" fill="#fff" opacity=".5"/></svg>`;
+
+  // =====================================================================
+  // 산책길 이웃: 장소마다 사는 동물이 이야기 속 수학 부탁을 한다
+  // =====================================================================
+  const NEIGH = {
+    garden: { id: 'squirrel', name: '다람쥐 토리', gift: ['honey', 1], hi: '안녕! 나는 꽃밭에 사는 다람쥐 토리야. 부탁 하나만 들어줄래?', thx: '고마워! 덕분에 겨울 준비 끝! 이건 꽃밭에서 모은 꿀이야.', miss: '괜찮아, 같이 생각해 줘서 고마워!' },
+    beach: { id: 'penguin', name: '펭귄 펭이', gift: ['candy', 5], hi: '어서 와! 나는 바닷가 펭귄 펭이야. 이것 좀 도와줄래?', thx: '우와, 정답이야! 바닷가에서 주운 별사탕 줄게!', miss: '헤헤, 괜찮아. 다음에 또 같이 풀자!' },
+    berry: { id: 'hedgehog', name: '고슴도치 도치', gift: ['berry', 2], hi: '반가워! 나는 딸기밭 주인 고슴도치 도치야. 계산 좀 도와줄래?', thx: '고마워! 내 딸기 두 개 가져가!', miss: '괜찮아! 도와주러 와 준 것만으로도 기뻐.' },
+    hill: { id: 'owl', name: '부엉이 박사', gift: ['candy', 5], hi: '부엉~ 별빛 언덕에 온 걸 환영하네. 내 수수께끼를 풀어 보겠나?', thx: '훌륭하군! 별사탕을 선물로 주겠네.', miss: '부엉, 괜찮네. 틀리면서 배우는 법이지.' }
+  };
+  const NB_ART = {
+    squirrel: `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/><circle cx="35" cy="44" r="3.4" fill="#4A3552"/><circle cx="50" cy="44" r="3.4" fill="#4A3552"/><circle cx="36" cy="43" r="1.1" fill="#fff"/><circle cx="51" cy="43" r="1.1" fill="#fff"/><ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="56" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
+    penguin: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="28" ry="34" fill="#4E5A8C" stroke="#323C66" stroke-width="3"/><ellipse cx="50" cy="64" rx="19" ry="25" fill="#fff"/><path d="M22 58 q-10 10 -2 20 M78 58 q10 10 2 20" stroke="#323C66" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="41" cy="44" r="3.6" fill="#2C2C2A"/><circle cx="59" cy="44" r="3.6" fill="#2C2C2A"/><circle cx="42" cy="43" r="1.2" fill="#fff"/><circle cx="60" cy="43" r="1.2" fill="#fff"/><path d="M44 51 l6 6 l6 -6z" fill="#FFB25A" stroke="#E08A2E" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="34" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="66" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="40" cy="93" rx="8" ry="4" fill="#FFB25A"/><ellipse cx="60" cy="93" rx="8" ry="4" fill="#FFB25A"/><path d="M36 22 q14 -8 28 0" stroke="#F7A0C1" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
+    hedgehog: `<svg viewBox="0 0 100 100"><path d="M14 72 C10 40 30 22 54 24 C76 26 90 46 86 72 Z" fill="#9C7254" stroke="#6E4C36" stroke-width="3" stroke-linejoin="round"/>${[[22, 40], [34, 28], [48, 22], [62, 24], [76, 32], [84, 46], [18, 56]].map(([x, y]) => `<path d="M${x} ${y} l-6 -8 l10 2z" fill="#9C7254" stroke="#6E4C36" stroke-width="2" stroke-linejoin="round"/>`).join('')}<ellipse cx="38" cy="66" rx="24" ry="20" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6"/><circle cx="30" cy="62" r="3.4" fill="#4A3552"/><circle cx="46" cy="62" r="3.4" fill="#4A3552"/><circle cx="31" cy="61" r="1.1" fill="#fff"/><circle cx="47" cy="61" r="1.1" fill="#fff"/><circle cx="38" cy="71" r="3.4" fill="#E5679A"/><ellipse cx="24" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="52" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><path d="M62 34 c6 -2 9 4 5 8 c-3 3 -8 2 -8 -2 c0 -3 1 -5 3 -6z" fill="#F2678F"/></svg>`,
+    owl: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="32" fill="#9C86C9" stroke="#6E5CA3" stroke-width="3"/><path d="M24 34 l-4 -16 l14 10z M76 34 l4 -16 l-14 10z" fill="#9C86C9" stroke="#6E5CA3" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="18" ry="16" fill="#E9E1FF"/><path d="M40 66 q4 4 8 0 M52 72 q4 4 8 0 M42 78 q4 4 8 0" stroke="#C9B8FF" stroke-width="2" fill="none"/><circle cx="38" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="62" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="38" cy="47" r="4.6" fill="#4A3552"/><circle cx="62" cy="47" r="4.6" fill="#4A3552"/><circle cx="39.5" cy="45.5" r="1.5" fill="#fff"/><circle cx="63.5" cy="45.5" r="1.5" fill="#fff"/><path d="M46 55 l4 6 l4 -6z" fill="#FFB25A"/><path d="M27 38 h22 M51 38 h22" stroke="#4A3552" stroke-width="2.4"/><circle cx="38" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><circle cx="62" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><path d="M50.5 46 h-0" stroke="#4A3552" stroke-width="2"/></svg>`
+  };
+  let nq = null, nPlace = null;
+  function openNeighbor(place) {
+    const N = NEIGH[place]; if (!N) return; nPlace = place;
+    if (!S.nb) S.nb = {};
+    $('nb-art').innerHTML = NB_ART[N.id]; $('nb-name').textContent = N.name;
+    const met = S.nb[N.id] || 0;
+    nq = Prob.story(N.id);
+    nsay(met ? `또 왔구나! ${pick(['이번에도 도와줄래?', '오늘도 부탁 하나 있어!', '기다리고 있었어!'])}` : N.hi);
+    const U = Prob.UNITS[nq.unit] || { sem: 1, name: '' }; const tag = $('nq-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+    $('nq-text').innerHTML = nq.q; $('nq-text').classList.add('long');
+    const box = $('nq-choices'); box.innerHTML = ''; box.className = 'choices' + (nq.choices.length === 3 ? ' three' : '');
+    nq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (nq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => nbAnswer(b, c); box.appendChild(b); });
+    $('nb-ok').style.display = 'none'; nq.lock = false;
+    overlay('ov-neighbor', true); Snd.babble(2, 'bunny');
+  }
+  function nsay(t) { const b = $('nb-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  function nbAnswer(btn, c) {
+    if (nq.lock) return; nq.lock = true; const N = NEIGH[nPlace], ok = c === nq.ans; S.total++;
+    const st = S.stats[nq.unit] || (S.stats[nq.unit] = { c: 0, w: 0 });
+    const all = [...$('nq-choices').children];
+    if (ok) {
+      btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++;
+      S.nb[N.id] = (S.nb[N.id] || 0) + 1; const [g, n] = N.gift;
+      if (g === 'candy') S.candy += n; else { initGarden(); S.pantry[g] = (S.pantry[g] || 0) + n; }
+      Snd.combo(); nsay(N.thx + `<br><small style="font-size:.8em;color:#7A6283">${g === 'candy' ? `별사탕 +${n}` : `${ING_NAME[g]} +${n}`} · ${N.name}${Prob.jo(N.name, '와').slice(N.name.length)} 더 친해졌어요</small>`);
+      S.log.push({ e: 'help', id: N.id });
+      if (S.nb[N.id] === 3) setTimeout(() => toast(`<b>${N.name}</b>${Prob.jo(N.name, '이').slice(N.name.length)} 가끔 방에 놀러 온대요!`), 900);
+    } else {
+      btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === nq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
+      Snd.no(); nsay(`${N.miss}<br><small style="font-size:.8em;color:#7A6283">정답은 ${nq.ans}</small>`);
+    }
+    $('nb-ok').style.display = ''; hud(); save();
+  }
+  $('nb-ok').onclick = () => { Snd.tap(); overlay('ov-neighbor', false); };
+
+  // 친해진 이웃(부탁 3번 이상)이 가끔 방에 놀러 온다
+  function neighborVisit() {
+    const v = $('visitor'); v.innerHTML = ''; v.style.display = 'none';
+    if (!S.nb) return;
+    const friends = Object.keys(NEIGH).map(k => NEIGH[k]).filter(N => (S.nb[N.id] || 0) >= 3);
+    if (!friends.length || Math.random() > .5) return;
+    const N = pick(friends); v.innerHTML = NB_ART[N.id]; v.style.display = ''; v.dataset.id = N.id;
+    v.onclick = () => {
+      Snd.babble(2, 'bunny'); poked();
+      speak('home', `<b>${N.name}</b>: ${pick(['놀러 왔어! 지난번에 도와줘서 고마워.', '너희 방 정말 예쁘다!', `${NM()}${Prob.jo(NM(), '와').slice(NM().length)} 너는 정말 사이좋구나.`, '다음에 우리 동네에도 또 놀러 와!'])}`, { silent: true });
+      v.classList.remove('hop'); void v.offsetWidth; v.classList.add('hop');
+    };
+  }
 
   // ---------- 바람 들어주기 ----------
   function fulfill(t, id, where = 'home') {
@@ -1167,6 +1231,7 @@
       overlay('ov-result', true);
       $('rb-home').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(); };
       fulfill('place', o.id, 'out');
+      setTimeout(() => openNeighbor(o.id), 350);
     }
     save();
   }
@@ -1228,6 +1293,7 @@
       sec('좋아하는 간식', 'food', Object.keys(FOODS), id => FOODS[id].name, id => Scene.food(id)) +
       sec('좋아하는 장소', 'place', Object.keys(PLACES), id => PLACES[id].name, () => ICON.walk.replace(/#fff/g, '#55C3A3')) +
       sec('좋아하는 장식', 'acc', Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc'), id => ITEMS[id].name, id => Scene.item(id)) +
+      `<div class="book-sec"><h4>산책길 이웃</h4><div class="book-items">${Object.keys(NEIGH).map(k => { const N = NEIGH[k], n = (S.nb || {})[N.id] || 0; return `<span class="bi ${n ? '' : 'unk'}"><span class="bic">${NB_ART[N.id]}</span>${n ? N.name : '???'}${n ? `<em class="love">${'♥'.repeat(Math.min(5, n))}</em>` : `<em>${PLACES[k].name}</em>`}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>이야기</h4>${stories}</div>` +
       `<div class="book-sec"><h4>함께한 기록</h4><div class="book-items"><span class="bi">함께한 날 ${S.days}일</span><span class="bi">맞힌 문제 ${S.correct}개</span><span class="bi">최고 연속 ${S.best}번</span><span class="bi">우정 ${S.flv}단계</span></div></div>`;
     $('book-body').querySelectorAll('.story-btn:not(.lock)').forEach(b => b.onclick = () => { Snd.tap(); playStory(+b.dataset.i); });
@@ -1291,6 +1357,7 @@
     if (log.some(e => e.e === 'allwish')) out.push(talk ? '내 바람을 전부 들어줬어. 세상에서 제일 행복한 하루!' : '바람을 모두 들어줬어요!');
     else if (log.some(e => e.e === 'wish')) out.push(talk ? '내 바람을 들어줘서 고마웠어.' : '바람을 들어줬어요.');
     if (log.some(e => e.e === 'party')) out.push(talk ? '오늘은 내 생일이었어! 케이크도, 풍선도, 고깔모자도… 평생 잊지 못할 거야.' : '생일 파티를 했어요!');
+    [...new Set(log.filter(e => e.e === 'help').map(e => e.id))].forEach(id => { const N = Object.values(NEIGH).find(x => x.id === id); out.push(talk ? `${N.name}의 부탁을 들어줬어. 우리 이웃이 생겼어!` : `${N.name}${Prob.jo(N.name, '을').slice(N.name.length)} 도와줬어요.`); });
     if (log.some(e => e.e === 'plant')) out.push(talk ? '텃밭에 씨앗을 심었어. 빨리 자랐으면 좋겠다.' : '텃밭에 씨앗을 심었어요.');
     if (log.some(e => e.e === 'water')) out.push(talk ? '텃밭에 물도 줬어. 내일 쑥 자라 있겠지?' : '텃밭에 물을 줬어요.');
     log.filter(e => e.e === 'harvest').forEach(e => out.push(talk ? `${ING_NAME[e.id]}${Prob.jo(ING_NAME[e.id], '을').slice(ING_NAME[e.id].length)} 거뒀어! 우리가 키운 거야.` : `${ING_NAME[e.id]}${Prob.jo(ING_NAME[e.id], '을').slice(ING_NAME[e.id].length)} 거뒀어요.`));
