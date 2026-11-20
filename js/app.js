@@ -211,7 +211,7 @@
     drawPet(); renderNeeds(); renderWishes(); renderCare(); hud();
   }
   function drawPet(mood) {
-    mood = mood || (sleeping ? 'sleep' : S.needs.mood < 35 || lowNeed() ? 'sad' : 'idle');
+    mood = mood || (sulking ? 'pout' : sleeping ? 'sleep' : S.needs.mood < 35 || lowNeed() ? 'sad' : 'idle');
     $('pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc());
     $('walker').classList.toggle('sleep', sleeping);
   }
@@ -250,7 +250,8 @@
     const step = () => {
       if (!$('scr-home').classList.contains('on')) return;
       const wk = $('walker');
-      if (sleeping) wk.style.left = '34%';
+      if (sulking) { /* 구석에서 삐쳐 있음 */ }
+      else if (sleeping) wk.style.left = '34%';
       else if (S.stage >= 3 || Math.random() < .3) {
         const cur = parseFloat(wk.style.left) || 55; let nx = R(30, 80); if (Math.abs(nx - cur) < 8) nx = cur > 55 ? cur - 20 : cur + 20;
         wk.style.left = nx + '%';
@@ -265,21 +266,77 @@
   function idleTalk() {
     if ($('scr-home').classList.contains('on') && !document.querySelector('.overlay.on')) {
       const ln = lowNeed(), w = S.wishes.find(x => !x.done);
-      if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
+      if (sulking) speak('home', L3('sulk'), { silent: true });
+      else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
       else if (ln && level() === 'talk') speak('home', line(ln));
       else if (w && level() === 'talk' && Math.random() < .5) speak('home', wishSay(w));
       else speak('home', level() === 'talk' && Math.random() < .4 ? line('happy') : line('idle'));
     }
     idleT = setTimeout(idleTalk, 22000);
   }
-  let lastPoke = 0;
-  $('pet').onclick = () => {
-    poked(); const now = Date.now(); if (now - lastPoke < 900) return; lastPoke = now;
-    if (sleeping) { speak('home', level() === 'egg' ? '(알이 꿈틀… 다시 새근새근)' : '음냐… 오 분만 더…', { silent: true }); return; }
+  // ---------- 누르기 · 쓰다듬기 · 마구 두드리기 ----------
+  // 한 번 누르면 반가워하고, 문지르면 좋아하고, 짧은 시간에 여러 번 두드리면 아파서 울며 도망간다.
+  // 울고 나면 한동안 삐쳐 있고, 살살 문질러 달래 주면 화해한다(벌은 기분이 조금 떨어지는 것뿐).
+  let lastPoke = 0, taps = [], sulking = false, sulkT = null, sulkHint = false, ouchAt = 0, madeAt = 0;
+  const L3 = (cat) => lineFrom(LINES3[S.kind][level()][cat], 'l3' + cat);
+  function runAway(fromX) {
+    const wk = $('walker'), cur = parseFloat(wk.style.left) || 55;
+    wk.classList.add('run'); wk.classList.toggle('egg', S.stage <= 2);
+    wk.style.left = (fromX != null ? (fromX > 50 ? R(14, 22) : R(78, 86)) : (cur > 50 ? R(14, 22) : R(78, 86))) + '%';
+    setTimeout(() => wk.classList.remove('run', 'egg'), 800);
+  }
+  function ouch() {
+    ouchAt = Date.now(); Snd.ouch(); react('sad', 'ouch'); speak('home', L3('ouch'), { silent: true }); addNeed('mood', -2); renderNeeds();
+  }
+  function cry(fromX) {
+    sulking = true; taps = []; clearTimeout(sulkT); clearTimeout(moodT);
+    Snd.cry(S.kind); drawPet('cry'); runAway(fromX);
+    $('walker').classList.add('sulk');
+    speak('home', L3('cry'), { silent: true });
+    addNeed('mood', -10); S.log.push({ e: 'cry' }); renderNeeds(); save();
+    setTimeout(() => { if (sulking) drawPet('pout'); }, 2600);
+    if (!sulkHint) { sulkHint = true; setTimeout(() => toast('아파서 울고 있어요. <b>살살 문질러서</b> 달래 주세요'), 1400); }
+    sulkT = setTimeout(sulkEnd, 22000);
+  }
+  function sulkEnd() {
+    if (!sulking) return; sulking = false; $('walker').classList.remove('sulk');
+    drawPet(); speak('home', L3('end')); startWander();
+  }
+  function makeUp() {
+    if (!sulking) return; sulking = false; madeAt = Date.now(); clearTimeout(sulkT); sulkHint = false; $('walker').classList.remove('sulk');
+    react('happy', 'hop'); heartAtPet(); setTimeout(heartAtPet, 250); Snd.heart(); Snd.combo();
+    speak('home', L3('makeup')); addNeed('mood', 8); addFriend(2); S.log.push({ e: 'makeup' }); renderNeeds(); renderWishes(); save(); startWander();
+  }
+  function onTap(x) {
+    poked(); const now = Date.now();
+    taps = taps.filter(t => now - t < 1800); taps.push(now);
+    if (sulking) { Snd.ouch(); speak('home', L3('sulk'), { silent: true }); drawPet('pout'); if (taps.length >= 3) { taps = []; runAway(x); } return; }
+    if (taps.length >= 5 || (taps.length >= 3 && now - ouchAt < 4000)) { cry(x); return; }
+    if (taps.length >= 3) { ouch(); return; }
+    if (sleeping) { if (now - lastPoke > 900) speak('home', level() === 'egg' ? '(알이 꿈틀… 다시 새근새근)' : '음냐… 오 분만 더…', { silent: true }); lastPoke = now; return; }
+    if (now - lastPoke < 700) return; lastPoke = now;
     react('happy', 'squish'); speak('home', line('poke')); heartAtPet(); addNeed('mood', 3);
     if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); }
     renderNeeds(); save();
-  };
+  }
+  (() => {
+    const pet = $('pet'); let down = false, lx = 0, ly = 0, moved = 0, rub = 0, nextHeart = 220;
+    pet.addEventListener('pointerdown', (e) => { down = true; lx = e.clientX; ly = e.clientY; moved = 0; try { pet.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    pet.addEventListener('pointermove', (e) => {
+      if (!down) return; const d = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY; moved += d;
+      if (moved < 15) return;
+      rub += d; poked();
+      if (rub > nextHeart) { nextHeart = rub + 220; heartAtPet(); Snd.heart(); if (!sulking && Date.now() - madeAt > 2500) { react('happy'); addNeed('mood', 2); renderNeeds(); } }
+      if (sulking && rub > 900) { rub = 0; nextHeart = 220; makeUp(); }
+    });
+    const up = () => {
+      if (!down) return; down = false;
+      if (moved < 15) { const r = $('room').getBoundingClientRect(), p = pet.getBoundingClientRect(); onTap((p.left + p.width / 2 - r.left) / r.width * 100); }
+      else if (!sulking && rub > 600 && Date.now() - madeAt > 2500) { rub = 0; nextHeart = 220; if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); } speak('home', line('poke')); save(); }
+    };
+    pet.addEventListener('pointerup', up); pet.addEventListener('pointercancel', up);
+    pet.addEventListener('click', (e) => e.preventDefault());
+  })();
 
   // ---------- 바람 들어주기 ----------
   function fulfill(t, id, where = 'home') {
@@ -424,7 +481,7 @@
   function startCook(id) { OUT = { type: 'cook', id, step: 0, n: 5, res: [], finds: [] }; beginOut(); }
   function startWalk(id) { OUT = { type: 'walk', id, step: 0, n: 6, res: [], finds: [] }; beginOut(); }
   function beginOut() {
-    clearTimeout(wanderT); clearTimeout(idleT);
+    clearTimeout(wanderT); clearTimeout(idleT); if (sulking) { sulking = false; clearTimeout(sulkT); $('walker').classList.remove('sulk'); }
     show('scr-out'); S.combo = 0;
     const st = $('stage'); st.classList.toggle('cooking', OUT.type === 'cook');
     $('out-title').textContent = OUT.type === 'cook' ? `${FOODS[OUT.id].name} 만들기` : `${PLACES[OUT.id].name} 산책`;
@@ -663,6 +720,7 @@
     if (log.some(e => e.e === 'allwish')) out.push(talk ? '내 바람을 전부 들어줬어. 세상에서 제일 행복한 하루!' : '바람을 모두 들어줬어요!');
     else if (log.some(e => e.e === 'wish')) out.push(talk ? '내 바람을 들어줘서 고마웠어.' : '바람을 들어줬어요.');
     if (log.some(e => e.e === 'grow')) out.push(talk ? '그리고… 나 오늘 자랐어!' : '오늘 쑥 자랐어요!');
+    if (log.some(e => e.e === 'cry')) out.push(talk ? (log.some(e => e.e === 'makeup') ? '누가 나를 막 두드려서 엉엉 울었어… 그래도 살살 쓰다듬어 줘서 금방 나았어.' : '누가 나를 막 두드려서 엉엉 울었어. 다음엔 살살 해 줘.') : '세게 두드려서 울었어요.');
     const n = log.filter(e => e.e === 'cook' || e.e === 'walk').reduce((s, e) => s + (e.good || 0), 0);
     if (n) out.push(talk ? `오늘 우리 문제를 ${n}개나 맞혔어.` : `문제를 ${n}개 맞혔어요.`);
     if (out.length <= (talk ? 0 : 1)) return talk ? '오늘은 조용한 하루였어. 내일은 같이 나들이 가자!' : '(조용한 하루였어요)';

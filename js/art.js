@@ -29,6 +29,17 @@ const Art = (() => {
     } else if (mood === 'sad') {
       eyes = `<path d="M-12 1.5 Q-8.5 6 -5 1.5 M5 1.5 Q8.5 6 12 1.5" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
       mouth = `<path d="M-3.5 12 Q0 9 3.5 12" stroke="${ink}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    } else if (mood === 'cry') {
+      // 질끈 감은 눈(> <), 엉엉 우는 입, 흘러내리는 눈물
+      eyes = `<path d="M-12.5 -0.5 L-6 3 L-12.5 6.5 M12.5 -0.5 L6 3 L12.5 6.5" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g class="tears"><path class="tear" d="M-13 8 q-2.6 4.4 0 6.4 q2.6 -2 0 -6.4z" fill="#9CC8FF" stroke="#6EA6F0" stroke-width=".7"/><path class="tear t2" d="M13 8 q-2.6 4.4 0 6.4 q2.6 -2 0 -6.4z" fill="#9CC8FF" stroke="#6EA6F0" stroke-width=".7"/></g>`;
+      mouth = `<path d="M-5 13.5 Q-5 7.5 0 7.5 Q5 7.5 5 13.5 Z" fill="#C9466F"/><path d="M-2.6 13.4 Q0 11 2.6 13.4" fill="#FF9CB8"/>`;
+    } else if (mood === 'pout') {
+      // 삐친 얼굴: 반쯤 감은 눈으로 옆을 흘깃, 부푼 볼, 삐죽 입
+      eyes = `<path d="M-12.5 1 h8 M4.5 1 h8" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-6.6" cy="3.6" r="2.2" fill="${ink}"/><circle cx="10.4" cy="3.6" r="2.2" fill="${ink}"/>`;
+      mouth = `<path d="M-3.5 11.5 q1.75 -2.6 3.5 0 q1.75 2.6 3.5 0" stroke="${ink}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <ellipse cx="-15.5" cy="9.5" rx="6.6" ry="4.4" fill="#F7A0C1" opacity=".75"/><ellipse cx="15.5" cy="9.5" rx="6.6" ry="4.4" fill="#F7A0C1" opacity=".75"/>
+        <g transform="translate(19 -13)" stroke="#E5679A" stroke-width="1.8" stroke-linecap="round"><path d="M-3 -1 q3 0 3 -3 M3 -1 q-3 0 -3 -3 M-3 3 q3 0 3 3 M3 3 q-3 0 -3 3" fill="none"/></g>`;
     } else if (mood === 'sleep') {
       eyes = `<path d="M-12 3 Q-8.5 5.5 -5 3 M5 3 Q8.5 5.5 12 3" stroke="${ink}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
       mouth = `<ellipse cx="0" cy="11" rx="1.8" ry="2.2" fill="${ink}" opacity=".7"/>`;
@@ -45,7 +56,9 @@ const Art = (() => {
     const sh = [[-19, 5, 19], [0, -8, 23], [19, 5, 19]];
     const out = sh.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r + 2.6}"/>`).join('') + `<ellipse cx="0" cy="11" rx="35.6" ry="18.6"/>`;
     const inn = sh.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + `<ellipse cx="0" cy="11" rx="33" ry="16"/>`;
-    const tear = mood === 'sad' ? `<path d="M19 12 q-3 5 0 7 q3 -2 0 -7z" fill="#9CC8FF" stroke="#6EA6F0" stroke-width=".8"/>` : '';
+    let tear = mood === 'sad' ? `<path d="M19 12 q-3 5 0 7 q3 -2 0 -7z" fill="#9CC8FF" stroke="#6EA6F0" stroke-width=".8"/>` : '';
+    // 구름이 울면 몸 아래로 비가 내린다
+    if (mood === 'cry') tear = `<g class="tears">${[-20, -8, 4, 16, 26].map((x, i) => `<path class="tear rain r${i}" d="M${x} 28 q-2.4 4.2 0 6 q2.4 -1.8 0 -6z" fill="#9CC8FF" stroke="#6EA6F0" stroke-width=".7"/>`).join('')}</g>`;
     return `<g fill="#CFC4F6">${out}</g><g fill="url(#cn-cloud)">${inn}</g>
       <path d="M-26 -2 q4 -8 12 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
       <g transform="translate(0 4)">${face(mood, '#45346A')}</g>${tear}`;
@@ -59,7 +72,9 @@ const Art = (() => {
     let peek = '';
     if (crack) {
       const ink = '#45346A';
-      peek = mood === 'happy'
+      peek = mood === 'cry' ? `<path d="M-13 -20 L-7 -17 L-13 -14 M13 -20 L7 -17 L13 -14" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g class="tears"><path class="tear" d="M-14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/><path class="tear t2" d="M14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/></g>`
+        : mood === 'pout' ? `<path d="M-13 -18 h7 M6 -18 h7" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-7.5" cy="-15.6" r="2" fill="${ink}"/><circle cx="11.5" cy="-15.6" r="2" fill="${ink}"/>`
+        : mood === 'happy'
         ? `<path d="M-13 -17 Q-9.5 -22 -6 -17 M6 -17 Q9.5 -22 13 -17" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
         : `<g class="eyes"><ellipse cx="-9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><ellipse cx="9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><circle cx="-8.4" cy="-18.4" r="1.3" fill="#fff"/><circle cx="10.6" cy="-18.4" r="1.3" fill="#fff"/></g>`;
     }
@@ -89,7 +104,7 @@ const Art = (() => {
   function bunnyEars(stage, mood) {
     const long = stage >= 4;
     const ry = long ? 17 : 10, cy = long ? -31 : -23;
-    const rot = mood === 'sad' ? 34 : mood === 'happy' ? -6 : 8;
+    const rot = mood === 'sad' || mood === 'cry' ? 40 : mood === 'pout' ? 24 : mood === 'happy' ? -6 : 8;
     const ear = (sx) => `<g transform="translate(${sx * 8} -14) rotate(${sx * rot}) translate(${-sx * 8} 14)">
       <ellipse cx="${sx * 9}" cy="${cy}" rx="7" ry="${ry}" fill="url(#cn-bun)" stroke="${BS}" stroke-width="${BW}"/>
       <ellipse cx="${sx * 9}" cy="${cy + 1}" rx="3.2" ry="${ry - 6}" fill="#FAC9DB"/></g>`;
@@ -118,7 +133,9 @@ const Art = (() => {
     let peek = '';
     if (crack) {
       const ink = '#5E2B47';
-      peek = mood === 'happy'
+      peek = mood === 'cry' ? `<path d="M-13 -20 L-7 -17 L-13 -14 M13 -20 L7 -17 L13 -14" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g class="tears"><path class="tear" d="M-14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/><path class="tear t2" d="M14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/></g>`
+        : mood === 'pout' ? `<path d="M-13 -18 h7 M6 -18 h7" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-7.5" cy="-15.6" r="2" fill="${ink}"/><circle cx="11.5" cy="-15.6" r="2" fill="${ink}"/>`
+        : mood === 'happy'
         ? `<path d="M-13 -17 Q-9.5 -22 -6 -17 M6 -17 Q9.5 -22 13 -17" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
         : `<g class="eyes"><ellipse cx="-9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><ellipse cx="9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><circle cx="-8.4" cy="-18.4" r="1.3" fill="#fff"/><circle cx="10.6" cy="-18.4" r="1.3" fill="#fff"/></g>`;
     }

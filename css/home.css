@@ -9,7 +9,7 @@
 .room-bg svg{width:100%;height:100%;display:block}
 .walker{position:absolute;bottom:6%;left:55%;width:min(25%,230px);transform:translateX(-50%);transition:left 2.6s ease-in-out;z-index:3}
 .walker.fast{transition:left .6s ease-out}
-.walker .pet{position:relative;left:auto;bottom:auto;width:100%;aspect-ratio:160/156;transform:none;display:block}
+.walker .pet{position:relative;left:auto;bottom:auto;width:100%;aspect-ratio:160/156;transform:none;display:block;touch-action:none}
 .walker.flip .pet svg{transform:scaleX(-1)}
 .walker.sleep .pet svg{filter:saturate(.9)}
 .think{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:6px;background:#fff;border-radius:22px;padding:8px 14px 8px 8px;
@@ -200,3 +200,20 @@
   .go{height:100%}
 }
 @media (orientation:landscape) and (min-width:1240px){ .home{grid-template-columns:minmax(0,1fr) 360px} }
+
+/* 맞으면: 눈물, 도망, 삐침 */
+.tear{transform-box:fill-box;transform-origin:center top;animation:tear .9s ease-in infinite}
+.tear.t2{animation-delay:.45s}
+.tear.rain{animation-duration:.7s}.tear.r1{animation-delay:.15s}.tear.r2{animation-delay:.3s}.tear.r3{animation-delay:.45s}.tear.r4{animation-delay:.6s}
+@keyframes tear{0%{transform:translateY(0) scale(.6);opacity:0}25%{opacity:1}100%{transform:translateY(12px) scale(1);opacity:0}}
+.walker.run{transition:left .7s cubic-bezier(.2,.9,.3,1)}
+.walker.run .pet svg{animation:runbob .16s ease-in-out infinite}
+@keyframes runbob{50%{transform:translateY(-9px) rotate(-5deg)}}
+.walker.run.egg .pet svg{animation:roll .7s ease-out}
+@keyframes roll{to{transform:rotate(-360deg)}}
+.walker.sulk .think{display:none}
+.walker.sulk .pet svg{animation:sulkshake 3s ease-in-out infinite}
+@keyframes sulkshake{0%,90%,100%{transform:none}93%{transform:translateX(-3px)}96%{transform:translateX(3px)}}
+.pet.ouch svg{animation:ouch .35s ease}
+@keyframes ouch{30%{transform:scale(.9,1.08) translateY(4px)}60%{transform:scale(1.06,.95)}}
+body.lowfx .tear{animation:none;opacity:1}

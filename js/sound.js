@@ -39,6 +39,12 @@ const Snd = (() => {
       const base = kind === 'bunny' ? 820 : 620;
       for (let i = 0; i < n; i++) { const f = base + Math.random() * 260; tone(f, .09, 'sine', .14, i * .13, f * 1.25); }
     },
+    ouch() { tone(900, .12, 'triangle', .22, 0, 520); },
+    cry(kind = 'cloud') {
+      // 으앙~ : 떨리며 내려가는 소리 세 번
+      const base = kind === 'bunny' ? 760 : 620;
+      [0, .42, .84].forEach((t, i) => { tone(base - i * 40, .38, 'sine', .16, t, base * .62 - i * 40); tone(base * 1.01 - i * 40, .38, 'triangle', .06, t + .02, base * .6); });
+    },
     lullaby() { [659, 587, 523, 587, 659, 659, 659, 0, 587, 587, 587, 0, 659, 784, 784].forEach((f, i) => f && tone(f, .38, 'sine', .12, i * .32)); }
   };
   return { unlock, set(v) { on = v; }, get on() { return on; }, ...S };
