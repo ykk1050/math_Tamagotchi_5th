@@ -225,10 +225,74 @@ const Scene = (() => {
 
   // 공
   const ball = () => svg('0 0 64 64', `<circle cx="32" cy="32" r="26" fill="#FFF4F8" stroke="#E5679A" stroke-width="3"/><path d="M8 30 q24 -14 48 0 M10 42 q22 12 44 0" fill="none" stroke="#8FE0C9" stroke-width="5"/><path d="M26 7 q-10 25 2 50" fill="none" stroke="#FFD36E" stroke-width="5"/><circle cx="22" cy="20" r="5" fill="#fff"/>`);
+  // ---------- 산책 풍경: 세 겹(먼 하늘 · 중간 언덕·바다 · 가까운 길가)이 서로 다른 속도로 지나간다 ----------
+  const WALK_F = { far: 1.25, mid: 1.9, near: 2.8 };
+  function seeded(seed) { let s = 0; for (const c of seed) s = (s * 31 + c.charCodeAt(0)) >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  function walkScene(placeId, aspect) {
+    const P = DATA.PLACES[placeId], night = placeId === 'hill';
+    const H = 420, V = Math.max(220, Math.round(H * aspect)); // 화면에 보이는 너비
+    const layer = (f, inner) => svg(`0 0 ${Math.round(V * f)} ${H}`, inner, 'none');
+    const rnd = seeded(placeId);
+    const R2 = (a, b) => a + rnd() * (b - a);
+    // 먼 곳
+    const Wf = V * WALK_F.far;
+    let far = '';
+    if (night) {
+      far += Array.from({ length: Math.round(Wf / 22) }, () => `<circle cx="${R2(0, Wf).toFixed(0)}" cy="${R2(10, 200).toFixed(0)}" r="${R2(1.2, 3).toFixed(1)}" fill="#FFF3B0" class="twk" style="animation-delay:${R2(0, 3).toFixed(1)}s"/>`).join('');
+      far += `<circle cx="${(V * .8).toFixed(0)}" cy="70" r="30" fill="#FFF3B0"/><circle cx="${(V * .8 - 12).toFixed(0)}" cy="62" r="28" fill="${P.sky[0]}"/>`;
+      far += `<path d="M0 260 ${Array.from({ length: 9 }, (_, i) => `Q${(Wf * (i + .5) / 9).toFixed(0)} ${R2(150, 210).toFixed(0)} ${(Wf * (i + 1) / 9).toFixed(0)} 250`).join(' ')} V${H} H0Z" fill="#6C64B0" opacity=".8"/>`;
+    } else {
+      far += `<circle cx="${(V * .78).toFixed(0)}" cy="70" r="28" fill="#FFE59A"/><circle cx="${(V * .78).toFixed(0)}" cy="70" r="40" fill="#FFE59A" opacity=".25"/>`;
+      far += Array.from({ length: Math.round(Wf / 160) + 2 }, () => { const x = R2(0, Wf), y = R2(30, 140), s = R2(.6, 1.2); return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${s.toFixed(2)})" fill="#fff" opacity=".92"><circle cx="0" cy="0" r="18"/><circle cx="20" cy="-8" r="22"/><circle cx="42" cy="2" r="16"/><rect x="-4" y="0" width="50" height="16" rx="8"/></g>`; }).join('');
+      if (placeId !== 'beach') far += `<path d="M0 250 ${Array.from({ length: 7 }, (_, i) => `Q${(Wf * (i + .5) / 7).toFixed(0)} ${R2(150, 200).toFixed(0)} ${(Wf * (i + 1) / 7).toFixed(0)} 245`).join(' ')} V${H} H0Z" fill="${placeId === 'berry' ? '#DCEFD0' : '#CFEBDC'}"/>`;
+    }
+    // 중간
+    const Wm = V * WALK_F.mid;
+    let mid = '';
+    if (placeId === 'beach') {
+      mid += `<rect y="220" width="${Wm.toFixed(0)}" height="90" fill="#8FD3F0"/><rect y="220" width="${Wm.toFixed(0)}" height="20" fill="#B8E5F7"/>`;
+      mid += `<path class="wave" d="M0 240 ${Array.from({ length: Math.ceil(Wm / 40) }, () => 'q20 -8 40 0').join(' ')}" stroke="#fff" stroke-width="4" fill="none"/>`;
+      for (let x = R2(100, 250); x < Wm - 80; x += R2(260, 420)) {
+        const t = rnd();
+        if (t < .4) mid += `<g transform="translate(${x.toFixed(0)} 214)" class="bob"><path d="M-24 0 h48 l-8 12 h-32z" fill="#FFB9A6" stroke="#D9776A" stroke-width="2"/><path d="M0 0 v-40 l22 34z" fill="#fff" stroke="#9EC2F2" stroke-width="2"/></g>`;
+        else if (t < .7) mid += `<g transform="translate(${x.toFixed(0)} 222)"><ellipse rx="56" ry="12" fill="#F7E2B5"/><path d="M0 -6 q-4 -30 6 -50" stroke="#A8724C" stroke-width="5" fill="none"/><path d="M6 -56 q-26 -4 -34 10 M6 -56 q26 -6 32 8 M6 -56 q-6 -20 -24 -22 M6 -56 q14 -18 30 -16" stroke="#6CC08F" stroke-width="6" fill="none" stroke-linecap="round"/></g>`;
+        else mid += `<g transform="translate(${x.toFixed(0)} 220)"><path d="M-10 0 l3 -60 h14 l3 60z" fill="#fff" stroke="#E5679A" stroke-width="2"/><path d="M-7 -40 h14 M-8 -22 h16" stroke="#F28DB2" stroke-width="6"/><rect x="-9" y="-72" width="18" height="12" rx="3" fill="#FFE59A"/></g>`;
+      }
+    } else {
+      const col = night ? '#5A8F7E' : placeId === 'berry' ? '#B9E3AE' : '#B5E3C6';
+      mid += `<path d="M0 290 ${Array.from({ length: 6 }, (_, i) => `Q${(Wm * (i + .5) / 6).toFixed(0)} ${R2(215, 250).toFixed(0)} ${(Wm * (i + 1) / 6).toFixed(0)} 285`).join(' ')} V${H} H0Z" fill="${col}"/>`;
+      for (let x = R2(80, 200); x < Wm - 60; x += R2(170, 320)) {
+        const t = rnd();
+        if (night) mid += t < .6 ? `<g transform="translate(${x.toFixed(0)} 282)"><path d="M0 0 l-22 0 l22 -70 l22 70z" fill="#3E5F5A"/><path d="M0 -40 l-16 0 l16 -46 l16 46z" fill="#3E5F5A"/></g>` : `<g transform="translate(${x.toFixed(0)} 280)"><rect x="-26" y="-36" width="52" height="36" fill="#8A7BC4"/><path d="M-32 -36 l32 -26 l32 26z" fill="#6E5CA3"/><rect x="-10" y="-26" width="12" height="12" fill="#FFE08A" class="glow2"/></g>`;
+        else if (placeId === 'berry' && t < .3) mid += `<g transform="translate(${x.toFixed(0)} 282)"><rect x="-34" y="-44" width="68" height="44" fill="#F2678F"/><path d="M-40 -44 l40 -30 l40 30z" fill="#C9466F"/><rect x="-10" y="-24" width="20" height="24" fill="#fff"/><path d="M-10 -24 l20 24 M10 -24 l-20 24" stroke="#F2678F" stroke-width="2"/></g>`;
+        else if (t < .75) { const c = pick2(rnd, ['#8FD8A8', '#9FDDB4', '#7CCB9A']); mid += `<g transform="translate(${x.toFixed(0)} 284)"><rect x="-5" y="-30" width="10" height="30" fill="#B98A6A"/><circle cx="0" cy="-46" r="26" fill="${c}"/><circle cx="-16" cy="-36" r="16" fill="${c}"/><circle cx="16" cy="-36" r="16" fill="${c}"/>${placeId === 'garden' && rnd() < .5 ? '<circle cx="-8" cy="-50" r="4" fill="#F7A0C1"/><circle cx="10" cy="-40" r="4" fill="#FFD36E"/>' : ''}</g>`; }
+        else mid += `<g transform="translate(${x.toFixed(0)} 284)"><rect x="-3" y="-70" width="6" height="70" fill="#C99A6E"/><g class="spin" style="transform-origin:0px -70px"><path d="M0 -70 l-6 -34 h12z M0 -70 l34 -6 v12z M0 -70 l6 34 h-12z M0 -70 l-34 6 v-12z" fill="#fff" stroke="#C9B8FF" stroke-width="2"/></g></g>`;
+      }
+    }
+    // 가까운 길가
+    const Wn = V * WALK_F.near;
+    const ground = { garden: '#BFE8C8', beach: '#FBE7C2', berry: '#C9EBC4', hill: '#7FB3A2' }[placeId];
+    let near = `<path d="M0 318 ${Array.from({ length: 10 }, (_, i) => `Q${(Wn * (i + .5) / 10).toFixed(0)} ${R2(300, 326).toFixed(0)} ${(Wn * (i + 1) / 10).toFixed(0)} 318`).join(' ')} V${H} H0Z" fill="${ground}"/>`;
+    near += `<path d="M0 384 ${Array.from({ length: 12 }, (_, i) => `Q${(Wn * (i + .5) / 12).toFixed(0)} ${R2(370, 392).toFixed(0)} ${(Wn * (i + 1) / 12).toFixed(0)} 384`).join(' ')}" stroke="${night ? '#A9D8C6' : '#fff'}" stroke-width="30" fill="none" stroke-linecap="round" opacity=".8"/>`;
+    for (let x = R2(40, 120); x < Wn - 40; x += R2(70, 150)) {
+      const y = rnd() < .5 ? R2(330, 352) : R2(400, 412), t = rnd();
+      const g = (s) => `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})">${s}</g>`;
+      if (placeId === 'garden') near += t < .6 ? g(`<path d="M0 0 v-18" stroke="#6CC08F" stroke-width="3"/><g fill="${pick2(rnd, ['#F7A0C1', '#FFD36E', '#C9B8FF', '#FFB9A6'])}"><circle cx="-5" cy="-20" r="5"/><circle cx="5" cy="-20" r="5"/><circle cx="0" cy="-26" r="5"/><circle cx="0" cy="-15" r="5"/></g><circle cy="-20" r="3" fill="#fff"/>`) : t < .8 ? g(`<ellipse cx="0" cy="-8" rx="24" ry="14" fill="#8FD8A8"/><circle cx="-8" cy="-14" r="3" fill="#F2678F"/>`) : g(`<g class="flutter"><path d="M0 -40 c-10 -12 -18 -2 -10 4 c-8 4 0 12 10 2z M0 -40 c10 -12 18 -2 10 4 c8 4 0 12 -10 2z" fill="#FFB3CF" stroke="#E5679A" stroke-width="1.2"/></g>`);
+      else if (placeId === 'beach') near += t < .35 ? g(`<path d="M-10 0 c0 -12 20 -12 20 0z" fill="#FFD3C4" stroke="#E7957C" stroke-width="1.6"/><path d="M0 0 v-10 M-6 0 l3 -8 M6 0 l-3 -8" stroke="#E7957C" stroke-width="1.2"/>`) : t < .6 ? g(`<path d="M0 -14 l3 8 9 1 -7 5 3 9 -8 -5 -8 5 3 -9 -7 -5 9 -1z" fill="#FFB27A" stroke="#E0843A" stroke-width="1.4"/>`) : t < .8 ? g(`<g class="crab"><ellipse cx="0" cy="-8" rx="12" ry="8" fill="#F2678F"/><circle cx="-5" cy="-16" r="2.4" fill="#fff"/><circle cx="5" cy="-16" r="2.4" fill="#fff"/><circle cx="-5" cy="-16" r="1.2" fill="#4A3552"/><circle cx="5" cy="-16" r="1.2" fill="#4A3552"/><path d="M-12 -8 l-8 -6 M12 -8 l8 -6 M-8 -2 l-6 4 M8 -2 l6 4" stroke="#F2678F" stroke-width="2.4" stroke-linecap="round"/></g>`) : g(`<path d="M0 0 v-60" stroke="#C99A6E" stroke-width="3"/><path d="M-40 -56 q40 -34 80 0z" fill="#F7A0C1"/><path d="M-13 -56 q13 -30 26 0" fill="#fff"/>`);
+      else if (placeId === 'berry') near += t < .65 ? g(`<ellipse cx="0" cy="-6" rx="22" ry="10" fill="#7FCF95"/>${[-10, 2, 12].map(dx => `<path transform="translate(${dx} -6)" d="M0 -5 c6 -1 8 5 5 9 c-2 3 -8 3 -10 0 c-3 -4 -1 -10 5 -9z" fill="#F2678F"/>`).join('')}`) : t < .85 ? g(`<g class="flutter"><ellipse cx="0" cy="-36" rx="6" ry="5" fill="#FFD36E" stroke="#4A3552" stroke-width="1.2"/><path d="M-2 -40 v8 M2 -40 v8" stroke="#4A3552" stroke-width="1.4"/><ellipse cx="-3" cy="-42" rx="4" ry="3" fill="#fff" opacity=".9"/></g>`) : g(`<rect x="-24" y="-46" width="48" height="26" rx="4" fill="#FFF4E0" stroke="#C99A6E" stroke-width="2"/><path d="M0 -20 v20" stroke="#C99A6E" stroke-width="4"/><path d="M-8 -34 c6 -1 8 5 5 9 c-2 3 -8 3 -10 0 c-3 -4 -1 -10 5 -9z" fill="#F2678F" transform="translate(4 2)"/>`);
+      else near += t < .5 ? g(`<path d="M-8 0 q-2 -14 -6 -20 M0 0 q0 -16 0 -24 M8 0 q2 -14 6 -20" stroke="#4E8C7B" stroke-width="3" fill="none"/>`) : t < .8 ? g(`<circle cy="-${R2(20, 60).toFixed(0)}" r="4" fill="#FFF3B0" class="firefly" style="animation-delay:${R2(0, 2).toFixed(1)}s"/>`) : g(`<path d="M0 0 v-18" stroke="#4E8C7B" stroke-width="3"/><circle cy="-22" r="6" fill="#C9B8FF" class="glow2"/>`);
+    }
+    // 도착 깃발: 끝까지 걸었을 때 화면 가운데쯤
+    const fx = Wn - V * .45;
+    near += `<g transform="translate(${fx.toFixed(0)} 372)"><path d="M0 0 V-60" stroke="#C98A3D" stroke-width="5"/><path d="M0 -60 l40 12 l-40 12z" fill="#F28DB2"/><ellipse cx="0" cy="2" rx="14" ry="4" fill="rgba(0,0,0,.12)"/></g>`;
+    return { sky: `linear-gradient(180deg,${P.sky[0]},${P.sky[1]})`, far: layer(WALK_F.far, far), mid: layer(WALK_F.mid, mid), near: layer(WALK_F.near, near) };
+  }
+  const pick2 = (rnd, a) => a[Math.floor(rnd() * a.length)];
+
   // 꾸미기 모드에서 끌 때 손가락을 따라다니는 가구 그림
   function itemAlone(id) {
     if (id === 'rug') return svg('-250 -70 500 70', `<ellipse cx="0" cy="-32" rx="250" ry="58" fill="#FFC7D9" stroke="#E5679A" stroke-width="5"/><ellipse cx="0" cy="-32" rx="190" ry="40" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="14 12"/>`, 'none');
     return svg('0 0 64 64', DECOR[id] || '', 'none');
   }
-  return { food, item, need, room, kitchen, path, pathNodes, ball, itemBox, itemAlone, clampPos, layerOf, DEF_POS, WALLS, FLOORS, swatch };
+  return { food, item, need, room, kitchen, path, pathNodes, ball, itemBox, itemAlone, clampPos, walkScene, WALK_F, layerOf, DEF_POS, WALLS, FLOORS, swatch };
 })();

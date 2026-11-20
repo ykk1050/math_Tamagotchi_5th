@@ -26,6 +26,11 @@ const CookFX = (() => {
   // 반으로 갈라진 달걀 껍데기 (가운데 지그재그)
   const SHELL_L = `<path d="M32 13 C20 13 16 26 16 36 C16 48 22 55 30 55 L30 46 L26 42 L31 37 L27 32 L32 27 Z" fill="#FFF9EC" stroke="#E2C99A" stroke-width="2.4" stroke-linejoin="round"/>`;
   const SHELL_R = `<path d="M32 13 C44 13 48 26 48 36 C48 48 42 55 34 55 L34 46 L38 42 L33 37 L37 32 L32 27 Z" fill="#FFF9EC" stroke="#E2C99A" stroke-width="2.4" stroke-linejoin="round"/>`;
+  // 대나무 찜기 (두 층 + 아래 받침), 뚜껑
+  const STEAMER = `<rect x="6" y="88" width="108" height="16" rx="6" fill="#B7C3D6" stroke="#8D9AB0" stroke-width="2.4"/>
+    <rect x="14" y="58" width="92" height="32" rx="8" fill="#E8C58F" stroke="#B88A4E" stroke-width="2.4"/><path d="M14 70 h92 M14 80 h92" stroke="#C99A5E" stroke-width="2"/>${[26, 42, 58, 74, 90].map(x => `<path d="M${x} 58 v32" stroke="#C99A5E" stroke-width="1.4" opacity=".7"/>`).join('')}
+    <rect x="14" y="26" width="92" height="34" rx="8" fill="#EFCF9B" stroke="#B88A4E" stroke-width="2.4"/><path d="M14 38 h92 M14 48 h92" stroke="#C99A5E" stroke-width="2"/>${[26, 42, 58, 74, 90].map(x => `<path d="M${x} 26 v34" stroke="#C99A5E" stroke-width="1.4" opacity=".7"/>`).join('')}`;
+  const LID = `<path d="M10 46 q50 -46 100 0z" fill="#F2D6A8" stroke="#B88A4E" stroke-width="2.4"/><path d="M24 40 q36 -28 72 0 M38 34 q22 -16 44 0" stroke="#C99A5E" stroke-width="2" fill="none"/><rect x="52" y="4" width="16" height="10" rx="4" fill="#C99A5E"/>`;
   // 재료가 그릇에 닿는 시점(애니메이션 길이 대비 비율)
   const land = (action) => ({ drop: .62, pour: .5, crack: .8, top: .58 }[action] || .5);
   function el(cls, html, style = '') { const d = document.createElement('div'); d.className = 'cfx ' + cls; d.innerHTML = html; if (style) d.style.cssText = style; return d; }
@@ -40,7 +45,7 @@ const CookFX = (() => {
   function play(host, bg, action, id, color, ok) {
     host.innerHTML = '';
     const c = COLORS[id] || color;
-    const T = { crack: 1700, drop: 1100, pour: 1500, stir: 1500, mash: 1400, bake: 1900, shake: 1200, sprinkle: 1400, spin: 1500, top: 1100, flip: 1400 }[action] || 1100;
+    const T = { steam: 2800, crack: 1700, drop: 1100, pour: 1500, stir: 1500, mash: 1400, bake: 1900, shake: 1200, sprinkle: 1400, spin: 1500, top: 1100, flip: 1400 }[action] || 1100;
     if (action === 'drop') {
       const n = id === 'berry' ? 3 : 1;
       for (let i = 0; i < n; i++) {
@@ -70,6 +75,13 @@ const CookFX = (() => {
     } else if (action === 'mash') {
       host.appendChild(el('ing mashing', ing('masher')));
       [350, 750, 1150].forEach(t => setTimeout(() => splash(host, color, 4), t));
+    } else if (action === 'steam') {
+      // 대나무 찜기가 그릇 위로 내려앉고 → 뚜껑이 들썩이며 김이 모락모락 → 뚜껑이 열린다
+      host.appendChild(el('steamer', S('0 0 120 110', STEAMER)));
+      const lid = el('steamlid', S('0 0 120 50', LID)); host.appendChild(lid);
+      for (let i = 0; i < 7; i++) host.appendChild(el('steamwisp', S('0 0 20 60', '<path d="M10 58 c-8 -10 8 -18 0 -28 c-8 -10 8 -18 0 -28" fill="none" stroke="#C9C2E6" stroke-width="9" stroke-linecap="round" opacity=".55"/><path d="M10 58 c-8 -10 8 -18 0 -28 c-8 -10 8 -18 0 -28" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>'), `left:${18 + i * 10}%;animation-delay:${.7 + (i % 4) * .28}s`));
+      setTimeout(() => host.appendChild(el('tok', '보글보글~', 'left:68%;top:4%')), 900);
+      setTimeout(() => host.appendChild(el('tok t2', '모락모락', 'left:-6%;top:10%')), 1500);
     } else if (action === 'bake') {
       host.appendChild(el('ing oven', ing('oven')));
       host.appendChild(el('ding', '띵!'));

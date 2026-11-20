@@ -470,3 +470,28 @@ body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}
 .go-edit{width:100%;margin:4px 0 6px}
 
 @media (orientation:portrait){.home.editing .panel{max-height:34vh}}
+
+/* 찜기 */
+.steamer{left:50%;top:22%;width:86%;transform:translateX(-50%);animation:steamin 2.8s ease forwards;opacity:0}
+@keyframes steamin{0%{opacity:0;transform:translate(-50%,-60%)}14%{opacity:1;transform:translate(-50%,4%)}20%{transform:translate(-50%,0)}88%{opacity:1}100%{opacity:0;transform:translate(-50%,0)}}
+.steamlid{left:50%;top:7%;width:86%;transform:translateX(-50%);opacity:0;animation:lid 2.8s ease forwards}
+@keyframes lid{0%{opacity:0;transform:translate(-50%,-140%)}14%{opacity:1;transform:translate(-50%,8%)}20%,30%{transform:translate(-50%,0)}34%{transform:translate(-50%,-6%) rotate(-3deg)}38%{transform:translate(-50%,0)}50%{transform:translate(-50%,-8%) rotate(3deg)}54%{transform:translate(-50%,0)}66%{transform:translate(-50%,-6%) rotate(-2deg)}70%{transform:translate(-50%,0)}82%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-10%,-120%) rotate(25deg)}}
+.steamwisp{top:-8%;width:9%;opacity:0;animation:wisp 1.1s ease-out 2}
+@keyframes wisp{0%{opacity:0;transform:translateY(20px) scale(.7)}30%{opacity:.95}100%{opacity:0;transform:translateY(-50px) scale(1.2)}}
+
+/* 산책 풍경 */
+.wl{position:absolute;left:0;top:0;height:100%;transition:transform 1.4s cubic-bezier(.45,.05,.4,1);will-change:transform}
+.wl svg{width:100%;height:100%;display:block}
+.wl.far{width:125%}.wl.mid{width:190%}.wl.near{width:280%}
+.stage.walking-scene .opet{left:32%;width:min(30%,190px);bottom:5%}
+.stage.walking-scene .opet.walking svg{animation:walkbob .28s ease-in-out 5}
+.twk{animation:tw 2.6s ease-in-out infinite}
+.wave{animation:wave 2s linear infinite}@keyframes wave{to{transform:translateX(-40px)}}
+.bob{animation:float 3s ease-in-out infinite}
+.spin{animation:spin 4s linear infinite;transform-box:view-box}
+.flutter{animation:flutter 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes flutter{0%,100%{transform:translate(0,0) scaleX(1)}25%{transform:translate(6px,-8px) scaleX(.6)}50%{transform:translate(12px,-2px) scaleX(1)}75%{transform:translate(4px,-10px) scaleX(.6)}}
+.crab{animation:crab 2.4s ease-in-out infinite}@keyframes crab{50%{transform:translateX(18px)}}
+.firefly{animation:firefly 2.4s ease-in-out infinite}@keyframes firefly{0%,100%{opacity:.2;transform:translate(0,0)}50%{opacity:1;transform:translate(8px,-10px)}}
+.glow2{animation:glow2 1.8s ease-in-out infinite alternate}@keyframes glow2{from{opacity:.6}to{opacity:1}}
+body.lowfx .wl{transition-duration:.4s}

@@ -43,7 +43,7 @@
   function overlay(id, on) { $(id).classList.toggle('on', on); }
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { Snd.tap(); overlay(b.dataset.close, false); });
   function toast(t) { const el = $('toast'); el.innerHTML = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2400); }
-  function applyFx() { document.body.classList.toggle('lowfx', !!S.lowfx); Snd.set(!!S.sound); }
+  function applyFx() { document.body.classList.toggle('lowfx', !!S.lowfx); Snd.set(!!S.sound); Snd.musicSet(S.music !== false); }
   function applyTime() { document.body.classList.toggle('night', isNight()); }
   applyFx(); applyTime();
   window.addEventListener('pointerdown', () => Snd.unlock(), { passive: true });
@@ -200,6 +200,7 @@
     applyTime(); newDay(); tickNeeds(); growGarden(); const bday = checkBirthday(); save();
     show('scr-home'); renderHome(); neighborVisit();
     if (bday) setTimeout(() => { toast(`오늘은 <b>${NM()}의 생일</b>이에요! 파티를 준비해 줘요`); Snd.level(); }, 900);
+    Snd.music(isNight() ? 'night' : 'home');
     clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); }, 60000);
     setTimeout(() => {
       const lv = level();
@@ -436,12 +437,12 @@
   const ballState = { x: 0, y: 0, vx: 0, vy: 0, flying: false, raf: 0, hist: [] };
   const ballSize = () => Math.max(46, $('room').getBoundingClientRect().width * .055);
   function floorY() { const r = $('room').getBoundingClientRect(); return r.height * .94 - ballSize(); }
-  function drawBall() { const b = $('ball'); b.style.transform = `translate(${ballState.x}px,${ballState.y}px) rotate(${ballState.x * 2}deg)`; }
+  function drawBall() { const b = $('ball'); b.style.transform = `translate(${ballState.x}px,${ballState.y}px) rotate(${ballState.carry ? 0 : ballState.x * 2}deg) scale(${ballState.sc || 1})`; }
   function resetBall(x) {
     const r = $('room').getBoundingClientRect(), b = $('ball'); b.innerHTML = Scene.ball(); b.style.width = b.style.height = ballSize() + 'px';
     ballState.x = x != null ? x : r.width * .7; ballState.y = floorY(); b.style.display = S.stage >= 3 ? '' : 'none'; drawBall();
   }
-  function stopBall() { cancelAnimationFrame(ballState.raf); ballState.flying = false; }
+  function stopBall() { cancelAnimationFrame(ballState.raf); cancelAnimationFrame(ballState.craf); ballState.flying = false; ballState.carry = false; ballState.sc = 1; ballState.fetching = false; }
   (() => {
     const b = $('ball'); let down = false, sx = 0, sy = 0, bx = 0, by = 0;
     b.addEventListener('pointerdown', (e) => {
@@ -463,7 +464,7 @@
     };
     b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
   })();
-  function throwBall() {
+  function throwBall(noFetch) {
     ballState.flying = true; let last = performance.now(), bounces = 0;
     const r = $('room').getBoundingClientRect(), s = ballSize();
     const step = (now) => {
@@ -474,21 +475,33 @@
       const fy = floorY();
       if (ballState.y > fy) { ballState.y = fy; if (Math.abs(ballState.vy) > 160) { ballState.vy *= -.55; bounces++; Snd.pop(); } else ballState.vy = 0; ballState.vx *= .86; }
       drawBall();
-      if (ballState.y >= fy && Math.abs(ballState.vx) < 25 && ballState.vy === 0) { ballState.flying = false; fetchBall(); return; }
+      if (ballState.y >= fy && Math.abs(ballState.vx) < 25 && ballState.vy === 0) { ballState.flying = false; if (!noFetch) fetchBall(); return; }
       ballState.raf = requestAnimationFrame(step);
     };
     ballState.raf = requestAnimationFrame(step);
-    if (!sleeping && !sulking && S.stage >= 3) speak('home', L4('ballGo'));
+    if (!noFetch && !sleeping && !sulking && S.stage >= 3) speak('home', L4('ballGo'));
   }
   function fetchBall() {
     if (sleeping || sulking || S.stage < 3 || !$('scr-home').classList.contains('on')) return;
     const r = $('room').getBoundingClientRect(), pct = Math.max(12, Math.min(88, (ballState.x + ballSize() / 2) / r.width * 100));
     ballState.fetching = true;
     goTo(pct, () => {
-      $('ball').style.display = 'none'; react('happy', 'hop'); Snd.heart();
+      // 공을 입(구름이는 머리 위)에 물고 돌아온다
+      react('happy', 'squish'); Snd.pop(); ballState.carry = true; ballState.sc = .8;
+      const carry = () => {
+        if (!ballState.carry) return;
+        const rr = $('room').getBoundingClientRect(), pr = $('pet').getBoundingClientRect(), s = ballSize() * ballState.sc;
+        const [mx, my] = Art.mouth(S.kind, S.stage);
+        ballState.x = pr.left - rr.left + pr.width * mx - ballSize() / 2;
+        ballState.y = S.kind === 'cloud' ? pr.top - rr.top + pr.height * (my - .34) - s * .55 : pr.top - rr.top + pr.height * my - ballSize() * .38;
+        drawBall(); ballState.craf = requestAnimationFrame(carry);
+      };
+      carry();
       const back = R(40, 62);
       setTimeout(() => goTo(back, () => {
-        resetBall(r.width * (back / 100) + r.width * .07); ballState.fetching = false;
+        // 내려놓기: 앞으로 톡 떨어뜨린다
+        ballState.carry = false; cancelAnimationFrame(ballState.craf); ballState.sc = 1;
+        ballState.vx = (Math.random() < .5 ? -1 : 1) * 160; ballState.vy = -260; throwBall(true); ballState.fetching = false;
         speak('home', L4('ballBack')); heartAtPet(); addNeed('mood', 4); addNeed('energy', -2);
         if (S.playToday < 10) { S.playToday++; addFriend(1); } renderNeeds(); save();
       }, true), 500);
@@ -1225,7 +1238,9 @@
     $('out-title').textContent = OUT.type === 'cook' ? `${FOODS[OUT.id].name} 만들기` : `${PLACES[OUT.id].name} 산책`;
     $('stage-bg').dataset.place = '';
     drawOutPet('idle'); renderOut(); speak('out', line(OUT.type === 'cook' ? 'cookStart' : 'walkStart'));
-    if (OUT.type === 'walk') placeOutPet(0, true); else { $('opet').style.left = ''; $('cook-fx').innerHTML = ''; placeCookFx(); }
+    st.classList.toggle('walking-scene', OUT.type === 'walk'); $('opet').style.left = ''; $('stage-bg').style.background = '';
+    if (OUT.type === 'walk') { renderOut(); placeOutPet(0, true); } else { $('cook-fx').innerHTML = ''; placeCookFx(); }
+    Snd.music(OUT.type === 'cook' ? 'cook' : 'walk');
     nextQ();
   }
   function renderOut() {
@@ -1237,8 +1252,10 @@
       // 애니메이션이 도는 동안에는 지금 단계 이름을 그대로 둔다
       if (!OUT.anim) $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${F.steps[OUT.step][0]}` : '완성!';
     } else if ($('stage-bg').dataset.place !== OUT.id) {
-      const r = $('stage').getBoundingClientRect();
-      $('stage-bg').innerHTML = Scene.path(OUT.id, OUT.n, false, r.width / Math.max(1, r.height)); $('stage-bg').dataset.place = OUT.id;
+      // 걸어가는 동안 풍경이 지나가는 산책길 (먼 하늘 · 중간 · 길가 세 겹)
+      const r = $('stage').getBoundingClientRect(), W = Scene.walkScene(OUT.id, r.width / Math.max(1, r.height));
+      $('stage-bg').innerHTML = `<div class="wl far">${W.far}</div><div class="wl mid">${W.mid}</div><div class="wl near">${W.near}</div>`;
+      $('stage-bg').style.background = W.sky; $('stage-bg').dataset.place = OUT.id;
     }
     $('steps').innerHTML = Array.from({ length: OUT.n }, (_, i) => `<i class="${OUT.res[i] === true ? 'ok' : OUT.res[i] === false ? 'no' : i === OUT.step ? 'cur' : ''}"></i>`).join('');
     $('hud-combo').textContent = S.combo || 0;
@@ -1253,11 +1270,14 @@
   }
   function drawOutPet(mood) { $('opet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
   function placeOutPet(i, instant) {
-    // 산책길 그림은 무대 비율에 맞춰 그리므로 칸 위치를 그대로 화면 비율로 옮긴다
-    const st = $('stage').getBoundingClientRect(); const W = Math.max(200, Math.round(420 * st.width / Math.max(1, st.height)));
-    const x = Scene.pathNodes(W, OUT.n)[i];
-    const op = $('opet'); if (instant) op.style.transition = 'none';
-    op.style.left = (x / W * 100) + '%'; if (instant) { void op.offsetWidth; op.style.transition = ''; }
+    // 친구는 제자리에서 걷고, 풍경 세 겹이 서로 다른 속도로 뒤로 지나간다
+    const p = Math.max(0, Math.min(1, i / (OUT.n - 1)));
+    $('stage-bg').querySelectorAll('.wl').forEach(L => {
+      const f = Scene.WALK_F[L.classList[1]];
+      if (instant) L.style.transition = 'none';
+      L.style.transform = `translateX(${(-p * (f - 1) / f * 100).toFixed(3)}%)`;
+      if (instant) { void L.offsetWidth; L.style.transition = ''; }
+    });
   }
   function outReact(mood, anim) {
     drawOutPet(mood); const p = $('opet'); p.classList.remove('hop', 'shake', 'walking'); if (anim) { void p.offsetWidth; p.classList.add(anim); }
@@ -1506,10 +1526,11 @@
   $('btn-diary').onclick = () => { Snd.tap(); poked(); openDiary(); };
 
   // ---------- 설정 ----------
-  function syncSet() { $('t-sound').setAttribute('aria-pressed', !!S.sound); $('t-lowfx').setAttribute('aria-pressed', !!S.lowfx); }
+  function syncSet() { $('t-music').setAttribute('aria-pressed', S.music !== false); $('t-sound').setAttribute('aria-pressed', !!S.sound); $('t-lowfx').setAttribute('aria-pressed', !!S.lowfx); }
   let resetArm = false;
   $('btn-set').onclick = () => { Snd.tap(); syncSet(); resetArm = false; $('btn-reset').textContent = '다시 하기'; overlay('ov-set', true); };
   $('btn-set-close').onclick = () => { Snd.tap(); overlay('ov-set', false); };
+  $('t-music').onclick = () => { S.music = S.music === false; applyFx(); syncSet(); save(); Snd.tap(); };
   $('t-sound').onclick = () => { S.sound = !S.sound; applyFx(); syncSet(); save(); Snd.tap(); };
   $('t-lowfx').onclick = () => { S.lowfx = !S.lowfx; applyFx(); syncSet(); save(); Snd.tap(); };
   $('btn-reset').onclick = () => {

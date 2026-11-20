@@ -11,6 +11,7 @@ const Snd = (() => {
         master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
       }
       if (ctx.state === 'suspended') ctx.resume();
+      if (mWant && !mTimer && mOn) music(mWant);
     } catch (e) { ctx = null; }
   }
   function tone(f, d, type = 'sine', v = 0.25, t0 = 0, f2 = null) {
@@ -48,5 +49,59 @@ const Snd = (() => {
     },
     lullaby() { [659, 587, 523, 587, 659, 659, 659, 0, 587, 587, 587, 0, 659, 784, 784].forEach((f, i) => f && tone(f, .38, 'sine', .12, i * .32)); }
   };
-  return { unlock, set(v) { on = v; }, get on() { return on; }, ...S };
+  // ---------- 배경 음악: 코드로 만든 오르골 곡 (방 · 밤 · 산책 · 요리) ----------
+  // 마디마다 화음 하나, 8분음표 8칸. 숫자는 MIDI 음 번호, 0은 쉼표
+  const SONGS = {
+    home: { bpm: 84, chords: [[48, 0], [45, 1], [41, 0], [43, 0]],
+      mel: [76, 0, 79, 0, 81, 79, 76, 0, 72, 0, 76, 0, 74, 72, 69, 0, 69, 0, 72, 0, 77, 76, 74, 0, 74, 0, 71, 0, 67, 0, 0, 0] },
+    night: { bpm: 66, chords: [[48, 0], [45, 1], [41, 0], [43, 0]],
+      mel: [79, 0, 0, 0, 76, 0, 0, 0, 72, 0, 0, 0, 76, 0, 0, 0, 77, 0, 0, 0, 81, 0, 0, 0, 79, 0, 0, 0, 0, 0, 0, 0] },
+    walk: { bpm: 104, chords: [[41, 0], [48, 0], [50, 1], [46, 0]],
+      mel: [72, 69, 72, 77, 0, 76, 77, 0, 79, 0, 76, 72, 74, 76, 0, 0, 77, 0, 74, 69, 72, 74, 0, 77, 74, 72, 70, 0, 72, 0, 0, 0] },
+    cook: { bpm: 112, chords: [[43, 0], [40, 1], [48, 0], [50, 0]],
+      mel: [71, 74, 79, 74, 71, 74, 79, 0, 79, 78, 76, 0, 71, 0, 76, 0, 76, 79, 84, 79, 76, 0, 72, 0, 74, 78, 81, 78, 74, 0, 0, 0] }
+  };
+  const ARP = [0, 7, 12, 16, 12, 7, 0, 7]; // 화음 펼치기 (장3화음 기준, 단3화음은 16→15)
+  let mOn = true, mTheme = null, mWant = null, mStep = 0, mNext = 0, mTimer = null, mBus = null;
+  const mf = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  function mNote(n, t, d, type, v) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(mf(n), t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(mBus); o.start(t); o.stop(t + d + 0.05);
+  }
+  function mTick() {
+    if (!ctx || !mTheme) return;
+    const S = SONGS[mTheme], e = 60 / S.bpm / 2;
+    while (mNext < ctx.currentTime + 0.2) {
+      const bar = Math.floor(mStep / 8) % 4, k = mStep % 8, [root, minor] = S.chords[bar];
+      const iv = ARP[k] === 16 && minor ? 15 : ARP[k];
+      mNote(root + 12 + iv, mNext, e * 1.8, 'triangle', mTheme === 'night' ? 0.05 : 0.06);         // 펼친 화음
+      if (k === 0) { mNote(root, mNext, e * 7, 'sine', 0.09); mNote(root + 7, mNext, e * 7, 'sine', 0.04); } // 낮은 바탕음
+      const m = S.mel[mStep % 32];
+      if (m) { mNote(m, mNext, e * 2.6, 'sine', 0.11); mNote(m + 12, mNext, e * 1.2, 'sine', 0.025); } // 오르골 멜로디
+      mStep++; mNext += e;
+    }
+  }
+  function music(theme) {
+    mWant = theme;
+    if (!ctx || !mOn) return;
+    if (!mBus) { mBus = ctx.createGain(); mBus.gain.value = 0; mBus.connect(master); }
+    if (mTheme === theme && mTimer) return;
+    // 곡이 바뀔 때는 살짝 줄였다가 다시 키운다
+    const now = ctx.currentTime;
+    mBus.gain.cancelScheduledValues(now); mBus.gain.setValueAtTime(mBus.gain.value, now); mBus.gain.linearRampToValueAtTime(0, now + .4);
+    setTimeout(() => {
+      mTheme = theme; mStep = 0; mNext = ctx.currentTime + 0.05;
+      const t = ctx.currentTime; mBus.gain.cancelScheduledValues(t); mBus.gain.setValueAtTime(0, t); mBus.gain.linearRampToValueAtTime(0.55, t + 1.2);
+      if (!mTimer) mTimer = setInterval(mTick, 60);
+    }, 420);
+  }
+  function musicStop() {
+    clearInterval(mTimer); mTimer = null; mTheme = null;
+    if (mBus && ctx) { const t = ctx.currentTime; mBus.gain.cancelScheduledValues(t); mBus.gain.setValueAtTime(0, t); }
+  }
+  function musicSet(v) { mOn = v; if (!v) musicStop(); else if (mWant) music(mWant); }
+
+  return { unlock, set(v) { on = v; }, get on() { return on; }, music, musicSet, musicStop, ...S };
 })();
