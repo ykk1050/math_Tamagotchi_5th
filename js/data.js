@@ -28,7 +28,19 @@ const DATA = (() => {
     cushion:  { name: '구름 쿠션',    kind: 'decor', slot: 'floorR', price: 20 },
     rug:      { name: '딸기 러그',    kind: 'decor', slot: 'rug', price: 25 },
     frame:    { name: '우리 사진 액자', kind: 'decor', slot: 'wall', price: 15 },
-    phat:     { name: '생일 고깔모자', kind: 'acc', price: 0, gift: true }
+    phat:     { name: '생일 고깔모자', kind: 'acc', price: 0, gift: true },
+    chair:    { name: '별 의자',      kind: 'decor', price: 20 },
+    table:    { name: '동그란 탁자',   kind: 'decor', price: 25 },
+    teddy:    { name: '곰 인형',      kind: 'decor', price: 30 },
+    books:    { name: '책 더미',      kind: 'decor', price: 15 },
+    cactus:   { name: '선인장 화분',   kind: 'decor', price: 15 },
+    heart:    { name: '하트 쿠션',     kind: 'decor', price: 20 },
+    mobile:   { name: '별달 모빌',     kind: 'decor', price: 25 },
+    lights:   { name: '반짝 전구',     kind: 'decor', price: 30 },
+    piano:    { name: '꼬마 피아노',   kind: 'decor', price: 40 },
+    vase:     { name: '꽃병',         kind: 'decor', price: 15 },
+    toybox:   { name: '장난감 상자',   kind: 'decor', price: 25 },
+    mirror:   { name: '거울',         kind: 'decor', price: 25 }
   };
   const CARE = {
     pet:    { name: '쓰다듬기',   wish: '쓰다듬어 줬으면 좋겠어…' },

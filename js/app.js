@@ -125,7 +125,7 @@
   function addFriend(v) {
     S.fxp += v; let up = false;
     while (S.flv < FRIEND_XP.length - 1 && S.fxp >= FRIEND_XP[S.flv + 1]) { S.flv++; up = true; }
-    if (up) { Snd.level(); setTimeout(() => toast(`우정이 <b>${S.flv}단계</b>가 됐어요!`), 400); }
+    if (up) { Snd.level(); setTimeout(() => toast(`우정이 <b>${S.flv}단계</b>가 됐어요!`), 400); if (S.flv >= 3 && !S.atticNoted) { S.atticNoted = true; setTimeout(() => { toast('<b>다락방</b>이 열렸어요! 방 오른쪽 위 버튼으로 올라가 봐요'); if ($('scr-home').classList.contains('on')) renderRoomNav(); }, 2800); } }
     save(); hud();
   }
   function pendingStory() { if (S.stage < 5) return null; return STORY[S.kind].findIndex((s, i) => S.flv >= s.lv && !S.seen.includes(i)); }
@@ -215,9 +215,9 @@
     const ps = pendingStory(); if (ps != null && ps >= 0) setTimeout(() => toast('친구 수첩에 <b>새 이야기</b>가 열렸어요!'), 1500);
   }
   function renderHome() {
-    const partyDeco = S.party && S.party.day === S.days && S.party.balloons ? ['balloons'] : [];
-    $('room-bg').innerHTML = Scene.room(S.kind, S.decor.concat(partyDeco), isNight(), S.weather || 'sun');
-    renderParty();
+    initRooms();
+    $('room-bg').innerHTML = roomSVG();
+    renderParty(); renderRoomNav();
     placeHotspots();
     sleeping = S.needs.energy < 25 && S.stage >= 3;
     drawPet(); renderNeeds(); renderWishes(); renderCare(); hud();
@@ -371,15 +371,20 @@
     { id: 'cushion', box: [615, 470, 720, 566], name: '쿠션', need: 'cushion' }
   ];
   function placeHotspots() {
-    const h = $('hots'); h.innerHTML = '';
-    HOTS.forEach(o => {
-      if (o.need && !S.decor.includes(o.need)) return;
+    const h = $('hots'); h.innerHTML = ''; initRooms();
+    const attic = S.roomId === 'attic';
+    const list = attic ? [{ id: 'window', box: [410, 80, 590, 260], name: '동그란 창문' }] : HOTS.map(o => {
+      if (o.id !== 'cushion') return o; const p = S.place.main.cushion; if (!p) return null;
+      return Object.assign({}, o, { box: Scene.itemBox('cushion', p[0], p[1]) });
+    }).filter(Boolean);
+    list.forEach(o => {
       const b = roomBox(...o.box); const el = document.createElement('button'); el.className = 'hot'; el.setAttribute('aria-label', o.name);
       Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px' });
       el.onclick = () => { Snd.tap(); poked(); useObject(o.id, b.cx); };
       h.appendChild(el);
     });
     if (!ballState.flying) resetBall();
+    $('ball').style.display = attic || S.stage < 3 ? 'none' : '';
   }
   window.addEventListener('resize', () => { if ($('scr-home').classList.contains('on')) placeHotspots(); });
 
@@ -395,11 +400,12 @@
     return true;
   }
   function useObject(id, cx) {
+    if (editing) return;
     if (sleeping && id !== 'bed') { speak('home', level() === 'egg' ? '(새근새근…)' : '음냐… 지금은 졸려…', { silent: true }); return; }
     if (id === 'window') {
       const order = ['sun', 'rain', 'rainbow', 'snow'];
       S.weather = order[(order.indexOf(S.weather || 'sun') + 1) % order.length]; save();
-      $('room-bg').innerHTML = Scene.room(S.kind, S.decor, isNight(), S.weather);
+      $('room-bg').innerHTML = roomSVG();
       goTo(Math.min(78, cx), () => {
         const sad = S.kind === 'bunny' && S.weather === 'rain';
         react(sad ? 'sad' : 'happy', sad ? 'shake' : 'hop'); speak('home', L4(S.weather));
@@ -744,6 +750,122 @@
       v.classList.remove('hop'); void v.offsetWidth; v.classList.add('hop');
     };
   }
+
+  // =====================================================================
+  // 방 꾸미기: 자유 배치 · 벽지 · 바닥 · 다락방
+  // =====================================================================
+  const WALL_PRICE = { dots: 0, stripe: 20, star: 25, heart: 25, sky: 30 };
+  const FLOOR_PRICE = { wood: 0, check: 20, mint: 25, night: 30 };
+  function initRooms() {
+    if (!S.place) { S.place = { main: {}, attic: {} }; (S.decor || []).forEach(id => { S.place.main[id] = Scene.DEF_POS[id] || (Scene.layerOf(id) === 'wall' ? [500, 250] : [500, 600]); }); }
+    if (!S.place.attic) S.place.attic = {};
+    S.wall = S.wall || { main: 'dots', attic: 'dots' }; S.floor = S.floor || { main: 'wood', attic: 'wood' };
+    S.walls = S.walls || ['dots']; S.floors = S.floors || ['wood'];
+    if (!S.roomId || (S.roomId === 'attic' && !atticOpen())) S.roomId = 'main';
+    syncDecor();
+  }
+  const atticOpen = () => S.flv >= 3;
+  function syncDecor() { S.decor = Object.keys(S.place.main); }
+  const placedIn = (id) => (S.place.main[id] ? 'main' : S.place.attic[id] ? 'attic' : null);
+  function roomSVG(hide) {
+    const R0 = S.roomId || 'main';
+    return Scene.room({ kind: S.kind, place: S.place[R0], night: isNight(), weather: S.weather || 'sun', wall: S.wall[R0], floor: S.floor[R0], roomId: R0, hide,
+      balloons: R0 === 'main' && S.party && S.party.day === S.days && S.party.balloons });
+  }
+  // 방 좌표 ↔ 화면 픽셀
+  function roomMap() { const r = $('room').getBoundingClientRect(), sc = Math.max(r.width / 1000, r.height / 640); return { r, sc, ox: (r.width - 1000 * sc) / 2, oy: r.height - 640 * sc }; }
+
+  // ---------- 다락방 오가기 ----------
+  function renderRoomNav() {
+    const b = $('btn-attic'); b.style.display = atticOpen() && !editing ? '' : 'none';
+    b.innerHTML = S.roomId === 'attic' ? '<span>▼</span> 내 방' : '<span>▲</span> 다락방';
+  }
+  $('btn-attic').onclick = () => {
+    Snd.tap(); poked(); S.roomId = S.roomId === 'attic' ? 'main' : 'attic'; save();
+    const wk = $('walker'); wk.classList.add('go'); wk.style.transitionDuration = '0s'; wk.style.left = '50%'; setTimeout(() => { wk.classList.remove('go'); wk.style.transitionDuration = ''; }, 50);
+    renderHome(); react('happy', 'hop');
+    speak('home', level() === 'talk' ? (S.roomId === 'attic' ? pick(['다락방이다! 여기 비밀 기지 같아.', '동그란 창문으로 하늘이 보여!']) : pick(['내 방으로 돌아왔다!', '역시 내 방이 포근해.'])) : L3('care'));
+  };
+
+  // ---------- 꾸미기 모드 ----------
+  let editing = false, sel = null, drag = null, panel = 'items';
+  function enterEdit() {
+    initRooms(); editing = true; sel = null; panel = 'items';
+    $('room').classList.add('editing'); document.querySelector('.home').classList.add('editing'); clearTimeout(wanderT); $('bubble').classList.add('hide');
+    renderEdit(); renderRoomNav();
+  }
+  function exitEdit() {
+    editing = false; sel = null; $('room').classList.remove('editing'); document.querySelector('.home').classList.remove('editing'); $('edit-layer').innerHTML = ''; $('edit-bar').innerHTML = '';
+    syncDecor(); save(); renderHome(); startWander(); renderRoomNav();
+    speak('home', level() === 'talk' ? pick(['우와, 방이 새로워졌어!', '여기 진짜 마음에 들어!', '우리 방 최고야!']) : L3('care')); react('happy', 'hop');
+  }
+  function renderEdit() {
+    if (!editing) return;
+    $('room-bg').innerHTML = roomSVG(drag && drag.id);
+    const m = roomMap(), L = $('edit-layer'); L.innerHTML = '';
+    const P = S.place[S.roomId];
+    Object.keys(P).forEach(id => {
+      const [x0, y0, x1, y1] = Scene.itemBox(id, P[id][0], P[id][1]);
+      const h = document.createElement('div'); h.className = 'handle' + (sel === id ? ' sel' : ''); h.dataset.id = id;
+      Object.assign(h.style, { left: (m.ox + x0 * m.sc) + 'px', top: (m.oy + y0 * m.sc) + 'px', width: ((x1 - x0) * m.sc) + 'px', height: ((y1 - y0) * m.sc) + 'px' });
+      if (sel === id) { const x = document.createElement('button'); x.className = 'h-del'; x.textContent = '✕'; x.setAttribute('aria-label', '치우기'); x.onpointerdown = (e) => e.stopPropagation(); x.onclick = (e) => { e.stopPropagation(); Snd.pop(); delete P[id]; sel = null; save(); renderEdit(); }; h.appendChild(x); }
+      h.addEventListener('pointerdown', (e) => startDrag(e, id, h));
+      L.appendChild(h);
+    });
+    renderEditBar();
+  }
+  function startDrag(e, id, h) {
+    e.preventDefault(); sel = id; const P = S.place[S.roomId];
+    drag = { id, sx: e.clientX, sy: e.clientY, x: P[id][0], y: P[id][1], moved: false };
+    $('room-bg').innerHTML = roomSVG(id);
+    h.classList.add('sel', 'drag'); h.innerHTML = Scene.itemAlone(id);
+    try { h.setPointerCapture(e.pointerId); } catch (x) {}
+    const m = roomMap();
+    const move = (ev) => {
+      const dx = (ev.clientX - drag.sx) / m.sc, dy = (ev.clientY - drag.sy) / m.sc; if (Math.hypot(dx, dy) > 3) drag.moved = true;
+      const [nx, ny] = Scene.clampPos(id, drag.x + dx, drag.y + dy);
+      const [x0, y0, x1, y1] = Scene.itemBox(id, nx, ny);
+      Object.assign(h.style, { left: (m.ox + x0 * m.sc) + 'px', top: (m.oy + y0 * m.sc) + 'px' }); drag.nx = nx; drag.ny = ny;
+    };
+    const up = () => {
+      h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+      if (drag.moved && drag.nx != null) { P[id] = [drag.nx, drag.ny]; Snd.pop(); save(); }
+      drag = null; renderEdit();
+    };
+    h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+  }
+  function renderEditBar() {
+    const bar = $('edit-bar'), R0 = S.roomId;
+    const tabs = `<div class="eb-tabs"><button class="eb-tab ${panel === 'items' ? 'on' : ''}" data-p="items">가구</button><button class="eb-tab ${panel === 'wall' ? 'on' : ''}" data-p="wall">벽지</button><button class="eb-tab ${panel === 'floor' ? 'on' : ''}" data-p="floor">바닥</button><span class="eb-hint">${panel === 'items' ? '가구를 끌어서 옮기고, 아래에서 눌러 놓아요' : '눌러서 바꿔요'}</span><button class="btn small primary eb-done">다 했어요</button></div>`;
+    let body = '';
+    if (panel === 'items') {
+      const free = S.items.filter(k => ITEMS[k] && ITEMS[k].kind === 'decor' && !placedIn(k));
+      body = free.length ? free.map(k => `<button class="eb-item" data-add="${k}"><span>${Scene.item(k)}</span><small>${ITEMS[k].name}</small></button>`).join('')
+        : `<p class="eb-empty">놓을 가구가 없어요. 꾸미기 → 주문하기에서 별사탕으로 더 주문할 수 있어요.</p>`;
+    } else {
+      const isW = panel === 'wall', list = isW ? Scene.WALLS : Scene.FLOORS, own = isW ? S.walls : S.floors, cur = isW ? S.wall[R0] : S.floor[R0], price = isW ? WALL_PRICE : FLOOR_PRICE;
+      body = Object.keys(list).map(k => `<button class="eb-item sw ${cur === k ? 'cur' : ''}" data-sw="${k}"><span>${Scene.swatch(isW ? 'wall' : 'floor', k, S.kind)}</span><small>${list[k].name}${own.includes(k) ? '' : ` · 별사탕 ${price[k]}`}</small></button>`).join('');
+    }
+    bar.innerHTML = tabs + `<div class="eb-row">${body}</div>`;
+    bar.querySelectorAll('.eb-tab').forEach(b => b.onclick = () => { Snd.tap(); panel = b.dataset.p; renderEditBar(); });
+    bar.querySelector('.eb-done').onclick = () => { Snd.tap(); exitEdit(); };
+    bar.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+      const k = b.dataset.add; Snd.pop(); S.place[R0][k] = Scene.clampPos(k, ...(Scene.DEF_POS[k] || (Scene.layerOf(k) === 'wall' ? [500, 250] : [500, 600])));
+      if (R0 === 'attic' && Scene.layerOf(k) === 'wall') S.place[R0][k] = Scene.clampPos(k, R(200, 300), 330);
+      if (Scene.layerOf(k) === 'floor' && !Scene.DEF_POS[k]) S.place[R0][k] = Scene.clampPos(k, R(300, 760), R(560, 610));
+      sel = k; S.log.push({ e: 'decor', id: k }); save(); renderEdit();
+    });
+    bar.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => {
+      const k = b.dataset.sw, isW = panel === 'wall', own = isW ? S.walls : S.floors, price = (isW ? WALL_PRICE : FLOOR_PRICE)[k];
+      if (!own.includes(k)) {
+        if (S.candy < price) { toast(`별사탕이 ${price - S.candy}개 더 필요해요`); Snd.no(); return; }
+        S.candy -= price; own.push(k); Snd.combo(); hud();
+      } else Snd.tap();
+      if (isW) S.wall[R0] = k; else S.floor[R0] = k; save(); renderEdit();
+    });
+  }
+  window.addEventListener('resize', () => { if (editing) renderEdit(); });
+  $('btn-deco').onclick = () => { Snd.tap(); poked(); editing ? exitEdit() : enterEdit(); };
 
   // ---------- 바람 들어주기 ----------
   function fulfill(t, id, where = 'home') {
@@ -1096,6 +1218,7 @@
   }
   function startWalk(id) { OUT = { type: 'walk', id, step: 0, n: 6, res: [], finds: [] }; beginOut(); }
   function beginOut() {
+    if (editing) { editing = false; $('room').classList.remove('editing'); document.querySelector('.home').classList.remove('editing'); $('edit-layer').innerHTML = ''; $('edit-bar').innerHTML = ''; }
     stopBall(); clearTimeout(wanderT); clearTimeout(idleT); if (sulking) { sulking = false; clearTimeout(sulkT); $('walker').classList.remove('sulk'); }
     show('scr-out'); S.combo = 0;
     const st = $('stage'); st.classList.toggle('cooking', OUT.type === 'cook');
@@ -1307,9 +1430,11 @@
     tab = t || tab;
     document.querySelectorAll('#closet-tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     const ids = Object.keys(ITEMS).filter(k => tab === 'shop' ? !S.items.includes(k) && !ITEMS[k].gift : ITEMS[k].kind === tab);
+    if (tab === 'decor') setTimeout(() => { const g = $('item-grid'); if (g && !g.querySelector('.go-edit')) { const b = document.createElement('button'); b.className = 'btn big primary go-edit'; b.textContent = '방에서 직접 옮기며 꾸미기'; b.onclick = () => { Snd.tap(); overlay('ov-closet', false); enterEdit(); }; g.parentNode.insertBefore(b, g); } }, 0);
+    else { const old = document.querySelector('.go-edit'); old && old.remove(); }
     $('closet-sub').innerHTML = tab === 'shop' ? `별사탕으로 주문할 수 있어요 · 가진 별사탕 <b>${S.candy}</b>개` : tab === 'acc' ? (S.stage < 3 ? '알에서 나오면 장식을 할 수 있어요' : '눌러서 친구에게 해 주세요') : '눌러서 방에 놓거나 치워요';
     $('item-grid').innerHTML = ids.length ? ids.map(k => {
-      const I = ITEMS[k], own = S.items.includes(k), on = I.kind === 'acc' ? S.acc === k : S.decor.includes(k);
+      const I = ITEMS[k], own = S.items.includes(k), on = I.kind === 'acc' ? S.acc === k : (initRooms(), !!placedIn(k));
       let btn;
       if (tab === 'shop') btn = `<button class="btn ${S.candy >= I.price ? 'primary' : ''}" data-buy="${k}">별사탕 ${I.price}</button>`;
       else if (!own) btn = `<small style="color:#A893AE;text-align:center">${I.gift ? '생일 선물로<br>받아요' : '산책에서 찾거나<br>주문해요'}</small>`;
@@ -1333,7 +1458,9 @@
         S.log.push({ e: 'wear', id: k }); save(); return;
       }
     } else {
-      if (S.decor.includes(k)) S.decor = S.decor.filter(x => x !== k); else { S.decor.push(k); S.log.push({ e: 'decor', id: k }); }
+      initRooms(); const where = placedIn(k);
+      if (where) delete S.place[where][k]; else { S.place.main[k] = Scene.clampPos(k, ...(Scene.DEF_POS[k] || (Scene.layerOf(k) === 'wall' ? [500, 250] : [500, 600]))); S.log.push({ e: 'decor', id: k }); }
+      syncDecor();
     }
     save(); renderHome(); openCloset();
   }
