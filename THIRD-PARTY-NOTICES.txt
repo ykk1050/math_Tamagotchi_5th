@@ -12,7 +12,12 @@
    License: SIL Open Font License, Version 1.1
    Source: https://fonts.google.com/specimen/Jua
 
-2. Gowun Dodum (고운돋움)
+2. Quicksand (숫자·기호에 사용)
+   Copyright 2011 The Quicksand Project Authors (Andrew Paglinawan)
+   License: SIL Open Font License, Version 1.1
+   Source: https://fonts.google.com/specimen/Quicksand
+
+3. Gowun Dodum (고운돋움)
    Copyright 2021 The Gowun Dodum Project Authors (Yanghee Ryu)
    License: SIL Open Font License, Version 1.1
    Source: https://fonts.google.com/specimen/Gowun+Dodum

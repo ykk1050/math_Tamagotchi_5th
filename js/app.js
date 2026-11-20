@@ -361,7 +361,7 @@
   function wishBadge(t, id) { return S.wishes.some(w => !w.done && w.t === t && w.id === id) ? '<span class="badge wishb">바람</span>' : ''; }
   function tasteBadge(t, id) { const k = S.known[t][id]; return k === 'love' ? '<span class="badge love">좋아해</span>' : k === 'hate' ? '<span class="badge hate">별로래</span>' : ''; }
 
-  let actClean = [];
+  let actClean = [], actGot = 0;
   function actSay(t) { const b = $('act-bubble'); b.querySelector('span').innerHTML = t; b.style.display = 'flex'; }
   function actPet(mood) { $('act-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
   function runAct(id, foodId) {
@@ -389,6 +389,7 @@
         if (id === 'play') { addNeed('mood', 25); addNeed('energy', -10); } if (id === 'pet') addNeed('mood', 15);
         addFriend(3); S.log.push({ e: 'care', id }); fulfill('care', id, 'act');
         ln = level() === 'talk' ? lineFrom(LINES[S.kind].talk.act[{ bath: 'bubble', play: 'bubble', nap: 'nap', pet: 'pet' }[id]], 'act' + id) : line('ok');
+        if (id === 'play' && actGot) { S.candy += actGot; ln += `<br><small style="font-size:.8em;color:#7A6283">규칙에 맞는 방울 ${actGot}개! 별사탕 +${actGot}</small>`; }
         if (id === 'bath' && level() === 'talk') ln = S.kind === 'bunny' ? '뽀송뽀송! 털이 보들보들해졌어!' : '뽀송뽀송! 하얀 구름으로 돌아왔어!';
       }
       actPet(mood); Snd.heart(); if (mood === 'happy') sparks(field, 14);
@@ -396,8 +397,8 @@
       save();
       setTimeout(() => { overlay('ov-act', false); sleeping = false; renderHome(); react(mood, mood === 'happy' ? 'hop' : null); }, 2600);
     };
-    const tm = setTimeout(finish, 30000); actClean.push(() => clearTimeout(tm));
-    ({ feed: actFeed, pet: actRub, bath: actBubble, play: actBubble, nap: actNap })[id](field, bottom, finish, id, foodId);
+    const tm = setTimeout(finish, id === 'play' ? 60000 : 40000); actClean.push(() => clearTimeout(tm));
+    ({ feed: actFeed, pet: actRub, bath: actScrub, play: actMathBubble, nap: actNap })[id](field, bottom, finish, id, foodId);
   }
   function actFeed(field, bottom, finish, id, foodId) {
     $('act-hint').textContent = '간식을 끌어서 입에 쏙 넣어 줘요';
@@ -457,6 +458,120 @@
     bottom.appendChild(b);
   }
 
+  // ---------- 뽀득뽀득 목욕: 얼룩을 문질러 거품을 내고, 샤워로 헹군다 ----------
+  function actScrub(field, bottom, finish) {
+    actPet('sad');
+    const fr = field.getBoundingClientRect(), pr = $('act-pet').getBoundingClientRect();
+    const spots = [];
+    for (let i = 0; i < 6; i++) {
+      const d = document.createElement('div'); d.className = 'dirt';
+      const sz = R(34, 52); d.style.width = sz + 'px'; d.style.height = sz * .8 + 'px';
+      d.style.left = (pr.left - fr.left + pr.width * (.24 + Math.random() * .52) - sz / 2) + 'px';
+      d.style.top = (pr.top - fr.top + pr.height * (.32 + Math.random() * .5) - sz * .4) + 'px';
+      d.style.borderRadius = `${R(35, 60)}% ${R(40, 65)}% ${R(35, 60)}% ${R(40, 65)}%`;
+      field.appendChild(d); spots.push({ d, hp: 100 });
+    }
+    let left = spots.length; const hint = () => { $('act-hint').textContent = left ? `손가락으로 얼룩을 문질러요 · ${left}개 남음` : '깨끗해졌어요! 샤워로 헹궈요'; };
+    hint();
+    let on = false, lx = 0, ly = 0, foamAcc = 0, popAcc = 0;
+    const down = (e) => { on = true; lx = e.clientX; ly = e.clientY; e.preventDefault(); };
+    const move = (e) => {
+      if (!on || !left) return;
+      const dist = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY;
+      const f = field.getBoundingClientRect(), x = e.clientX - f.left, y = e.clientY - f.top;
+      foamAcc += dist; popAcc += dist;
+      if (foamAcc > 26) { foamAcc = 0; const fo = document.createElement('i'); fo.className = 'foam'; fo.style.left = (x + R(-14, 14)) + 'px'; fo.style.top = (y + R(-14, 14)) + 'px'; fo.style.setProperty('--s', R(14, 30) + 'px'); field.appendChild(fo); setTimeout(() => fo.remove(), 2600); }
+      if (popAcc > 140) { popAcc = 0; Snd.pop(); }
+      spots.forEach(sp => {
+        if (sp.hp <= 0) return; const r = sp.d.getBoundingClientRect();
+        if (Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) < 50) {
+          sp.hp -= dist * .32; sp.d.style.opacity = Math.max(0, sp.hp / 100);
+          if (sp.hp <= 0) { sp.d.remove(); left--; Snd.heart(); sparks(field, 6, x, y); actPet(left ? 'idle' : 'happy'); hint(); if (!left) rinse(); }
+        }
+      });
+    };
+    const up = () => { on = false; };
+    field.addEventListener('pointerdown', down); field.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    actClean.push(() => { field.removeEventListener('pointerdown', down); field.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); field.querySelectorAll('.dirt,.foam,.shower').forEach(e => e.remove()); });
+    function rinse() {
+      const b = document.createElement('button'); b.className = 'btn big primary'; b.textContent = '샤워로 헹구기';
+      b.onclick = () => {
+        b.remove(); const p = $('act-pet').getBoundingClientRect(), f = field.getBoundingClientRect();
+        const sh = document.createElement('div'); sh.className = 'shower';
+        sh.style.left = (p.left - f.left + p.width * .1) + 'px'; sh.style.width = (p.width * .8) + 'px'; sh.style.top = '0'; sh.style.height = (p.top - f.top + p.height * .9) + 'px';
+        sh.innerHTML = '<span class="head"></span>' + Array.from({ length: 14 }, (_, i) => `<i style="left:${4 + i * 7}%;animation-delay:${(i % 5) * .08}s"></i>`).join('');
+        field.appendChild(sh); Snd.lullaby && [0, 200, 400, 600, 800].forEach(t => setTimeout(() => Snd.pop(), t));
+        setTimeout(() => { field.querySelectorAll('.foam').forEach(e => e.remove()); actPet('happy'); sparks(field, 18); }, 1300);
+        setTimeout(() => { sh.remove(); finish(); }, 1900);
+      };
+      bottom.appendChild(b);
+    }
+  }
+
+  // ---------- 수수께끼 방울 놀이: 친구가 낸 규칙에 맞는 방울만 터뜨린다 (수학) ----------
+  const frh = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+  const gcd2 = (a, b) => (b ? gcd2(b, a % b) : a);
+  const dec2 = (v) => (v / 100).toFixed(2).replace(/0$/, '').replace(/\.$/, '');
+  const BUB_RULES = [
+    () => { // 크기가 같은 분수 (약분과 통분)
+      const [a, b] = pick([[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5]]);
+      return { title: `${frh(a, b)} 과 크기가 같은 분수`, gen: (ok) => { const m = R(2, 5); if (ok) return frh(a * m, b * m); let n = a * m + (Math.random() < .5 ? 1 : -1); if (n <= 0) n = a * m + 1; return Math.random() < .5 ? frh(n, b * m) : frh(a * m, b * m + 1); } };
+    },
+    () => ({ // 기약분수 (약분과 통분)
+      title: '기약분수', gen: (ok) => { if (ok) { let d = R(3, 12), n = R(1, d - 1); while (gcd2(n, d) !== 1) n = R(1, d - 1); return frh(n, d); } let d = R(2, 6), n = R(1, d - 1), k = R(2, 3); return frh(n * k, d * k); }
+    }),
+    () => { // 수의 범위
+      const lo = R(15, 60), hi = lo + R(4, 7), k1 = pick(['이상', '초과']), k2 = pick(['이하', '미만']);
+      const inR = (v) => (k1 === '이상' ? v >= lo : v > lo) && (k2 === '이하' ? v <= hi : v < hi);
+      return { title: `${lo} ${k1} ${hi} ${k2}인 수`, gen: (ok) => { let v; do { v = ok ? R(lo, hi) : pick([lo, hi, lo - R(1, 4), hi + R(1, 4)]); } while (inR(v) !== ok); return String(v); } };
+    },
+    () => { // 반올림 (어림하기)
+      const T = R(2, 9) * 10;
+      return { title: `반올림하여 십의 자리까지 나타내면 ${T}인 수`, gen: (ok) => String(ok ? R(T - 5, T + 4) : pick([R(T - 12, T - 6), R(T + 5, T + 11)])) };
+    },
+    () => { // 소수의 크기
+      const x = R(2, 8) * 10;
+      return { title: `${dec2(x)}보다 큰 소수`, gen: (ok) => { let v; do { v = ok ? R(x + 1, 99) : R(5, x - 1); } while (v % 10 === 0 && Math.random() < .6); return dec2(v); } };
+    },
+    () => ({ // 1/2보다 큰 분수 (분수의 크기 비교)
+      title: `${frh(1, 2)} 보다 큰 분수`, gen: (ok) => { let d, n; do { d = R(3, 12); n = R(1, d - 1); } while (n * 2 === d || (n * 2 > d) !== ok); return frh(n, d); }
+    })
+  ];
+  function actMathBubble(field, bottom, finish) {
+    const rule = pick(BUB_RULES)(); const goal = 6; let got = 0, miss = 0; actGot = 0;
+    const card = document.createElement('div'); card.className = 'rule-card';
+    card.innerHTML = `<span class="rq">${level() === 'talk' ? `${S.name === NM() ? S.name : NM()}의 수수께끼!` : '규칙'}</span><b>${rule.title}</b>만 톡!`;
+    bottom.appendChild(card);
+    const hint = () => { $('act-hint').innerHTML = `맞힌 방울 ${got} / ${goal}${miss ? ` · 앗! ${miss}` : ''}`; };
+    hint();
+    if (level() === 'talk') actSay(S.kind === 'bunny' ? '내가 문제 낼게! 규칙에 맞는 방울만 터뜨려 줘!' : '수수께끼 방울이야. 규칙에 맞는 것만 톡 해 줘!');
+    let n = 0;
+    const spawn = () => {
+      const ok = n % 2 === 0 ? Math.random() < .6 : Math.random() < .45; n++;
+      const b = document.createElement('div'); b.className = 'bub mbub';
+      b.style.setProperty('--s', R(92, 118) + 'px'); b.style.setProperty('--t', R(7, 10) + 's');
+      b.style.left = R(3, 80) + '%'; b.style.top = '100%';
+      b.innerHTML = `<span>${rule.gen(ok)}</span>`;
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); if (b.classList.contains('popped') || b.classList.contains('wrong')) return;
+        if (ok) {
+          b.classList.add('popped'); Snd.ok(); got++; actGot = got; hint(); actPet('happy');
+          const r = b.getBoundingClientRect(), f = field.getBoundingClientRect(), p = $('act-pet').getBoundingClientRect();
+          const st = document.createElement('i'); st.className = 'star-fly'; st.style.left = (r.left - f.left + r.width / 2 - 12) + 'px'; st.style.top = (r.top - f.top + r.height / 2 - 12) + 'px';
+          st.style.setProperty('--tx', (p.left - r.left + p.width / 2 - r.width / 2) + 'px'); st.style.setProperty('--ty', (p.top - r.top + p.height * .3 - r.height / 2) + 'px');
+          field.appendChild(st); setTimeout(() => { st.remove(); Snd.heart(); }, 700);
+          setTimeout(() => b.remove(), 260);
+          if (got >= goal) { clearInterval(iv); setTimeout(finish, 700); }
+        } else {
+          b.classList.add('wrong'); Snd.no(); miss++; hint(); actPet('sad'); setTimeout(() => actPet('idle'), 700);
+          if (level() === 'talk') actSay(pick(['앗, 그건 규칙이랑 달라!', '음… 다시 한번 볼까?', '아깝다! 그건 아니야.']));
+        }
+      });
+      field.appendChild(b); setTimeout(() => b.remove(), 11000);
+    };
+    spawn(); const iv = setInterval(spawn, 1100); actClean.push(() => { clearInterval(iv); field.querySelectorAll('.mbub,.star-fly').forEach(e => e.remove()); });
+  }
+
   // ---------- 고르기 창 (공용) ----------
   function openPick(title, sub, list, cb, place = false) {
     $('choose-title').textContent = title; $('choose-sub').textContent = sub;
@@ -487,20 +602,28 @@
     $('out-title').textContent = OUT.type === 'cook' ? `${FOODS[OUT.id].name} 만들기` : `${PLACES[OUT.id].name} 산책`;
     $('stage-bg').dataset.place = '';
     drawOutPet('idle'); renderOut(); speak('out', line(OUT.type === 'cook' ? 'cookStart' : 'walkStart'));
-    if (OUT.type === 'walk') placeOutPet(0, true); else $('opet').style.left = '';
+    if (OUT.type === 'walk') placeOutPet(0, true); else { $('opet').style.left = ''; $('cook-fx').innerHTML = ''; placeCookFx(); }
     nextQ();
   }
   function renderOut() {
     if (OUT.type === 'cook') {
       const F = FOODS[OUT.id];
       $('stage-bg').innerHTML = Scene.kitchen(OUT.step / OUT.n, F.color, OUT.step >= OUT.n);
-      $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${F.steps[OUT.step]}` : '완성!';
+      $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${F.steps[OUT.step][0]}` : '완성!';
     } else if ($('stage-bg').dataset.place !== OUT.id) {
       const r = $('stage').getBoundingClientRect();
       $('stage-bg').innerHTML = Scene.path(OUT.id, OUT.n, false, r.width / Math.max(1, r.height)); $('stage-bg').dataset.place = OUT.id;
     }
     $('steps').innerHTML = Array.from({ length: OUT.n }, (_, i) => `<i class="${OUT.res[i] === true ? 'ok' : OUT.res[i] === false ? 'no' : i === OUT.step ? 'cur' : ''}"></i>`).join('');
     $('hud-combo').textContent = S.combo || 0;
+  }
+  // 부엌 그림(600×420, 아래 가운데 맞춤)에서 그릇 위치를 찾아 애니메이션 상자를 놓는다
+  function placeCookFx() {
+    const st = $('stage').getBoundingClientRect(), w = st.width, h = st.height;
+    const sc = Math.max(w / 600, h / 420), ox = (w - 600 * sc) / 2, oy = h - 420 * sc;
+    const x = ox + 360 * sc, y = oy + 280 * sc, bw = 160 * .66 * sc;
+    const fx = $('cook-fx'), W = bw * 1.7, H = bw * 1.9;
+    Object.assign(fx.style, { left: (x - W / 2) + 'px', top: (y - H * .82) + 'px', width: W + 'px', height: H + 'px' });
   }
   function drawOutPet(mood) { $('opet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
   function placeOutPet(i, instant) {
@@ -552,8 +675,16 @@
   function advance() {
     if (!$('scr-out').classList.contains('on')) return;
     if (OUT.type === 'cook') {
-      const d = $('drop'); d.style.background = FOODS[OUT.id].color; d.classList.remove('go'); void d.offsetWidth; d.classList.add('go'); Snd.pop();
-      setTimeout(() => { renderOut(); if (OUT.step >= OUT.n) finishOut(); else nextQ(); }, 650);
+      // 방금 푼 단계의 동작을 보여 준 뒤 그릇을 채우고 다음 단계로
+      const F = FOODS[OUT.id], st = F.steps[OUT.step - 1]; placeCookFx();
+      $('step-label').textContent = `${OUT.step}. ${st[0]}`;
+      const T = CookFX.play($('cook-fx'), $('stage-bg'), st[1], st[2], F.color, OUT.res[OUT.step - 1]);
+      setTimeout(() => Snd.pop(), Math.min(700, T * .5));
+      setTimeout(() => {
+        renderOut();
+        if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); setTimeout(finishOut, CookFX.done($('cook-fx'), Scene.food(OUT.id))); }
+        else nextQ();
+      }, T);
     } else {
       placeOutPet(Math.min(OUT.step, OUT.n - 1)); const p = $('opet'); p.classList.remove('walking'); void p.offsetWidth; p.classList.add('walking');
       const P = PLACES[OUT.id];

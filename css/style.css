@@ -11,7 +11,7 @@
   --r:22px;
   --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
   --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
-  --fh:"Jua","Gowun Dodum",system-ui,sans-serif;
+  --fh:"Quicksand","Jua","Gowun Dodum",system-ui,sans-serif; /* 숫자·소수점은 Quicksand(점이 쉼표처럼 보이지 않게), 한글은 Jua */
   --fb:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}

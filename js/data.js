@@ -2,12 +2,12 @@
 // 저장 데이터는 id로 가리키므로 id를 바꾸지 말고, 새 것은 뒤에 덧붙인다.
 const DATA = (() => {
   const FOODS = {
-    milk:    { name: '딸기 우유',   color: '#F7A9C6', steps: ['딸기 씻기', '딸기 으깨기', '우유 붓기', '꿀 한 숟갈', '살살 흔들기'] },
-    cake:    { name: '당근 케이크', color: '#FFB27A', steps: ['당근 갈기', '밀가루 넣기', '반죽 섞기', '오븐에 굽기', '크림 바르기'] },
-    cotton:  { name: '솜사탕',      color: '#C9B8FF', steps: ['설탕 붓기', '기계 켜기', '빙글빙글 감기', '색 입히기', '막대 꽂기'] },
-    cookie:  { name: '별 쿠키',     color: '#FFD36E', steps: ['버터 녹이기', '반죽하기', '별 모양 찍기', '오븐에 굽기', '반짝 가루'] },
-    pudding: { name: '구름 푸딩',   color: '#FFF1C9', steps: ['우유 데우기', '달걀 풀기', '컵에 붓기', '찜기에 찌기', '구름 크림'] },
-    pancake: { name: '꿀 팬케이크', color: '#F2C27B', steps: ['반죽 만들기', '팬 달구기', '동그랗게 붓기', '뒤집기', '꿀 뿌리기'] }
+    milk:    { name: '딸기 우유',   color: '#F7A9C6', steps: [['딸기 넣기', 'drop', 'berry'], ['딸기 으깨기', 'mash'], ['우유 붓기', 'pour', 'milk'], ['꿀 한 숟갈', 'pour', 'honey'], ['살살 흔들기', 'shake']] },
+    cake:    { name: '당근 케이크', color: '#FFB27A', steps: [['당근 넣기', 'drop', 'carrot'], ['밀가루 넣기', 'pour', 'flour'], ['반죽 섞기', 'stir'], ['오븐에 굽기', 'bake'], ['크림 올리기', 'top', 'cream']] },
+    cotton:  { name: '솜사탕',      color: '#C9B8FF', steps: [['설탕 붓기', 'pour', 'sugar'], ['기계 켜기', 'spin'], ['빙글빙글 감기', 'stir'], ['색 가루 뿌리기', 'sprinkle'], ['막대 꽂기', 'drop', 'stick']] },
+    cookie:  { name: '별 쿠키',     color: '#FFD36E', steps: [['버터 넣기', 'drop', 'butter'], ['반죽하기', 'stir'], ['별 모양 찍기', 'mash'], ['오븐에 굽기', 'bake'], ['반짝 가루', 'sprinkle']] },
+    pudding: { name: '구름 푸딩',   color: '#FFF1C9', steps: [['우유 붓기', 'pour', 'milk'], ['달걀 톡', 'drop', 'egg'], ['살살 섞기', 'stir'], ['찜기에 찌기', 'bake'], ['구름 크림', 'top', 'cream']] },
+    pancake: { name: '꿀 팬케이크', color: '#F2C27B', steps: [['밀가루 넣기', 'pour', 'flour'], ['달걀 톡', 'drop', 'egg'], ['반죽 섞기', 'stir'], ['휙 뒤집기', 'flip'], ['꿀 뿌리기', 'pour', 'honey']] }
   };
   const PLACES = {
     garden: { name: '꽃밭',     sky: ['#DDF1FF', '#F3FBFF'], ground: '#BFE8C8', finds: ['flower', 'plant'], sights: ['나비가 팔랑팔랑 날아가요', '꽃향기가 솔솔 나요', '무당벌레가 인사해요'] },
@@ -31,8 +31,8 @@ const DATA = (() => {
   };
   const CARE = {
     pet:    { name: '쓰다듬기',   wish: '쓰다듬어 줬으면 좋겠어…' },
-    bath:   { name: '거품 목욕',  wish: '몸이 꼬질꼬질해. 씻고 싶어!' },
-    play:   { name: '비눗방울 놀이', wish: '같이 비눗방울 놀이 하고 싶어!' },
+    bath:   { name: '뽀득뽀득 목욕',  wish: '몸이 꼬질꼬질해. 씻고 싶어!' },
+    play:   { name: '수수께끼 방울 놀이', wish: '방울 놀이 하고 싶어! 내가 문제 낼게!' },
     nap:    { name: '낮잠 재우기', wish: '하암… 낮잠 자고 싶어' }
   };
   // 친구마다 좋아하는 것과 싫어하는 것 (친구 수첩에서 하나씩 알아낸다)

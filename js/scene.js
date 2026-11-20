@@ -101,11 +101,11 @@ const Scene = (() => {
       <rect x="40" y="60" width="150" height="90" rx="14" fill="#fff" opacity=".9"/><path d="M60 80 h110 M60 105 h80 M60 130 h95" stroke="#F3D3E2" stroke-width="8" stroke-linecap="round"/>
       <g transform="translate(440 60)"><rect width="110" height="110" rx="55" fill="#fff" opacity=".9"/><path d="M55 25 v30 l20 12" stroke="#E5679A" stroke-width="6" stroke-linecap="round" fill="none"/></g>
       <rect x="0" y="300" width="600" height="120" fill="#F7D9C4"/><rect x="0" y="292" width="600" height="18" rx="6" fill="#fff"/>
-      <g transform="translate(360 300) scale(.66) translate(-300 -300)"><ellipse cx="300" cy="352" rx="100" ry="14" fill="#E9C2A9" opacity=".7"/>
+      <g class="bowlg"><g transform="translate(360 300) scale(.66) translate(-300 -300)"><ellipse cx="300" cy="352" rx="100" ry="14" fill="#E9C2A9" opacity=".7"/>
       <path d="M220 270 h160 a80 70 0 0 1 -160 0z" fill="#EAF4FF" stroke="#9EC2F2" stroke-width="5"/>
       <rect x="220" y="${340 - h}" width="160" height="${h + 2}" fill="${color}" clip-path="url(#kb)" opacity=".9"/>
       <path d="M210 270 h180" stroke="#9EC2F2" stroke-width="10" stroke-linecap="round"/>
-      ${done ? '<g fill="#FFD36E"><circle cx="250" cy="240" r="5"/><circle cx="350" cy="236" r="6"/><circle cx="300" cy="222" r="4"/></g>' : ''}</g>
+      ${done ? '<g fill="#FFD36E"><circle cx="250" cy="240" r="5"/><circle cx="350" cy="236" r="6"/><circle cx="300" cy="222" r="4"/></g>' : ''}</g></g>
     `, 'xMidYMax slice');
   }
 
