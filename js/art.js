@@ -40,6 +40,18 @@ const Art = (() => {
       mouth = `<path d="M-3.5 11.5 q1.75 -2.6 3.5 0 q1.75 2.6 3.5 0" stroke="${ink}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
         <ellipse cx="-15.5" cy="9.5" rx="6.6" ry="4.4" fill="#F7A0C1" opacity=".75"/><ellipse cx="15.5" cy="9.5" rx="6.6" ry="4.4" fill="#F7A0C1" opacity=".75"/>
         <g transform="translate(19 -13)" stroke="#E5679A" stroke-width="1.8" stroke-linecap="round"><path d="M-3 -1 q3 0 3 -3 M3 -1 q-3 0 -3 -3 M-3 3 q3 0 3 3 M3 3 q-3 0 -3 3" fill="none"/></g>`;
+    } else if (mood === 'chomp') {
+      // 앙! 크게 벌린 입
+      eyes = `<path d="M-12 3 Q-8.5 -2.5 -5 3 M5 3 Q8.5 -2.5 12 3" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+      mouth = `<ellipse cx="0" cy="11.5" rx="5.6" ry="5.2" fill="#C9466F"/><ellipse cx="0" cy="14" rx="3.4" ry="2" fill="#FF9CB8"/>`;
+    } else if (mood === 'chew') {
+      // 오물오물: 볼이 빵빵
+      eyes = `<path d="M-12 3 Q-8.5 -2.5 -5 3 M5 3 Q8.5 -2.5 12 3" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M-3.5 10.5 q1.75 2 3.5 0 q1.75 2 3.5 0" stroke="${ink}" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="-15" cy="9" rx="7.4" ry="5.6" fill="#F7A0C1" opacity=".55"/><ellipse cx="15" cy="9" rx="7.4" ry="5.6" fill="#F7A0C1" opacity=".55"/>`;
+    } else if (mood === 'sip') {
+      // 쪼옥: 오므린 입
+      eyes = `<path d="M-12 3 Q-8.5 5.5 -5 3 M5 3 Q8.5 5.5 12 3" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+      mouth = `<ellipse cx="0" cy="11" rx="2.6" ry="2.4" fill="none" stroke="#C9466F" stroke-width="2"/>`;
     } else if (mood === 'sleep') {
       eyes = `<path d="M-12 3 Q-8.5 5.5 -5 3 M5 3 Q8.5 5.5 12 3" stroke="${ink}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
       mouth = `<ellipse cx="0" cy="11" rx="1.8" ry="2.2" fill="${ink}" opacity=".7"/>`;
@@ -64,8 +76,8 @@ const Art = (() => {
       <g transform="translate(0 4)">${face(mood, '#45346A')}</g>${tear}`;
   }
   const cloudWings = (s = 1) => `<g transform="scale(${s})">
-    <path d="M-30 -2 C-50 -18 -62 -6 -54 6 C-48 14 -36 10 -30 4 Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="2"/>
-    <path d="M30 -2 C50 -18 62 -6 54 6 C48 14 36 10 30 4 Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="2"/></g>`;
+    <path class="wing wl" d="M-30 -2 C-50 -18 -62 -6 -54 6 C-48 14 -36 10 -30 4 Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="2"/>
+    <path class="wing wr" d="M30 -2 C50 -18 62 -6 54 6 C48 14 36 10 30 4 Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="2"/></g>`;
 
   function eggC(stage, mood) {
     const crack = stage >= 2;
@@ -180,6 +192,12 @@ const Art = (() => {
     const [x, y, sc] = ACC_POS[kind][acc];
     return `<g transform="translate(${x} ${y}) scale(${sc})">${ACC[acc]()}</g>`;
   }
+  // 입 위치(그림 상자 안 비율, 0~1). 먹는 애니메이션이 여기에 간식을 놓는다
+  function mouth(kind, stage) {
+    if (stage <= 2) return [.5, .62];
+    if (kind === 'bunny') { const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2; const ty = 60 - 44 * s; return [.5, (ty + 10.5 * s + 92) / 156]; }
+    const s = [0, 0, 0, 1.0, 1.16, 1.28, 1.34, 1.38, 1.42, 1.46, 1.5][stage] || 1.2; return [.5, (50 - 30 * s + 14 * s + 92) / 156];
+  }
   function draw(kind, stage, mood, acc) { installDefs(); return kind === 'bunny' ? bunny(stage, mood, acc) : cloud(stage, mood, acc); }
 
   // ---------- 작은 그림 ----------
@@ -192,5 +210,5 @@ const Art = (() => {
   };
   function icon(n) { installDefs(); return icons[n] || ''; }
 
-  return { draw, icon, star, ACC, installDefs };
+  return { draw, icon, star, ACC, installDefs, mouth };
 })();

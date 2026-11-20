@@ -309,3 +309,34 @@ body.lowfx .cfx{animation-duration:.01s!important}
 .foam.stay{animation:foamin .3s ease-out forwards}
 @keyframes foamin{from{transform:scale(.3)}to{transform:scale(1)}}
 .foam.gone{transition:opacity .35s,transform .35s;opacity:0;transform:translateY(20px) scale(.6)}
+
+/* 먹기 애니메이션 */
+.eating{position:absolute;z-index:6;pointer-events:none;transition:transform .2s ease,opacity .25s}
+.eating svg{width:100%;height:100%;overflow:visible}
+.eating.bite1{transform:scale(.78) rotate(-6deg)}
+.eating.bite2{transform:scale(.55) rotate(5deg)}
+.eating.bite3{transform:scale(.3) rotate(-4deg);opacity:.8}
+.eating.drink{transform:rotate(-28deg);transform-origin:20% 80%}
+.eating.drink.lv1{transform:rotate(-40deg) translateX(-4px)}
+.eating.drink.lv2{transform:rotate(-55deg) translateX(-6px)}
+.eating.drink.lv3{transform:rotate(-70deg) translateX(-8px);opacity:.85}
+.eating.drink.done{transform:rotate(-10deg) scale(.4);opacity:0;transition:all .45s}
+.eating.absorb{animation:absorb 1.1s ease-in forwards}
+@keyframes absorb{0%{transform:scale(1)}60%{transform:scale(.6) translateY(10px)}100%{transform:scale(0) translateY(26px);opacity:0}}
+.eat-word{position:absolute;z-index:7;font-family:var(--fh);font-size:24px;color:#E5679A;text-shadow:0 2px 0 #fff,0 0 6px #fff;pointer-events:none;white-space:nowrap;transform:translateX(-50%);animation:eatword .9s ease-out forwards}
+@keyframes eatword{0%{opacity:0;transform:translate(-50%,6px) scale(.6)}25%{opacity:1;transform:translate(-50%,-4px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}
+.crumb{position:absolute;z-index:6;width:7px;height:7px;border-radius:2px;pointer-events:none;animation:crumb .8s ease-in forwards}
+@keyframes crumb{to{transform:translate(var(--dx),70px) rotate(160deg);opacity:0}}
+
+/* 날개 생긴 구름이 날기 */
+.walker{transition:left 2.6s ease-in-out,bottom 1.3s cubic-bezier(.3,1.2,.5,1)}
+.wing{transform-box:fill-box}
+.wl{transform-origin:100% 40%}.wr{transform-origin:0% 40%}
+.walker.flying .wl{animation:flapl .22s ease-in-out infinite alternate}
+.walker.flying .wr{animation:flapr .22s ease-in-out infinite alternate}
+@keyframes flapl{from{transform:rotate(14deg)}to{transform:rotate(-22deg)}}
+@keyframes flapr{from{transform:rotate(-14deg)}to{transform:rotate(22deg)}}
+.walker.flying .pet svg{animation:flybob 1s ease-in-out infinite}
+@keyframes flybob{50%{transform:translateY(-8px) rotate(3deg)}}
+.walker.flying::after{content:"";position:absolute;left:50%;bottom:-40%;width:50%;height:12px;margin-left:-25%;border-radius:50%;background:rgba(110,80,140,.12)}
+body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}

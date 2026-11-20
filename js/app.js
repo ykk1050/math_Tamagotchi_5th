@@ -253,10 +253,15 @@
       if (!$('scr-home').classList.contains('on')) return;
       const wk = $('walker');
       if (sulking) { /* 구석에서 삐쳐 있음 */ }
-      else if (sleeping) wk.style.left = '34%';
+      else if (sleeping) { wk.style.left = '34%'; wk.style.bottom = ''; wk.classList.remove('flying'); }
       else if (S.stage >= 3 || Math.random() < .3) {
         const cur = parseFloat(wk.style.left) || 55; let nx = R(30, 80); if (Math.abs(nx - cur) < 8) nx = cur > 55 ? cur - 20 : cur + 20;
         wk.style.left = nx + '%';
+        // 날개가 생긴 구름 요정은 가끔 날아올라 방을 한 바퀴 돌다 내려온다
+        if (S.kind === 'cloud' && S.stage >= 5 && !wk.classList.contains('flying') && Math.random() < .45) {
+          wk.classList.add('flying'); wk.style.bottom = R(24, 40) + '%';
+          clearTimeout(startWander.land); startWander.land = setTimeout(() => { wk.style.bottom = ''; setTimeout(() => wk.classList.remove('flying'), 1200); }, R(2600, 4200));
+        }
         if (S.stage >= 3) { const p = $('pet'); p.classList.remove('walking'); void p.offsetWidth; p.classList.add('walking'); setTimeout(() => p.classList.remove('walking'), 2600); }
       }
       wanderT = setTimeout(step, R(4500, 8000));
@@ -283,7 +288,7 @@
   const L3 = (cat) => lineFrom(LINES3[S.kind][level()][cat], 'l3' + cat);
   function runAway(fromX) {
     const wk = $('walker'), cur = parseFloat(wk.style.left) || 55;
-    wk.classList.add('run'); wk.classList.toggle('egg', S.stage <= 2);
+    wk.classList.remove('flying'); wk.style.bottom = ''; wk.classList.add('run'); wk.classList.toggle('egg', S.stage <= 2);
     wk.style.left = (fromX != null ? (fromX > 50 ? R(14, 22) : R(78, 86)) : (cur > 50 ? R(14, 22) : R(78, 86))) + '%';
     setTimeout(() => wk.classList.remove('run', 'egg'), 800);
   }
@@ -412,11 +417,45 @@
       if (!on) return; on = false; s.classList.remove('drag');
       const a = s.getBoundingClientRect(), p = $('act-pet').getBoundingClientRect();
       if (Math.hypot(a.left + a.width / 2 - (p.left + p.width / 2), a.top + a.height / 2 - (p.top + p.height * .5)) < p.width * .45) {
-        s.classList.add('gone'); Snd.munch(); actPet('happy'); setTimeout(finish, 700);
+        s.classList.add('gone'); eat(field, foodId, finish);
       } else s.style.transform = '';
     };
     s.addEventListener('pointerup', up); s.addEventListener('pointercancel', up);
     bottom.appendChild(s);
+  }
+  // 입에 들어간 간식을 실제로 먹는 모습: 딱딱한 것은 세 입에 냠냠, 마실 것은 쭈욱~ 꿀꺽
+  function eat(field, foodId, finish) {
+    const p = $('act-pet').getBoundingClientRect(), f = field.getBoundingClientRect();
+    const [mx, my] = Art.mouth(S.kind, S.stage); const x = p.left - f.left + p.width * mx, y = p.top - f.top + p.height * my;
+    const sz = Math.max(56, p.width * .3), egg = S.stage <= 2, drink = foodId === 'milk';
+    const el = document.createElement('div'); el.className = 'eating' + (drink ? ' drink' : ''); el.innerHTML = Scene.food(foodId);
+    Object.assign(el.style, { width: sz + 'px', height: sz + 'px', left: (x - sz / 2 + (drink ? sz * .45 : 0)) + 'px', top: (y - sz * (drink ? .7 : .55)) + 'px' });
+    field.appendChild(el);
+    const pop = (t, dx = 0) => { const w = document.createElement('div'); w.className = 'eat-word'; w.textContent = t; w.style.left = (x + dx) + 'px'; w.style.top = (y - sz * .9) + 'px'; field.appendChild(w); setTimeout(() => w.remove(), 900); };
+    const crumbs = () => { const c = FOODS[foodId].color; for (let i = 0; i < 5; i++) { const k = document.createElement('i'); k.className = 'crumb'; k.style.background = c; k.style.left = (x + R(-sz * .3, sz * .3)) + 'px'; k.style.top = (y + 4) + 'px'; k.style.setProperty('--dx', R(-30, 30) + 'px'); field.appendChild(k); setTimeout(() => k.remove(), 800); } };
+    const T = [];
+    const at = (ms, fn) => T.push(setTimeout(fn, ms));
+    actClean.push(() => { T.forEach(clearTimeout); el.remove(); });
+    if (egg) {
+      // 알은 간식을 품듯 빨아들인다
+      el.classList.add('absorb'); at(150, () => Snd.munch()); at(700, () => { pop('(쏙!)'); actPet('happy'); }); at(1300, finish); return;
+    }
+    if (drink) {
+      actPet('sip'); pop(S.kind === 'bunny' ? '쭈욱~' : '쪼옥~', sz * .3);
+      [0, 380, 760, 1140].forEach(t => at(t, () => Snd.sip()));
+      at(300, () => el.classList.add('lv1')); at(800, () => el.classList.add('lv2')); at(1300, () => el.classList.add('lv3'));
+      at(1700, () => { el.classList.add('done'); actPet('chew'); pop('꿀꺽!'); Snd.munch(); });
+      at(2300, () => { actPet('happy'); if (Math.random() < .35 && level() !== 'egg') pop(S.kind === 'bunny' ? '끅! 헤헤' : '꺼억? 히히'); });
+      at(2700, finish); return;
+    }
+    // 냠 · 오물오물 세 번
+    [0, 750, 1500].forEach((t, i) => {
+      at(t, () => { actPet('chomp'); Snd.munch(); el.className = 'eating bite' + (i + 1); crumbs(); pop(pick(['냠!', '앙!', '냠냠']), R(-20, 20)); });
+      at(t + 300, () => actPet('chew'));
+    });
+    at(2250, () => { el.remove(); actPet('chew'); pop('오물오물…'); });
+    at(2800, () => { actPet('happy'); if (Math.random() < .3) pop(S.kind === 'bunny' ? '끅! 헤헤' : '꺼억? 히히'); });
+    at(3200, finish);
   }
   function actRub(field, bottom, finish) {
     $('act-hint').textContent = '손가락으로 살살 문질러 줘요';

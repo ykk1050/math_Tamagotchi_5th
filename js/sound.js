@@ -39,6 +39,7 @@ const Snd = (() => {
       const base = kind === 'bunny' ? 820 : 620;
       for (let i = 0; i < n; i++) { const f = base + Math.random() * 260; tone(f, .09, 'sine', .14, i * .13, f * 1.25); }
     },
+    sip() { tone(520, .22, 'sine', .12, 0, 760); },
     ouch() { tone(900, .12, 'triangle', .22, 0, 520); },
     cry(kind = 'cloud') {
       // 으앙~ : 떨리며 내려가는 소리 세 번
