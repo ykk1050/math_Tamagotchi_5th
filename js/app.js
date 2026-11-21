@@ -500,9 +500,22 @@
       carry();
       const back = R(40, 62);
       setTimeout(() => goTo(back, () => {
-        // 내려놓기: 앞으로 톡 떨어뜨린다
-        ballState.carry = false; cancelAnimationFrame(ballState.craf); ballState.sc = 1;
-        ballState.vx = (Math.random() < .5 ? -1 : 1) * 160; ballState.vy = -260; throwBall(true); ballState.fetching = false;
+        // 내려놓기: 고개를 숙여 바로 앞 바닥에 살며시 놓는다
+        ballState.carry = false; cancelAnimationFrame(ballState.craf);
+        const rr2 = $('room').getBoundingClientRect(), pr2 = $('pet').getBoundingClientRect();
+        const [mx2, my2] = Art.mouth(S.kind, S.stage), s0 = .8, side = Math.random() < .5 ? -1 : 1;
+        const x0 = pr2.left - rr2.left + pr2.width * mx2 - ballSize() / 2;
+        const y0 = S.kind === 'cloud' ? pr2.top - rr2.top + pr2.height * (my2 - .34) - ballSize() * s0 * .55 : pr2.top - rr2.top + pr2.height * my2 - ballSize() * .38;
+        const x1 = Math.max(0, Math.min(rr2.width - ballSize(), pr2.left - rr2.left + pr2.width / 2 - ballSize() / 2 + side * pr2.width * .42)), y1 = floorY();
+        const p2 = $('pet'); p2.classList.remove('bow'); void p2.offsetWidth; p2.classList.add('bow');
+        const t0 = performance.now(), D = 650;
+        const ease = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        const lower = (now) => {
+          const t = Math.max(0, Math.min(1, (now - t0) / D)), e = ease(t);
+          ballState.x = x0 + (x1 - x0) * e; ballState.y = y0 + (y1 - y0) * e - Math.sin(Math.PI * t) * 10; ballState.sc = s0 + (1 - s0) * e; drawBall();
+          if (t < 1) ballState.craf = requestAnimationFrame(lower); else { ballState.sc = 1; drawBall(); setTimeout(() => p2.classList.remove('bow'), 200); }
+        };
+        ballState.craf = requestAnimationFrame(lower); ballState.fetching = false;
         speak('home', L4('ballBack')); heartAtPet(); addNeed('mood', 4); addNeed('energy', -2);
         if (S.playToday < 10) { S.playToday++; addFriend(1); } renderNeeds(); save();
       }, true), 500);

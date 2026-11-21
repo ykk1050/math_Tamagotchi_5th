@@ -529,3 +529,6 @@ body.lowfx .wl{transition-duration:.4s}
 .spk{display:inline-block;font-family:var(--fh);font-weight:400;color:var(--mint-d);margin-right:4px}
 .nb-portrait{width:110px;height:110px;margin:0 auto}.nb-portrait svg{width:100%;height:100%}
 .nb-wait{font-size:18px;color:var(--ink-3);font-weight:400}
+
+.walker .pet.bow svg{animation:bowdown .65s ease-in-out}
+@keyframes bowdown{40%{transform:rotate(10deg) translateY(6px) scale(1.02,.96)}100%{transform:none}}
