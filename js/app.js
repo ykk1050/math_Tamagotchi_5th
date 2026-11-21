@@ -288,6 +288,7 @@
       else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
       else if (ln && level() === 'talk') speak('home', line(ln));
       else if (w && level() === 'talk' && Math.random() < .5) speak('home', wishSay(w));
+      else if (level() === 'talk' && S.read && Object.keys(S.read).length && Math.random() < .3) speak('home', BOOKS[pick(Object.keys(S.read))].mem);
       else speak('home', level() === 'talk' && Math.random() < .4 ? line('happy') : line('idle'));
     }
     idleT = setTimeout(idleTalk, 22000);
@@ -414,7 +415,7 @@
         renderNeeds(); save();
       });
     } else if (id === 'shelf') {
-      goTo(Math.max(26, cx), () => { react('happy', 'squish'); setTimeout(openRiddle, 450); });
+      goTo(Math.max(26, cx), () => { react('happy', 'squish'); speak('home', level() === 'talk' ? pick(['같이 책 읽자!', '오늘은 무슨 책 읽을까?']) : L3('care')); setTimeout(openShelf, 500); });
     } else if (id === 'bed') {
       goTo(cx, () => {
         // 침대 위로 올라가서 뒹군다
@@ -880,6 +881,169 @@
   window.addEventListener('resize', () => { if (editing) renderEdit(); });
   $('btn-deco').onclick = () => { Snd.tap(); poked(); editing ? exitEdit() : enterEdit(); };
 
+  // =====================================================================
+  // 그림책: 책장에서 골라 친구와 한 쪽씩 읽고, 마지막 장의 '책 속 수수께끼'를 푼다
+  // =====================================================================
+  const BOOKS = {
+    cloudland: { title: '구름 나라의 생일 잔치', color: '#C9B8FF', from: 'start', mem: '구름 나라 생일 잔치 이야기 또 읽고 싶다!',
+      pages: ['구름 나라에 아기 구름 뭉게가 살았어요. 오늘은 뭉게의 생일이에요.', '친구 구름들이 케이크를 만들었어요. 케이크를 똑같이 4조각으로 나누었더니 한 조각은 전체의 1/4이 되었어요.', '그런데 친구가 한 명 더 왔어요! 이번엔 5조각으로 나누니 한 조각이 1/5이 되었어요. 조각은 조금 작아졌지만 모두 웃었어요.', '뭉게는 생각했어요. "나눠 먹으니까 더 달콤해!" 그날 밤 하늘에는 무지개 구름이 떴대요.'],
+      chat: ['케이크를 나누면 조각이 작아져도 기분은 커져!', '나도 생일 때 이렇게 나눠 먹고 싶어.'] },
+    moonrabbit: { title: '달토끼의 떡방아', color: '#FFE29A', from: 'start', mem: '달토끼 떡방아 이야기 기억나? 쿵덕쿵덕!',
+      pages: ['둥근 보름달에 달토끼가 살았어요. 달토끼는 매일 떡방아를 찧었어요.', '한 번 찧을 때마다 떡이 3개씩 생겼어요. 2번 찧으면 6개, 3번 찧으면 9개!', '"규칙이 보인다!" 달토끼는 신이 났어요. "찧은 횟수에 3을 곱하면 떡의 수야."', '달토끼는 만든 떡을 별님들에게 나눠 주었어요. 그래서 밤하늘 별들은 늘 배가 부르대요.'],
+      chat: ['쿵덕쿵덕! 규칙을 찾으면 계산이 쉬워져.', '떡 먹고 싶다… 달토끼한테 하나만 달라고 할까?'] },
+    owlstars: { title: '별을 세는 부엉이', color: '#9C86C9', from: 'owl', mem: '부엉이 박사님처럼 별을 어림해서 세 보고 싶어.',
+      pages: ['별빛 언덕의 부엉이 박사는 밤마다 별을 셌어요.', '"하나, 둘, 셋… 1,467개!" 너무 많아서 머리가 빙글빙글했어요.', '그래서 박사는 반올림을 쓰기로 했어요. "백의 자리까지 반올림하면 약 1,500개구나!"', '어림하니 별 세기가 훨씬 쉬워졌어요. 박사는 기분 좋게 "부엉~" 하고 노래했대요.'],
+      chat: ['어림하면 큰 수도 무섭지 않아!', '나도 오늘 밤 별 세어 볼래.'] },
+    berryhide: { title: '딸기밭 숨바꼭질', color: '#F7A0C1', from: 'hedgehog', mem: '딸기밭 숨바꼭질처럼 우리도 숨바꼭질하자!',
+      pages: ['딸기밭에서 고슴도치 도치와 친구들이 숨바꼭질을 했어요.', '도치는 가로 8 m, 세로 5 m인 딸기밭 둘레를 한 바퀴 돌며 친구들을 찾았어요. 둘레는 26 m였어요.', '친구들은 딸기 잎 뒤에 쏙쏙 숨었어요. 딸기밭 넓이가 40 m²나 되어서 찾기가 쉽지 않았어요.', '마지막으로 찾은 친구는 딸기를 먹다 들킨 토끼였어요. 모두 깔깔 웃었대요.'],
+      chat: ['둘레는 한 바퀴, 넓이는 안쪽 전부!', '딸기 먹다 들킨 토끼… 혹시 나 아니겠지?'] },
+    seafriends: { title: '바닷속 친구들', color: '#9EC2F2', from: 'penguin', mem: '바닷속 친구들 책에 나온 문어 정말 귀여웠어.',
+      pages: ['펭귄 펭이는 바닷속 친구들을 만나러 풍덩 들어갔어요.', '문어는 다리가 8개예요. 문어 3마리가 모이니 다리가 모두 24개나 되었어요.', '물고기 떼는 0.5 m씩 헤엄치는 걸 4번 했어요. 모두 2 m를 간 셈이에요.', '펭이는 친구들과 손을 잡고 빙글빙글 춤을 추었어요. 바다가 반짝반짝 빛났대요.'],
+      chat: ['문어 다리 24개! 손잡기 놀이 하면 엄청 길겠다.', '나도 바다에서 헤엄쳐 보고 싶어!'] },
+    rainbow: { title: '무지개 다리 건너기', color: '#8FE0C9', from: 'squirrel', mem: '무지개 다리 책처럼 우리도 무지개 다리 건너 보자!',
+      pages: ['비가 그친 뒤 꽃밭에 무지개 다리가 생겼어요.', '다람쥐 토리는 다리를 건너고 싶었어요. 다리는 접으면 양쪽이 똑같이 겹치는 선대칭 모양이었어요.', '토리는 다리 가운데 대칭축에 서서 양쪽을 바라보았어요. 왼쪽과 오른쪽 색깔이 똑같았어요.', '다리 끝에는 도토리가 가득한 상자가 있었어요. 토리는 친구들과 나눠 먹었대요.'],
+      chat: ['접으면 똑같이 겹치는 모양, 선대칭!', '무지개 다리 끝에 뭐가 있을지 궁금해.'] }
+  };
+  const BOOK_FROM = { owl: '부엉이 박사', hedgehog: '고슴도치 도치', penguin: '펭귄 펭이', squirrel: '다람쥐 토리' };
+  function bookCover(id) {
+    const B = BOOKS[id], m = {
+      cloudland: '<g fill="#fff"><circle cx="34" cy="50" r="12"/><circle cx="48" cy="44" r="15"/><circle cx="62" cy="50" r="11"/><rect x="24" y="50" width="48" height="10" rx="5"/></g><path d="M40 30 l3 6 6 .6 -4.5 4 1.3 6 -5.8 -3.2 -5.8 3.2 1.3 -6 -4.5 -4 6 -.6z" fill="#FFE29A"/>',
+      moonrabbit: '<circle cx="48" cy="46" r="20" fill="#FFF6C9"/><ellipse cx="44" cy="36" rx="3.4" ry="9" fill="#fff" stroke="#E5679A" stroke-width="1.4"/><ellipse cx="52" cy="36" rx="3.4" ry="9" fill="#fff" stroke="#E5679A" stroke-width="1.4"/><circle cx="48" cy="50" r="9" fill="#fff" stroke="#E5679A" stroke-width="1.4"/>',
+      owlstars: '<circle cx="40" cy="46" r="8" fill="#fff"/><circle cx="56" cy="46" r="8" fill="#fff"/><circle cx="40" cy="46" r="3.4" fill="#4A3552"/><circle cx="56" cy="46" r="3.4" fill="#4A3552"/>' + [[24, 26], [70, 30], [48, 22], [30, 64], [68, 62]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.4" fill="#FFF3B0"/>`).join(''),
+      berryhide: '<path d="M48 34 C64 30 70 46 64 58 C60 66 36 66 32 58 C26 46 32 30 48 34Z" fill="#F2678F" stroke="#C9466F" stroke-width="2"/><path d="M40 32 l4 4 4 -6 4 6 4 -4 -2 6 h-12z" fill="#7FCF95"/>',
+      seafriends: '<path d="M20 58 q8 -8 16 0 t16 0 t16 0 t16 0" stroke="#fff" stroke-width="4" fill="none"/><path d="M40 30 c14 0 20 14 14 24 l-28 0 c-6 -10 0 -24 14 -24z" fill="#FFD3C4" stroke="#E7957C" stroke-width="2"/>',
+      rainbow: '<g fill="none" stroke-width="5"><path d="M22 62 a26 26 0 0 1 52 0" stroke="#F7A0C1"/><path d="M28 62 a20 20 0 0 1 40 0" stroke="#FFD36E"/><path d="M34 62 a14 14 0 0 1 28 0" stroke="#9EC2F2"/></g>'
+    }[id];
+    return `<svg viewBox="0 0 96 120" aria-hidden="true"><rect x="6" y="4" width="84" height="112" rx="8" fill="${B.color}" stroke="rgba(74,53,82,.25)" stroke-width="2"/><rect x="6" y="4" width="10" height="112" rx="4" fill="rgba(255,255,255,.35)"/><g transform="translate(0 6)">${m}</g><rect x="20" y="86" width="56" height="18" rx="6" fill="rgba(255,255,255,.8)"/></svg>`;
+  }
+  const ownBooks = () => { S.books = S.books || ['cloudland', 'moonrabbit']; return S.books; };
+  function openShelf() {
+    const own = ownBooks();
+    $('shelf-grid').innerHTML = Object.keys(BOOKS).map(id => {
+      const B = BOOKS[id], has = own.includes(id), n = (S.read || {})[id] || 0;
+      return `<button class="bookbtn ${has ? '' : 'lock'}" data-book="${id}"><span class="cover">${bookCover(id)}</span><b>${has ? B.title : '???'}</b><small>${has ? (n ? `${n}번 읽었어요` : '아직 안 읽었어요') : B.from === 'start' ? '' : `${BOOK_FROM[B.from]}에게 받아요`}</small></button>`;
+    }).join('');
+    $('shelf-grid').querySelectorAll('.bookbtn:not(.lock)').forEach(b => b.onclick = () => { Snd.tap(); openBook2(b.dataset.book); });
+    overlay('ov-shelf', true);
+  }
+  let rb = null; // 읽는 중인 책 { id, page }
+  function openBook2(id) {
+    overlay('ov-shelf', false); rb = { id, page: 0 };
+    $('read-cover').innerHTML = bookCover(id); $('read-pet').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
+    showPage(); overlay('ov-read', true);
+  }
+  function readSay(t) { const b = $('read-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  function showPage() {
+    const B = BOOKS[rb.id], last = rb.page >= B.pages.length;
+    $('read-title').textContent = B.title;
+    $('read-pageno').textContent = last ? '마지막 장 · 책 속 수수께끼' : `${rb.page + 1} / ${B.pages.length}`;
+    $('read-text').style.display = last ? 'none' : ''; $('read-quiz').style.display = last ? '' : 'none';
+    $('read-next').style.display = last ? 'none' : ''; $('read-close').style.display = 'none';
+    if (!last) {
+      $('read-text').textContent = B.pages[rb.page];
+      $('read-next').textContent = rb.page === B.pages.length - 1 ? '수수께끼 보기' : '다음 장 ▸';
+      const t = level() === 'talk' ? (rb.page === 1 ? B.chat[0] : rb.page === 2 ? B.chat[1] : rb.page === 0 ? pick(['이 책 재밌어 보여!', '같이 읽자!', '두근두근, 무슨 이야기일까?']) : '오, 그다음은?') : L3('care');
+      readSay(t); Snd.pop();
+    } else {
+      rq = Prob.next(S.rot, S.review, S.total); const U = Prob.UNITS[rq.unit];
+      readSay(level() === 'talk' ? '마지막 장에 수수께끼가 있어! 같이 풀어 보자.' : L3('care'));
+      const tag = $('rd-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+      $('rd-fig').innerHTML = rq.fig; $('rd-text').innerHTML = rq.q; $('rd-text').classList.toggle('long', rq.q.replace(/<[^>]+>/g, '').length > 30 || !!rq.fig);
+      const box = $('rd-choices'); box.innerHTML = ''; box.className = 'choices' + (rq.choices.length === 3 ? ' three' : '');
+      rq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (rq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => readAnswer(b, c); box.appendChild(b); });
+      rq.lock = false;
+    }
+  }
+  function readAnswer(btn, c) {
+    if (rq.lock) return; rq.lock = true; const ok = c === rq.ans, st = S.stats[rq.unit] || (S.stats[rq.unit] = { c: 0, w: 0 }); S.total++;
+    const all = [...$('rd-choices').children];
+    if (ok) { btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy += 2; Snd.ok(); readSay(L4('riddleOk') + '<br><small style="font-size:.8em;color:#7A6283">별사탕 +2</small>'); }
+    else { btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === rq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++; Snd.no(); readSay(L4('riddleNo', { a: rq.ans })); if (!S.review.some(r => r.unit === rq.unit && r.type === rq.type)) S.review.push({ unit: rq.unit, type: rq.type, due: S.total + R(3, 6) }); }
+    S.read = S.read || {}; S.read[rb.id] = (S.read[rb.id] || 0) + 1; addFriend(3); S.log.push({ e: 'read', id: rb.id });
+    $('read-close').style.display = ''; hud(); save();
+  }
+  $('read-next').onclick = () => { Snd.tap(); rb.page++; showPage(); };
+  $('read-close').onclick = () => {
+    Snd.tap(); overlay('ov-read', false); react('happy', 'hop');
+    if (S.stage < MAX_STAGE && S.xp >= STAGE_XP[S.stage + 1]) setTimeout(() => levelUp(), 300);
+  };
+  $('shelf-close').onclick = () => { Snd.tap(); overlay('ov-shelf', false); };
+  // 이웃이 처음 고마워할 때 그림책을 선물로 준다
+  function giveBook(nbId) {
+    const id = Object.keys(BOOKS).find(k => BOOKS[k].from === nbId); if (!id) return '';
+    const own = ownBooks(); if (own.includes(id)) return ''; own.push(id); return id;
+  }
+
+  // =====================================================================
+  // 산책 끝: 이웃이 왼쪽에서 걸어와 인사하고 이야기하다가, 오른쪽 문제 칸에 부탁을 낸다
+  // =====================================================================
+  const NB_CHAT = {
+    squirrel: { first: [['N', '어? 안녕! 나는 꽃밭에 사는 다람쥐 토리야.'], ['F', '안녕, 토리! 꽃밭 정말 예쁘다.'], ['N', '겨울 준비로 도토리를 모으는 중인데, 셈이 너무 어려워…'], ['F', '우리가 도와줄게!']],
+      again: [['N', '또 왔구나! 반가워!'], ['F', '토리, 도토리는 많이 모았어?'], ['N', '응! 그런데 또 궁금한 게 생겼어.']] },
+    penguin: { first: [['N', '뒤뚱뒤뚱~ 안녕! 나는 바닷가에 사는 펭귄 펭이야.'], ['F', '안녕, 펭이! 바다 냄새가 좋다.'], ['N', '물고기를 잡았는데 무게를 계산하다가 헷갈렸어.'], ['F', '같이 생각해 볼래?']],
+      again: [['N', '어서 와! 오늘 바다 엄청 반짝이지?'], ['F', '응! 펭이도 잘 지냈어?'], ['N', '응! 그런데 또 셈할 게 생겼어.']] },
+    hedgehog: { first: [['N', '앗, 손님이다! 나는 딸기밭 주인 고슴도치 도치야.'], ['F', '안녕, 도치! 딸기가 정말 많다.'], ['N', '딸기밭을 넓히려는데 계산이 막혔어. 가시는 안 찌를게!'], ['F', '헤헤, 우리가 도와줄게.']],
+      again: [['N', '또 놀러 왔구나! 딸기 하나 먹을래?'], ['F', '고마워, 도치!'], ['N', '그 대신 이번에도 하나만 도와줘.']] },
+    owl: { first: [['N', '부엉~ 별빛 언덕에 손님이 오다니. 나는 부엉이 박사라네.'], ['F', '안녕하세요, 박사님! 별이 정말 많아요.'], ['N', '허허, 별을 세다 보면 재미있는 수수께끼가 많지.'], ['F', '저희도 들려주세요!']],
+      again: [['N', '부엉, 또 왔구먼. 반갑네.'], ['F', '박사님, 오늘도 별을 세셨어요?'], ['N', '물론이지. 그래서 오늘의 수수께끼가 있다네.']] }
+  };
+  const ASK = { squirrel: '내가 내는 문제 풀어 볼래?', penguin: '내가 내는 문제, 같이 풀어 볼래?', hedgehog: '내 문제 한번 풀어 볼래?', owl: '내 수수께끼를 풀어 보겠나?' };
+  let nbs = null; // 이웃 만남 진행 상태
+  function neighborScene(done) {
+    const N = NEIGH[OUT.id]; if (!N) { done(); return; }
+    if (!S.nb) S.nb = {};
+    const met = (S.nb[N.id] || 0) > 0;
+    const lines = (met ? NB_CHAT[N.id].again : NB_CHAT[N.id].first).concat([['N', ASK[N.id]]]);
+    const el = $('nbw'); el.innerHTML = NB_ART[N.id]; el.className = 'nbw in'; el.style.display = '';
+    // 대화 중에는 문제 칸에 이웃 이름표
+    $('qtag').textContent = `${N.name}${met ? '' : ' · 처음 만났어요'}`; $('qtag').classList.remove('s1');
+    $('qfig').innerHTML = `<div class="nb-portrait">${NB_ART[N.id]}</div>`; $('qtext').innerHTML = '<span class="nb-wait">이야기하는 중… 화면을 누르면 다음 말로 넘어가요</span>'; $('qtext').classList.remove('long'); $('choices').innerHTML = '';
+    nbs = { N, lines, i: -1, done, phase: 'walk' };
+    Snd.babble(2, 'bunny');
+    setTimeout(() => { el.classList.remove('in'); el.classList.add('here'); nbs.phase = 'talk'; nextNbLine(); }, 1500);
+  }
+  function nextNbLine() {
+    if (!nbs || nbs.phase !== 'talk') return;
+    nbs.i++;
+    if (nbs.i >= nbs.lines.length) { nbs.phase = 'ask'; nbAsk(); return; }
+    const [who, t] = nbs.lines[nbs.i];
+    if (who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${t}`, { silent: true }); Snd.babble(2, 'bunny'); bounce($('nbw')); }
+    else { speak('out', level() === 'talk' ? t : line('poke')); bounce($('opet')); }
+    clearTimeout(nbs.t); nbs.t = setTimeout(nextNbLine, 2600);
+  }
+  function bounce(el) { el.classList.remove('talk'); void el.offsetWidth; el.classList.add('talk'); }
+  $('stage').addEventListener('click', () => { if (nbs && nbs.phase === 'talk') { clearTimeout(nbs.t); nextNbLine(); } });
+  function nbAsk() {
+    const N = nbs.N; nq = Prob.story(N.id); nPlace = OUT.id;
+    const U = Prob.UNITS[nq.unit] || { sem: 1, name: '' };
+    const tag = $('qtag'); tag.textContent = `${N.name}의 부탁 · ${U.sem}학기 ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+    $('qfig').innerHTML = ''; $('qtext').innerHTML = nq.q; $('qtext').classList.add('long');
+    const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (nq.choices.length === 3 ? ' three' : '');
+    nq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (nq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => nbBoardAnswer(b, c); box.appendChild(b); });
+    const qc = $('qcard'); qc.classList.remove('in'); void qc.offsetWidth; qc.classList.add('in'); nq.lock = false;
+  }
+  function nbBoardAnswer(btn, c) {
+    if (nq.lock) return; nq.lock = true; const N = nbs.N, ok = c === nq.ans; S.total++;
+    const st = S.stats[nq.unit] || (S.stats[nq.unit] = { c: 0, w: 0 }); const all = [...$('choices').children];
+    let msg;
+    if (ok) {
+      btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++;
+      S.nb[N.id] = (S.nb[N.id] || 0) + 1; const [g, n] = N.gift;
+      if (g === 'candy') S.candy += n; else { initGarden(); S.pantry[g] = (S.pantry[g] || 0) + n; }
+      const book = giveBook(N.id);
+      msg = `${N.thx}${book ? ` 그리고 이 그림책 <b>「${BOOKS[book].title}」</b>도 선물이야!` : ''}<br><small style="font-size:.8em;color:#7A6283">${g === 'candy' ? `별사탕 +${n}` : `${ING_NAME[g]} +${n}`}${book ? ' · 그림책 +1' : ''}</small>`;
+      Snd.combo(); outReact('happy', 'hop'); S.log.push({ e: 'help', id: N.id });
+      if (S.nb[N.id] === 3) setTimeout(() => toast(`<b>${N.name}</b>${Prob.jo(N.name, '이').slice(N.name.length)} 가끔 방에 놀러 온대요!`), 1500);
+    } else {
+      btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === nq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
+      Snd.no(); msg = `${N.miss}<br><small style="font-size:.8em;color:#7A6283">정답은 ${nq.ans}</small>`;
+    }
+    speak('out', `<b class="spk">${N.name}</b> ${msg}`, { silent: true }); bounce($('nbw')); save(); hud();
+    // 인사하고 왼쪽으로 걸어 나간다
+    setTimeout(() => { speak('out', `<b class="spk">${N.name}</b> ${pick(['또 놀러 와! 안녕~', '고마웠어! 다음에 또 만나!', '잘 가! 조심히 가!'])}`, { silent: true }); $('nbw').classList.add('bye'); }, 3200);
+    setTimeout(() => { $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; const d = nbs.done; nbs = null; d(); }, 5000);
+  }
+
   // ---------- 바람 들어주기 ----------
   function fulfill(t, id, where = 'home') {
     const w = S.wishes.find(x => !x.done && x.t === t && x.id === id); if (!w) return false;
@@ -1231,6 +1395,7 @@
   }
   function startWalk(id) { OUT = { type: 'walk', id, step: 0, n: 6, res: [], finds: [] }; beginOut(); }
   function beginOut() {
+    $('nbw').style.display = 'none'; nbs = null;
     if (editing) { editing = false; $('room').classList.remove('editing'); document.querySelector('.home').classList.remove('editing'); $('edit-layer').innerHTML = ''; $('edit-bar').innerHTML = ''; }
     stopBall(); clearTimeout(wanderT); clearTimeout(idleT); if (sulking) { sulking = false; clearTimeout(sulkT); $('walker').classList.remove('sulk'); }
     show('scr-out'); S.combo = 0;
@@ -1341,7 +1506,7 @@
         if (f) { OUT.finds.push(f); S.items.push(f); setTimeout(() => { speak('out', line('find', { x: ITEMS[f].name })); Snd.combo(); sparks($('ofx'), 12); }, 1200); }
         else if (OUT.step === 3) { S.candy += 3; setTimeout(() => speak('out', level() === 'talk' ? '반짝반짝! 별사탕 세 개를 주웠어!' : line('find')), 1200); }
       } else if (Math.random() < .5) setTimeout(() => speak('out', `<span style="color:#7A6283">(${pick(P.sights)})</span>`, { silent: true }), 1200);
-      setTimeout(() => { if (OUT.step >= OUT.n) finishOut(); else nextQ(); }, OUT.step === 3 ? 2400 : 1300);
+      setTimeout(() => { if (OUT.step >= OUT.n) neighborScene(finishOut); else nextQ(); }, OUT.step === 3 ? 2400 : 1300);
     }
   }
   function finishOut() {
@@ -1374,7 +1539,6 @@
       overlay('ov-result', true);
       $('rb-home').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(); };
       fulfill('place', o.id, 'out');
-      setTimeout(() => openNeighbor(o.id), 350);
     }
     save();
   }
@@ -1437,6 +1601,7 @@
       sec('좋아하는 장소', 'place', Object.keys(PLACES), id => PLACES[id].name, () => ICON.walk.replace(/#fff/g, '#55C3A3')) +
       sec('좋아하는 장식', 'acc', Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc'), id => ITEMS[id].name, id => Scene.item(id)) +
       `<div class="book-sec"><h4>산책길 이웃</h4><div class="book-items">${Object.keys(NEIGH).map(k => { const N = NEIGH[k], n = (S.nb || {})[N.id] || 0; return `<span class="bi ${n ? '' : 'unk'}"><span class="bic">${NB_ART[N.id]}</span>${n ? N.name : '???'}${n ? `<em class="love">${'♥'.repeat(Math.min(5, n))}</em>` : `<em>${PLACES[k].name}</em>`}</span>`; }).join('')}</div></div>` +
+      `<div class="book-sec"><h4>그림책</h4><div class="book-items">${Object.keys(BOOKS).map(id => { const has = ownBooks().includes(id), n = (S.read || {})[id] || 0; return `<span class="bi ${has ? '' : 'unk'}">${has ? BOOKS[id].title : '???'}${n ? `<em class="like">${n}번 읽음</em>` : ''}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>이야기</h4>${stories}</div>` +
       `<div class="book-sec"><h4>함께한 기록</h4><div class="book-items"><span class="bi">함께한 날 ${S.days}일</span><span class="bi">맞힌 문제 ${S.correct}개</span><span class="bi">최고 연속 ${S.best}번</span><span class="bi">우정 ${S.flv}단계</span></div></div>`;
     $('book-body').querySelectorAll('.story-btn:not(.lock)').forEach(b => b.onclick = () => { Snd.tap(); playStory(+b.dataset.i); });
@@ -1505,6 +1670,7 @@
     else if (log.some(e => e.e === 'wish')) out.push(talk ? '내 바람을 들어줘서 고마웠어.' : '바람을 들어줬어요.');
     if (log.some(e => e.e === 'party')) out.push(talk ? '오늘은 내 생일이었어! 케이크도, 풍선도, 고깔모자도… 평생 잊지 못할 거야.' : '생일 파티를 했어요!');
     [...new Set(log.filter(e => e.e === 'help').map(e => e.id))].forEach(id => { const N = Object.values(NEIGH).find(x => x.id === id); out.push(talk ? `${N.name}의 부탁을 들어줬어. 우리 이웃이 생겼어!` : `${N.name}${Prob.jo(N.name, '을').slice(N.name.length)} 도와줬어요.`); });
+    [...new Set(log.filter(e => e.e === 'read').map(e => e.id))].forEach(id => out.push(talk ? `같이 「${BOOKS[id].title}」${Prob.hasBatchim(BOOKS[id].title) ? '을' : '를'} 읽었어. ${BOOKS[id].chat[1]}` : `「${BOOKS[id].title}」${Prob.hasBatchim(BOOKS[id].title) ? '을' : '를'} 읽었어요.`));
     if (log.some(e => e.e === 'plant')) out.push(talk ? '텃밭에 씨앗을 심었어. 빨리 자랐으면 좋겠다.' : '텃밭에 씨앗을 심었어요.');
     if (log.some(e => e.e === 'water')) out.push(talk ? '텃밭에 물도 줬어. 내일 쑥 자라 있겠지?' : '텃밭에 물을 줬어요.');
     log.filter(e => e.e === 'harvest').forEach(e => out.push(talk ? `${ING_NAME[e.id]}${Prob.jo(ING_NAME[e.id], '을').slice(ING_NAME[e.id].length)} 거뒀어! 우리가 키운 거야.` : `${ING_NAME[e.id]}${Prob.jo(ING_NAME[e.id], '을').slice(ING_NAME[e.id].length)} 거뒀어요.`));

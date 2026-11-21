@@ -133,6 +133,7 @@
       <div class="bubble" id="obubble"><span id="obubble-txt"></span></div>
       <div id="cook-fx"></div>
       <div class="opet" id="opet"></div>
+      <div class="nbw" id="nbw" style="display:none"></div>
       <div class="fx" id="ofx"></div>
     </div>
     <div class="board">
@@ -190,6 +191,32 @@
     <p class="sub" id="party-line"></p>
     <div class="res-gets"><span>생일 고깔모자 선물</span><span>별사탕 +20</span><span>우정 +20</span></div>
     <button class="btn big primary" id="party-ok">고마워!</button>
+  </div>
+</div>
+
+<!-- 책장 -->
+<div class="overlay" id="ov-shelf">
+  <div class="sheet wide shelf">
+    <h3 class="h3">우리 책장</h3>
+    <p class="sub">읽고 싶은 그림책을 골라요</p>
+    <div class="shelf-grid" id="shelf-grid"></div>
+    <button class="btn" id="shelf-close">닫기</button>
+  </div>
+</div>
+
+<!-- 그림책 읽기 -->
+<div class="overlay" id="ov-read">
+  <div class="openbook">
+    <div class="page left"><div class="read-cover" id="read-cover"></div><div class="read-title" id="read-title"></div><div class="read-pageno" id="read-pageno"></div>
+      <div class="read-buddy"><span class="read-pet" id="read-pet"></span><div class="bubble read-say" id="read-say"><span></span></div></div></div>
+    <div class="page right">
+      <p class="read-text" id="read-text"></p>
+      <div class="read-quiz" id="read-quiz" style="display:none">
+        <div class="qcard small"><div class="qtag" id="rd-tag"></div><div class="qfig" id="rd-fig"></div><div class="qtext" id="rd-text"></div></div>
+        <div class="choices" id="rd-choices"></div>
+      </div>
+      <div class="res-btns"><button class="btn big primary" id="read-next">다음 장 ▸</button><button class="btn big primary" id="read-close" style="display:none">책 덮기</button></div>
+    </div>
   </div>
 </div>
 
