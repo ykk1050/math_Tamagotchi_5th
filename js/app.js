@@ -175,7 +175,7 @@
   // =====================================================================
   // 친구의 방
   // =====================================================================
-  let wanderT = null, idleT = null, sleeping = false;
+  let wanderT = null, idleT = null, sleeping = false, objBusy = 0, lastTouch = 0, lastObj = null;
   const ICON = {
     cook: `<svg viewBox="0 0 64 64"><path d="M14 30 h36 v6 a18 16 0 0 1 -36 0z" fill="#fff"/><path d="M18 30 q2 -10 8 -6 q2 -10 10 -4 q6 -6 10 4 q6 -2 4 6z" fill="#fff" opacity=".8"/><path d="M10 30 h44" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>`,
     walk: `<svg viewBox="0 0 64 64"><path d="M14 46 q18 -26 36 -10" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="2 8"/><path d="M46 14 v24" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M46 14 l14 5 -14 5z" fill="#fff"/></svg>`,
@@ -266,6 +266,8 @@
       const wk = $('walker');
       if (sulking) { /* 구석에서 삐쳐 있음 */ }
       else if (sleeping) { wk.style.left = '34%'; wk.style.bottom = ''; wk.classList.remove('flying'); }
+      else if (Date.now() < objBusy) { wanderT = setTimeout(step, objBusy - Date.now() + 300); return; }
+      else if (S.stage >= 3 && Math.random() < .4 && objPlay()) { /* 물건 가지고 노는 중 */ }
       else if (S.stage >= 3 || Math.random() < .3) {
         const cur = parseFloat(wk.style.left) || 55; let nx = R(30, 80); if (Math.abs(nx - cur) < 8) nx = cur > 55 ? cur - 20 : cur + 20;
         wk.style.left = nx + '%';
@@ -281,7 +283,7 @@
     if (sleeping) $('walker').style.left = '34%';
     wanderT = setTimeout(step, 2500);
   }
-  function poked() { clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
+  function poked() { lastTouch = Date.now(); clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
   function idleTalk() {
     if ($('scr-home').classList.contains('on') && !document.querySelector('.overlay.on')) {
       const ln = lowNeed(), w = S.wishes.find(x => !x.done);
@@ -433,6 +435,108 @@
         addNeed('mood', 3); renderNeeds(); setTimeout(() => { p.classList.remove('boing'); drawPet(); }, 1500);
       });
     }
+  }
+
+  // ---------- 혼자 돌아다니다 방 물건을 가지고 논다 ----------
+  // pet: 친구 몸짓, it: 물건 움직임, fx: 떠오르는 것, at: 'under'(벽 물건 아래) | 'side'(옆에 서기) | 'on'(위에 올라가기)
+  const OBJ_PLAY = {
+    shell:   { pet: 'squish', it: 'wiggle', fx: 'wave', snd: 'wave', at: 'under' },
+    plant:   { pet: 'squish', it: 'grow', fx: 'drop', snd: 'drip', at: 'side' },
+    lamp:    { pet: 'hop', it: 'glow', fx: 'star', snd: 'chime', at: 'under' },
+    cushion: { pet: 'boing', it: 'squash', fx: 'heart', snd: 'pop3', at: 'on', up: .8 },
+    rug:     { pet: 'roll', it: '', fx: 'heart', snd: 'pop', at: 'on', up: 0 },
+    frame:   { pet: 'hop', it: 'tilt', fx: 'heart', snd: 'heart', at: 'under' },
+    chair:   { pet: 'squish', it: 'squash', fx: 'star', snd: 'pop', at: 'on', up: .8 },
+    table:   { pet: 'squish', it: '', fx: 'steam', snd: 'sip', at: 'side', cup: true },
+    teddy:   { pet: 'squish', it: 'squash', fx: 'heart', snd: 'heart', at: 'side' },
+    books:   { pet: 'squish', it: 'wiggle', fx: 'star', snd: 'pop', at: 'side' },
+    cactus:  { pet: 'shake', it: 'wiggle', fx: 'prick', snd: 'prick', at: 'side', mood: 'sad' },
+    heart:   { pet: 'boing', it: 'squash', fx: 'heart', snd: 'heart', at: 'side' },
+    mobile:  { pet: 'hop', it: 'swing', fx: 'star', snd: 'chime', at: 'under' },
+    lights:  { pet: 'hop', it: 'twinkle', fx: 'star', snd: 'chime', at: 'under' },
+    piano:   { pet: 'dance', it: 'bounce', fx: 'note', snd: 'piano', at: 'side' },
+    vase:    { pet: 'squish', it: 'wiggle', fx: 'petal', snd: 'pop', at: 'side' },
+    toybox:  { pet: 'hop', it: 'bounce', fx: 'toy', snd: 'pop', at: 'side' },
+    mirror:  { pet: 'hop', it: 'glow', fx: 'star', snd: 'chime', at: 'under' },
+    window:  { pet: 'hop', it: '', fx: '', snd: 'tap', at: 'under', box: [550, 64, 800, 286] },
+    shelf:   { pet: 'squish', it: '', fx: 'star', snd: 'pop', at: 'under', box: [210, 136, 445, 222] },
+    bed:     { pet: 'roll', it: '', fx: 'zz', snd: 'pop', at: 'on', up: .55, box: [170, 380, 390, 505] }
+  };
+  function objPlay(force) {
+    if (sulking || sleeping || editing || S.stage < 3 || ballState.flying || ballState.fetching) return false;
+    if (document.querySelector('.overlay.on') || Date.now() - lastTouch < 6000) return false;
+    const wk = $('walker'); if (wk.classList.contains('flying')) return false;
+    const R0 = S.roomId || 'main', P = S.place[R0] || {};
+    let ids = Object.keys(P).filter(k => OBJ_PLAY[k]);
+    if (R0 === 'main') ids.push('window', 'shelf', 'bed');
+    ids = ids.filter(k => k !== lastObj); if (!ids.length) return false;
+    const id = force || pick(ids), o = OBJ_PLAY[id];
+    const box = o.box || Scene.itemBox(id, P[id][0], P[id][1]);
+    const b = roomBox(...box), rw = $('room').getBoundingClientRect().width;
+    let x = b.cx;
+    if (o.at === 'side') { const half = b.width / rw * 100 / 2 + 6; x = b.cx > 55 ? b.cx - half : b.cx + half; }
+    x = Math.max(12, Math.min(86, x)); lastObj = id;
+    objBusy = Date.now() + 9000;
+    return goTo(x, () => objReact(id, o, b), false) !== false;
+  }
+  if (/[?&]dev/.test(location.search)) window.__objPlay = (id) => { lastTouch = 0; lastObj = null; objBusy = 0; return objPlay(id); };
+  function objReact(id, o, b) {
+    if (sulking || sleeping || document.querySelector('.overlay.on')) { objBusy = 0; return; }
+    const wk = $('walker'), p = $('pet'), room = $('room'), rh = room.getBoundingClientRect().height, DUR = 2600;
+    objBusy = Date.now() + DUR + 600; clearTimeout(wanderT);
+    if (o.at === 'on' && o.up) wk.style.bottom = (rh - b.top - b.height * o.up) + 'px';
+    // 물건이 움직인다
+    const g = $('room-bg').querySelector(`[data-it="${id}"]`);
+    if (g && o.it && !S.lowfx) { g.classList.remove('it-' + o.it); void g.getBoundingClientRect(); g.classList.add('it-' + o.it); setTimeout(() => g.classList.remove('it-' + o.it), DUR); }
+    // 친구 몸짓
+    const anim = o.pet === 'dance' ? 'hop' : o.pet;
+    drawPet(o.mood || 'happy'); p.classList.remove('hop', 'shake', 'squish', 'roll', 'boing'); void p.offsetWidth; p.classList.add(anim);
+    if (o.pet === 'dance') setTimeout(() => { p.classList.remove('hop'); void p.offsetWidth; p.classList.add('hop'); }, 1100);
+    if (o.mood) setTimeout(() => drawPet('happy'), 1200);
+    // 소리와 떠오르는 것
+    if (o.snd === 'pop3') { Snd.pop(); setTimeout(() => Snd.pop(), 420); setTimeout(() => Snd.pop(), 840); }
+    else if (id === 'vase' && S.kind === 'bunny') setTimeout(() => Snd.sneeze(), 700);
+    else if (Snd[o.snd]) Snd[o.snd]();
+    objFx(o.fx, b);
+    if (o.cup) objCup(b);
+    // 말
+    let t;
+    if (level() === 'talk') {
+      t = pick(LINES5[S.kind][id] || ['헤헤.']).replace('{d}', S.days || 1);
+      if (id === 'mirror') { const w = Object.values(S.wear || {}).filter(Boolean); if (w.length && Math.random() < .6) t = `거울아 거울아, 오늘 ${Prob.jo(ITEMS[pick(w)].name, '이')} 잘 어울리지?`; }
+      if (id === 'window' && isNight()) t = pick(['밤하늘에 별이 반짝반짝…', '달님, 안녕! 잘 자요.']);
+    } else t = LINES5.baby[id] || '(헤헤)';
+    if (Math.random() < .8 || level() !== 'talk') speak('home', t, { silent: level() !== 'talk' });
+    if (!S.objT) S.objT = {};
+    if (Date.now() - (S.objT[id] || 0) > 5 * 60000) { S.objT[id] = Date.now(); addNeed('mood', 2); renderNeeds(); save(); }
+    setTimeout(() => {
+      p.classList.remove(anim); wk.style.bottom = ''; drawPet(); objBusy = Date.now() + 300; startWander();
+    }, DUR);
+  }
+  // 물건 둘레에 떠오르는 것 (음표, 하트, 별, 물방울 …)
+  function objFx(kind, b) {
+    if (!kind) return;
+    const room = $('room'), n = S.lowfx ? 2 : kind === 'drop' ? 6 : 5;
+    const CH = { note: ['♪', '♫', '♬'], heart: ['♥'], star: ['✦', '★'], drop: ['●'], petal: ['✿', '❀'], zz: ['z', 'Z'], wave: ['∿', '~'], prick: ['!', '✱'], steam: ['∿'], toy: ['★'] }[kind] || ['✦'];
+    for (let i = 0; i < n; i++) {
+      const e = document.createElement('span'); e.className = 'objfx fx-' + kind; e.textContent = pick(CH);
+      const x = b.left + b.width * (.2 + Math.random() * .6), y = kind === 'drop' ? b.top + b.height * .05 : b.top + b.height * (.1 + Math.random() * .3);
+      Object.assign(e.style, { left: x + 'px', top: y + 'px', animationDelay: (i * .22) + 's' });
+      room.appendChild(e); setTimeout(() => e.remove(), 2400 + i * 220);
+    }
+    if (kind === 'toy') {
+      const t = document.createElement('div'); t.className = 'objtoy'; t.innerHTML = Scene.item(pick(['teddy', 'heart', 'cushion', 'books'].filter(k => !(S.place[S.roomId || 'main'] || {})[k]).concat(['heart'])));
+      Object.assign(t.style, { left: (b.left + b.width / 2) + 'px', top: (b.top + b.height * .2) + 'px', width: b.width * .45 + 'px', height: b.width * .45 + 'px' });
+      room.appendChild(t); setTimeout(() => t.remove(), 2400);
+    }
+  }
+  // 탁자 위에 찻잔이 놓이고 김이 오른다
+  function objCup(b) {
+    const c = document.createElement('div'); c.className = 'objcup';
+    c.innerHTML = `<svg viewBox="0 0 40 30"><path d="M6 10 h22 v8 a11 11 0 0 1 -22 0z" fill="#fff" stroke="#E5679A" stroke-width="2"/><path d="M28 12 a5 5 0 0 1 0 9" fill="none" stroke="#E5679A" stroke-width="2"/><ellipse cx="17" cy="11" rx="10" ry="2.4" fill="#C98B5A"/><ellipse cx="17" cy="28" rx="15" ry="2" fill="#F3D3E2"/></svg>`;
+    const w = Math.max(34, b.width * .32);
+    Object.assign(c.style, { left: (b.left + b.width / 2 - w / 2) + 'px', top: (b.top + b.height * .08 - w * .6) + 'px', width: w + 'px', height: w * .75 + 'px' });
+    $('room').appendChild(c); setTimeout(() => c.remove(), 2700);
   }
 
   // ---------- 공: 손가락으로 던지면 굴러가고, 친구가 쫓아가 물어 온다 ----------

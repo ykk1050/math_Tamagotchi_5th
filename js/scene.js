@@ -96,8 +96,8 @@ const Scene = (() => {
     const s = scaleOf(id) * 64; return [x - s / 2, y - s, x + s / 2, y];
   }
   function itemSVG(id, x, y) {
-    if (id === 'rug') return `<g transform="translate(${x} ${y - 32})"><ellipse rx="250" ry="58" fill="#FFC7D9" stroke="#E5679A" stroke-width="5"/><ellipse rx="190" ry="40" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="14 12"/></g>`;
-    const s = scaleOf(id); return `<g transform="translate(${x - 32 * s} ${y - 64 * s}) scale(${s})">${DECOR[id]}</g>`;
+    if (id === 'rug') return `<g data-it="rug"><g transform="translate(${x} ${y - 32})"><ellipse rx="250" ry="58" fill="#FFC7D9" stroke="#E5679A" stroke-width="5"/><ellipse rx="190" ry="40" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="14 12"/></g></g>`;
+    const s = scaleOf(id); return `<g data-it="${id}"><g transform="translate(${x - 32 * s} ${y - 64 * s}) scale(${s})">${DECOR[id]}</g></g>`;
   }
 
   // ---------- 친구의 방 (내 방 / 다락방) ----------

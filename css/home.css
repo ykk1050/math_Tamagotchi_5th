@@ -589,3 +589,34 @@ body.lowfx .wl{transition-duration:.4s}
 @keyframes motif{to{transform:translate(-50%,-50%) scale(1)}}
 .ribbonfx{left:50%;top:-10%;width:34%;transform:translateX(-50%);animation:ctop 1.1s cubic-bezier(.3,1.4,.5,1) forwards}
 .button-pop{width:14px;height:14px;border-radius:50%;background:#FFE29A;box-shadow:0 0 0 2px #D9AE52,inset 0 0 0 3px #FFF6D6;transform:scale(0);animation:motif .35s cubic-bezier(.3,1.6,.5,1) forwards}
+
+/* 혼자 물건 가지고 놀기: 물건 움직임 */
+#room-bg [data-it]{transform-box:fill-box;transform-origin:50% 100%}
+#room-bg .it-wiggle{animation:itwig .45s ease-in-out 4}
+@keyframes itwig{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+#room-bg .it-grow{animation:itgrow .9s cubic-bezier(.3,1.6,.5,1) 2}
+@keyframes itgrow{0%,100%{transform:scale(1)}50%{transform:scale(1.08,1.14)}}
+#room-bg .it-squash{animation:itsq .42s ease-in-out 4}
+@keyframes itsq{0%,100%{transform:scale(1)}50%{transform:scale(1.12,.86)}}
+#room-bg .it-bounce{animation:itbo .35s ease-in-out 6}
+@keyframes itbo{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#room-bg .it-tilt{animation:ittilt 2.4s ease-in-out}
+@keyframes ittilt{0%,100%{transform:rotate(0)}20%,70%{transform:rotate(-6deg)}}
+#room-bg .it-swing{transform-origin:50% 0;animation:itsw 1.2s ease-in-out 2}
+@keyframes itsw{0%,100%{transform:rotate(0)}25%{transform:rotate(14deg)}75%{transform:rotate(-14deg)}}
+#room-bg .it-glow{animation:itglow 1.2s ease-in-out 2}
+@keyframes itglow{0%,100%{filter:none}50%{filter:brightness(1.25) drop-shadow(0 0 10px #FFE29A)}}
+#room-bg .it-twinkle{animation:ittw .3s steps(2) 8}
+@keyframes ittw{0%{filter:brightness(1)}100%{filter:brightness(1.45) drop-shadow(0 0 8px #FFE29A)}}
+/* 떠오르는 것 */
+.objfx{position:absolute;z-index:4;pointer-events:none;font-family:var(--fh);font-size:clamp(18px,2.4vw,30px);opacity:0;transform:translate(-50%,0);animation:objup 1.8s ease-out forwards;text-shadow:0 2px 0 #fff}
+@keyframes objup{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}20%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(calc(-50% + 14px),-70px) scale(1)}}
+.fx-note{color:#9C86F0}.fx-heart{color:#F77FAE}.fx-star,.fx-toy{color:#FFC24E}.fx-petal{color:#F7A0C1}.fx-zz{color:#A996F0}.fx-wave{color:#7FB8EE}.fx-prick{color:#E5679A}.fx-steam{color:#C9C3D8}
+.fx-drop{color:#7FC6F0;font-size:clamp(10px,1.2vw,15px);animation:objdrop 1.1s ease-in forwards}
+@keyframes objdrop{0%{opacity:0;transform:translate(-50%,-30px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,60px)}}
+.objtoy{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,0);animation:toypop 2.2s cubic-bezier(.3,1.4,.5,1) forwards}
+.objtoy svg{width:100%;height:100%}
+@keyframes toypop{0%{opacity:0;transform:translate(-50%,30px) scale(.4)}25%{opacity:1;transform:translate(-50%,-50px) scale(1) rotate(-10deg)}75%{opacity:1;transform:translate(-50%,-40px) scale(1) rotate(8deg)}100%{opacity:0;transform:translate(-50%,10px) scale(.6)}}
+.objcup{position:absolute;z-index:2;pointer-events:none;animation:cupin 2.6s ease forwards}
+.objcup svg{width:100%;height:100%}
+@keyframes cupin{0%{opacity:0;transform:translateY(-10px)}12%,85%{opacity:1;transform:none}100%{opacity:0}}

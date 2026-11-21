@@ -29,6 +29,12 @@ const Snd = (() => {
   }
   const S = {
     tap() { tone(880, .08, 'sine', .15); },
+    piano() { const sc = [523, 587, 659, 784, 880, 1047]; let t = 0; for (let i = 0; i < 7; i++) { tone(sc[Math.floor(Math.random() * sc.length)], .32, 'triangle', .2, t); t += .2 + (i % 3 === 2 ? .12 : 0); } },
+    chime() { [1568, 2093, 2637, 2093].forEach((f, i) => tone(f, .5, 'sine', .1, i * .12)); },
+    drip() { [0, .25, .5].forEach(t => tone(1300, .12, 'sine', .14, t, 600)); },
+    wave() { tone(220, 1.1, 'sine', .12, 0, 140); tone(260, 1.1, 'sine', .08, .7, 150); },
+    prick() { tone(1400, .07, 'square', .08); tone(500, .2, 'sine', .15, .08, 300); },
+    sneeze() { tone(600, .15, 'triangle', .14, 0, 900); tone(900, .18, 'sawtooth', .07, .3, 300); },
     ok() { tone(784, .14, 'triangle', .25); tone(988, .14, 'triangle', .25, .09); tone(1319, .28, 'triangle', .22, .18); },
     combo() { [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, .16, 'triangle', .18, i * .06)); },
     no() { tone(392, .2, 'sine', .2, 0, 330); tone(330, .28, 'sine', .16, .16, 262); },
