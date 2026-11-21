@@ -425,6 +425,51 @@ const Prob = (() => {
     return make('u11', 0);
   }
 
+
+  // ---------- 재봉 공방·물감 공방 문제 (옷 만들기 단계에 맞춘 문장제) ----------
+  const SEW_GEN = {
+    area: [
+      () => { const a = R(6, 14), b = R(3, 10); return { fig: shapeSVG('rect', a, b), q: `가로 ${a} cm, 세로 ${b} cm인 천을 잘랐어요. 천의 넓이는 몇 cm²일까요?`, ...numChoices(a * b, [2 * (a + b), a + b, a * b + a], ' cm²'), unit: 'u16' }; },
+      () => { const a = R(6, 14), b = R(3, 10); return { fig: shapeSVG('rect', a, b), q: `가로 ${a} cm, 세로 ${b} cm인 천 가장자리에 레이스를 두르려고 해요. 레이스는 몇 cm 필요할까요?`, ...numChoices(2 * (a + b), [a * b, a + b, 2 * a + b], ' cm'), unit: 'u16' }; },
+      () => { let a, h; do { a = R(6, 14); h = R(4, 10); } while ((a * h) % 2); return { fig: shapeSVG('tri', a, 0, h), q: `밑변 ${a} cm, 높이 ${h} cm인 삼각형 천 조각의 넓이는 몇 cm²일까요?`, ...numChoices(a * h / 2, [a * h, a + h, a * h / 2 + h], ' cm²'), unit: 'u16' }; }
+    ],
+    rule: [
+      () => { const k = R(2, 6), n = R(3, 9); return { q: `단추를 한 줄에 ${k}개씩 달아요. ${n}줄을 달면 단추는 모두 몇 개일까요?`, ...numChoices(k * n, [k + n, k * (n - 1), k * n + k], '개'), unit: 'u13' }; },
+      () => { const k = R(2, 5); const tbl = `<table class="tbl"><tr><th>바느질한 길이(cm)</th><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><th>바늘땀 수</th><td>${k}</td><td>${2 * k}</td><td>${3 * k}</td><td>${4 * k}</td></tr></table>`;
+        const n = R(6, 12); return { fig: tbl, q: `바느질한 길이가 ${n} cm이면 바늘땀은 몇 땀일까요?`, ...numChoices(n * k, [n + k, n * k - k, n * k + k], '땀'), unit: 'u13' }; },
+      () => { const k = R(2, 6); const right = `△ = □ × ${k}`; return { q: `옷 한 벌(□)에 단추가 ${k}개(△)씩 필요해요. □와 △ 사이의 대응 관계를 식으로 나타내면?`, ans: right, choices: [right, `△ = □ + ${k}`, `□ = △ × ${k}`, `△ = □ × ${k + 1}`], txt: true, unit: 'u13' }; }
+    ],
+    sym: [
+      () => { const x = R(2, 9); return { q: `무늬를 선대칭이 되게 넣으려고 해요. 대칭축에서 ${x} cm 떨어진 별의 대응점은 대칭축에서 몇 cm 떨어져 있어야 할까요?`, ...numChoices(x, [x * 2, x + 1, x - 1 > 0 ? x - 1 : x + 2], ' cm'), unit: 'u23' }; },
+      () => ({ q: '선대칭 무늬에서 대응점끼리 이은 선분과 대칭축은 몇 도로 만날까요?', ...numChoices(90, [45, 180, 60], '°'), unit: 'u23' }),
+      () => ({ q: '점대칭 무늬는 대칭의 중심을 중심으로 몇 도 돌리면 처음 무늬와 완전히 겹칠까요?', ...numChoices(180, [90, 360, 270], '°'), unit: 'u23' }),
+      () => { const p = pick([['정사각형', 4], ['정육각형', 6], ['정오각형', 5]]); return { q: `${p[0]} 모양 무늬 조각의 대칭축은 모두 몇 개일까요?`, ...numChoices(p[1], [p[1] - 1, p[1] + 1, p[1] * 2], '개'), txt: true, unit: 'u23' }; }
+    ],
+    frac: [
+      () => { const a = properRand(2, 6), w = R(1, 3), b = properRand(2, 5); const L = mixedF(w, a.n, a.d), ans = fmul(L, b);
+        return { q: `리본 ${mh(w, a.n, a.d)} m의 ${fh(b)}만큼 잘라 옷에 달았어요. 단 리본은 몇 m일까요?`, ...fracChoices(ans, [fadd(L, b), { n: L.n * b.d, d: L.d * b.n }, fadd(ans, { n: 1, d: lcm(L.d, b.d) })]), unit: 'u22' }; },
+      () => { const L = D(R(11, 29), 1), n = R(2, 6); const ans = dmul(L, D(n, 0)); return { q: `${dstr(L)} m짜리 레이스를 ${n}개 달았어요. 레이스는 모두 몇 m일까요?`, ...decChoices(ans, [dshift(ans, 1), dshift(ans, -1)], ' m'), unit: 'u24' }; },
+      () => { let a, b; do { a = properRand(2, 8); b = properRand(2, 8); } while (a.d === b.d); const ans = fadd(a, b);
+        return { q: `분홍 실 ${fh(a)} m와 노랑 실 ${fh(b)} m를 썼어요. 실은 모두 몇 m일까요?`, ...fracChoices(ans, [{ n: a.n + b.n, d: a.d + b.d }, fadd(ans, { n: 1, d: lcm(a.d, b.d) })]), unit: 'u15' }; }
+    ],
+    paint: [
+      () => { let a, b; do { a = properRand(2, 8); b = properRand(2, 8); } while (a.d === b.d); const ans = fadd(a, b);
+        return { q: `빨강 물감 ${fh(a)} 통과 하양 물감 ${fh(b)} 통을 섞었어요. 섞은 물감은 모두 몇 통일까요?`, ...fracChoices(ans, [{ n: a.n + b.n, d: a.d + b.d }, fadd(ans, { n: 1, d: lcm(a.d, b.d) })]), unit: 'u15' }; },
+      () => { let a, b; do { a = properRand(2, 8); b = properRand(2, 8); } while (a.d === b.d || a.n * b.d <= b.n * a.d); const ans = fsub(a, b);
+        return { q: `파랑 물감이 ${fh(a)} 통 있었는데 ${fh(b)} 통을 썼어요. 남은 물감은 몇 통일까요?`, ...fracChoices(ans, [{ n: Math.abs(a.n - b.n) || 1, d: Math.abs(a.d - b.d) || 1 }, fadd(ans, { n: 1, d: lcm(a.d, b.d) })]), unit: 'u15' }; },
+      () => { const a = properRand(3, 9), n = R(2, 6); const ans = fmul(a, { n, d: 1 });
+        return { q: `한 번 칠할 때 물감을 ${fh(a)} 통씩 써요. ${n}번 칠하면 물감은 모두 몇 통일까요?`, ...fracChoices(ans, [{ n: a.n, d: a.d * n }, { n: a.n + n, d: a.d }]), unit: 'u22' }; }
+    ]
+  };
+  function themed(kind) {
+    for (let tries = 0; tries < 20; tries++) {
+      const p = pick(SEW_GEN[kind])(); const uniq = [...new Set(p.choices)];
+      if (uniq.length < 3 || uniq.filter(c => c === p.ans).length !== 1) continue;
+      return { unit: p.unit, type: -1, q: p.q, fig: p.fig || '', ans: p.ans, choices: shuffle(uniq), txt: !!p.txt };
+    }
+    return make('u16', 0);
+  }
+
   // 돌아가며 내기: 11개 단원을 섞은 순서대로 한 바퀴씩 돌고,
   // 단원 안에서도 문제 유형을 섞은 순서대로 돌아가며 낸다.
   // 틀린 문제 종류는 몇 문제 뒤에 한 번 다시 끼워 넣는다(바로 앞 단원과 겹치지 않게).
@@ -447,5 +492,5 @@ const Prob = (() => {
     rot.last = unit;
     return make(unit, type);
   }
-  return { make, next, story, UNITS, G, jo, hasBatchim };
+  return { make, next, story, themed, UNITS, G, jo, hasBatchim };
 })();

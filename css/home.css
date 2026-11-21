@@ -532,3 +532,60 @@ body.lowfx .wl{transition-duration:.4s}
 
 .walker .pet.bow svg{animation:bowdown .65s ease-in-out}
 @keyframes bowdown{40%{transform:rotate(10deg) translateY(6px) scale(1.02,.96)}100%{transform:none}}
+
+/* 옷장 */
+.sheet.wd{width:min(1060px,100%);height:min(680px,100%);display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:stretch;padding:18px}
+.wd-mirror{display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0;position:relative}
+.mirror-frame{flex:1;min-height:0;width:100%;border-radius:999px 999px 30px 30px;background:radial-gradient(circle at 50% 35%,#FFFFFF,#EFE8FF 70%);box-shadow:inset 0 0 0 10px #F2D3B6,inset 0 0 0 14px #fff,0 10px 30px rgba(122,82,140,.18);display:grid;place-items:center;overflow:hidden}
+.wd-pet{height:86%;max-width:80%;aspect-ratio:160/156}.wd-pet svg{width:100%;height:100%;overflow:visible}
+.wd-pet.hop svg{animation:hop .5s cubic-bezier(.3,1.5,.5,1) 2}
+.wd-say{position:relative;top:auto;left:auto;right:auto;width:100%;font-size:17px;min-height:52px}
+.wd-say::after{top:-12px;bottom:auto;border:12px solid transparent;border-bottom-color:#fff;border-top:0}
+.wd-presets{display:flex;gap:8px;width:100%}
+.preset{flex:1;display:flex;flex-direction:column;gap:4px;align-items:stretch}
+.pre-load{height:74px;border-radius:16px;background:#fff;box-shadow:var(--shadow-s);display:grid;place-items:center;color:var(--ink-3);font-size:13px}
+.pre-load svg{width:70px;height:68px}
+.pre-save{min-height:36px;border-radius:999px;background:var(--lilac-l);color:var(--lilac-d);font-size:13px}
+.wd-side{display:flex;flex-direction:column;gap:10px;min-height:0}
+.wd-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.wd-body .sub{margin:0}
+.slot-row{display:flex;gap:6px;flex-wrap:wrap}
+.slot{min-height:44px;padding:0 14px;border-radius:999px;background:#fff;box-shadow:var(--shadow-s);font-size:15px}
+.slot.on{background:var(--rose);color:#fff}
+.wd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.wd-item{background:#fff;border-radius:18px;box-shadow:0 3px 0 #EADBEA;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:124px}
+.wd-item .ia{width:64px;height:64px}.wd-item .ia svg{width:100%;height:100%;overflow:visible}
+.wd-item b{font-size:13px;text-align:center;line-height:1.25}
+.wd-item small{font-size:11px;color:var(--ink-3);text-align:center;line-height:1.2}
+.wd-item.on{box-shadow:0 0 0 3px var(--mint)}
+.wd-item.lock .ia{filter:grayscale(1) opacity(.4)}
+.paint-head{display:flex;align-items:center;gap:10px}
+.paint-head b{flex:1;font-family:var(--fh);font-weight:400;font-size:19px}
+.paint-pot{width:40px;height:40px;border-radius:10px 10px 16px 16px;background:var(--c);box-shadow:inset 0 -8px 0 rgba(0,0,0,.08),0 0 0 3px #fff,var(--shadow-s)}
+@media (orientation:portrait),(max-width:760px){.sheet.wd{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%}.mirror-frame{height:30vh;flex:none}.wd-presets .pre-load{height:56px}}
+
+/* 재봉 공방 */
+#sew-piece{position:absolute;z-index:2;display:grid;place-items:center;pointer-events:none}
+#sew-piece .cloth{position:absolute;inset:18% 8%;border-radius:10px;box-shadow:0 4px 0 rgba(0,0,0,.06);transition:opacity .5s,transform .5s}
+#sew-piece .garm{width:86%;height:86%;opacity:0;transition:all .6s}
+#sew-piece .garm svg{width:100%;height:100%;overflow:visible}
+#sew-piece.s1 .cloth{opacity:.35;transform:scale(.92)}
+#sew-piece.s1 .garm{opacity:.8;filter:grayscale(1) brightness(1.15)}
+#sew-piece.s2 .cloth,#sew-piece.s3 .cloth,#sew-piece.s4 .cloth{opacity:0}
+#sew-piece.s2 .garm{opacity:1;filter:grayscale(.55) drop-shadow(0 0 0 #fff)}
+#sew-piece.s3 .garm,#sew-piece.s4 .garm{opacity:1;filter:none}
+#sew-piece.done .garm{animation:hop .6s cubic-bezier(.3,1.5,.5,1) 2}
+.cutline{left:6%;right:6%;top:52%;height:0;border-top:3px dashed #8D9AB0}
+.scissors{top:38%;width:30%;left:0;animation:cutgo 1.5s ease-in-out forwards}
+@keyframes cutgo{0%{left:-6%}100%{left:76%}}
+.scissors svg{animation:snip .25s ease-in-out infinite alternate}
+@keyframes snip{to{transform:scaleY(.7)}}
+.stitchline{left:10%;top:56%;height:0;width:0;border-top:3px dashed #F28DB2;animation:stitchgrow 1.5s linear forwards}
+@keyframes stitchgrow{to{width:80%}}
+.needle{width:26%;top:30%;left:6%;animation:needlego 1.5s linear forwards}
+@keyframes needlego{0%{left:4%;transform:translateY(0)}12.5%{transform:translateY(16px)}25%{transform:translateY(0)}37.5%{transform:translateY(16px)}50%{transform:translateY(0)}62.5%{transform:translateY(16px)}75%{transform:translateY(0)}87.5%{transform:translateY(16px)}100%{left:72%;transform:translateY(0)}}
+.axis{left:50%;top:18%;bottom:4%;width:0;border-left:3px dashed #A996F0;animation:cfade 1.8s ease forwards}
+.motif{font-size:26px;color:#FFC24E;text-shadow:0 0 0 #E8A93C,0 2px 0 #fff;transform:translate(-50%,-50%) scale(0);animation:motif .4s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes motif{to{transform:translate(-50%,-50%) scale(1)}}
+.ribbonfx{left:50%;top:-10%;width:34%;transform:translateX(-50%);animation:ctop 1.1s cubic-bezier(.3,1.4,.5,1) forwards}
+.button-pop{width:14px;height:14px;border-radius:50%;background:#FFE29A;box-shadow:0 0 0 2px #D9AE52,inset 0 0 0 3px #FFF6D6;transform:scale(0);animation:motif .35s cubic-bezier(.3,1.6,.5,1) forwards}

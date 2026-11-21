@@ -20,6 +20,7 @@
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); S = Object.assign(fresh(), o); S.needs = Object.assign(fresh().needs, o.needs || {}); S.known = Object.assign(fresh().known, o.known || {}); } } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  if (S.acc) { S.wear = S.wear || {}; const SL = { flower: 'head', crown: 'head', berryhat: 'head', phat: 'head', bow: 'head', scarf: 'neck' }; S.wear[SL[S.acc] || 'head'] = S.acc; S.acc = null; }
 
   // ---------- 친구 정보 ----------
   const MAX_STAGE = 5; // 시험판은 5단계까지
@@ -34,7 +35,7 @@
   const bat = (w) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0; };
   const NM = () => S.name + (bat(S.name) ? '이' : ''); // 몽실 → 몽실이, 콩이 → 콩이
   const obj = (w) => w + (bat(w) ? '을' : '를');
-  const showAcc = () => (S.stage >= 3 ? S.acc : null);
+  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base' } : null);
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const isNight = () => { const h = new Date().getHours(); return h >= 18 || h < 6; };
 
@@ -56,7 +57,7 @@
     let t, n = 0; do { t = pick(arr); n++; } while (arr.length > 1 && t === lastLine[key] && n < 6);
     lastLine[key] = t; return t;
   }
-  const POS = ['wishDone', 'allWish', 'cookStart', 'cookOk', 'cookDone', 'walkStart', 'walkOk', 'find', 'arrive', 'welcome', 'happy', 'wear', 'ok', 'c3', 'c5', 'c10', 'poke'];
+  const POS = ['wishDone', 'allWish', 'cookStart', 'cookOk', 'sewOk', 'cookDone', 'walkStart', 'walkOk', 'find', 'arrive', 'welcome', 'happy', 'wear', 'ok', 'c3', 'c5', 'c10', 'poke'];
   // 대사 고르기: 5단계부터 문장, 그 전에는 몸짓·옹알이
   function line(cat, v = {}) {
     const lv = level(); let t;
@@ -65,7 +66,7 @@
       t = lineFrom(a || LINES[S.kind].talk.idle, cat);
     } else {
       const pack = LINES[S.kind][lv];
-      const neg = ['cookNo', 'walkNo', 'no'].includes(cat);
+      const neg = ['cookNo', 'walkNo', 'sewNo', 'no'].includes(cat);
       t = lineFrom(neg ? pack.no : POS.includes(cat) ? (cat === 'poke' ? pack.poke : pack.ok) : pack.idle, lv + cat);
     }
     if (v.x != null) t = fillJo(t, '{x}', v.x);
@@ -679,7 +680,7 @@
     if (S.party.cake && S.party.balloons && S.party.fed) setTimeout(throwParty, 1200);
   }
   function throwParty() {
-    S.bdayDone = true; if (!S.items.includes('phat')) S.items.push('phat'); S.acc = 'phat'; S.candy += 20; addFriend(20); S.log.push({ e: 'party' }); save();
+    S.bdayDone = true; if (!S.items.includes('phat')) S.items.push('phat'); initWear(); S.wear.head = 'phat'; S.candy += 20; addFriend(20); S.log.push({ e: 'party' }); save();
     renderHome(); $('party-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', S.stage >= 3 ? 'phat' : null);
     $('party-line').innerHTML = level() === 'talk' ? (S.kind === 'bunny' ? '내 생일을 기억해 줬구나! 오늘이 세상에서 제일 행복한 날이야! 깡총!' : '내 생일을 챙겨 줘서 고마워… 구름 위로 날아갈 것 같아!') : line('ok');
     overlay('ov-party', true); Snd.level(); setTimeout(() => Snd.combo(), 900);
@@ -1057,6 +1058,111 @@
     setTimeout(() => { $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; const d = nbs.done; nbs = null; d(); }, 5000);
   }
 
+  // =====================================================================
+  // 옷장: 거울 앞에서 부위별로 입히기 · 코디 저장 · 몸 색 · 옷 만들기 · 주문
+  // =====================================================================
+  const SLOTS = [['head', '머리'], ['face', '얼굴'], ['neck', '목'], ['body', '몸'], ['hand', '손'], ['back', '등']];
+  const TINT_NAME = { base: '처음 색', sunset: '노을 분홍', sky: '하늘', mint: '민트', lav: '라벤더', rainbow: '무지개', cream: '크림', choco: '초코', berry: '딸기', gray: '구름 회색' };
+  const SEWABLE = ['apron', 'cape', 'pajama', 'dress', 'bag', 'tie'];
+  let wdTab = 'wear', wdSlot = 'head', paintQ = null;
+  function initWear() {
+    S.wear = S.wear || {}; S.tint = S.tint || 'base'; S.tints = S.tints || ['base']; S.outfits = S.outfits || [null, null, null];
+    if (S.acc && ITEMS[S.acc]) { S.wear[ITEMS[S.acc].slot || 'head'] = S.acc; S.acc = null; }
+  }
+  function wdSay(t) { const b = $('wd-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  function wdPet(mood = 'idle') { $('wd-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
+  function openWardrobe(tab) {
+    initWear(); wdTab = tab || 'wear'; paintQ = null; wdPet('happy');
+    wdSay(S.stage < 3 ? '(알에서 나오면 옷을 입을 수 있어요)' : level() === 'talk' ? pick(['오늘은 뭐 입을까?', '거울 앞에 서니까 두근두근!', '예쁘게 꾸며 줘!']) : L3('care'));
+    renderWd(); overlay('ov-wd', true);
+  }
+  function renderWd() {
+    document.querySelectorAll('#wd-tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === wdTab));
+    renderPresets();
+    const body = $('wd-body'), own = (id) => S.items.includes(id);
+    if (wdTab === 'wear') {
+      const ids = Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc' && ITEMS[k].slot === wdSlot);
+      body.innerHTML = `<div class="slot-row">${SLOTS.map(([k, n]) => `<button class="slot ${wdSlot === k ? 'on' : ''}" data-slot="${k}">${n}${S.wear[k] ? ' ●' : ''}</button>`).join('')}</div>
+        <div class="wd-grid"><button class="wd-item off" data-off="1"><span class="ia"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="#C9B8D9" stroke-width="3"/><path d="M10 30 L30 10" stroke="#C9B8D9" stroke-width="3"/></svg></span><b>안 입기</b></button>
+        ${ids.map(k => { const I = ITEMS[k], o = own(k), on = S.wear[wdSlot] === k; return `<button class="wd-item ${o ? '' : 'lock'} ${on ? 'on' : ''}" data-wear="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${I.name}</b><small>${o ? (on ? '입는 중' : '') : I.sew ? '재봉 공방에서 만들어요' : I.gift ? '생일 선물' : `주문 · 별사탕 ${I.price}`}</small></button>`; }).join('')}</div>`;
+      body.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { Snd.tap(); wdSlot = b.dataset.slot; renderWd(); });
+      body.querySelector('[data-off]').onclick = () => { Snd.tap(); delete S.wear[wdSlot]; save(); wdPet(); renderWd(); };
+      body.querySelectorAll('[data-wear]').forEach(b => b.onclick = () => {
+        const k = b.dataset.wear;
+        if (!own(k)) { Snd.no(); if (ITEMS[k].sew) { wdTab = 'sew'; renderWd(); } else if (!ITEMS[k].gift) { wdTab = 'shop'; renderWd(); } return; }
+        if (S.stage < 3) { toast('알에서 나오면 입을 수 있어요'); return; }
+        S.wear[wdSlot] = k; Snd.pop();
+        const ts = (TASTE[S.kind].acc || {})[k] || 'like', first = !S.known.acc[k]; S.known.acc[k] = ts; if (first) addFriend(ts === 'love' ? 6 : 2);
+        wdPet(ts === 'hate' ? 'sad' : 'happy'); const p = $('wd-pet'); p.classList.remove('hop'); void p.offsetWidth; p.classList.add('hop');
+        wdSay(level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].acc[ts], 'ta'), '{x}', ITEMS[k].name) : ts === 'hate' ? L3('yuck') : L3('care'));
+        S.log.push({ e: 'wear', id: k }); save(); renderWd();
+      });
+    } else if (wdTab === 'tint') {
+      if (paintQ) return renderPaint();
+      const tints = Object.keys(Art.TINT_DEF[S.kind]);
+      body.innerHTML = `<p class="sub">물감 공방에서 물감을 만들면 몸 색을 바꿀 수 있어요</p><div class="wd-grid">${tints.map(t => { const o = S.tints.includes(t), on = S.tint === t;
+        return `<button class="wd-item ${on ? 'on' : ''}" data-tint="${t}"><span class="ia">${Art.draw(S.kind, Math.max(3, S.stage), 'happy', { wear: {}, tint: t })}</span><b>${TINT_NAME[t]}</b><small>${o ? (on ? '지금 색' : '바꾸기') : '물감 만들기 (문제 2개)'}</small></button>`; }).join('')}</div>`;
+      body.querySelectorAll('[data-tint]').forEach(b => b.onclick = () => {
+        const t = b.dataset.tint; Snd.tap();
+        if (S.stage < 3) { toast('알에서 나오면 색을 바꿀 수 있어요'); return; }
+        if (S.tints.includes(t)) { S.tint = t; save(); wdPet('happy'); sparks($('wd-mirror'), 14); wdSay(level() === 'talk' ? pick(['우와, 새 색이다! 어울려?', '몸이 반짝반짝해!', '나 이 색 마음에 들어!']) : L3('care')); renderWd(); }
+        else { paintQ = { tint: t, got: 0 }; renderPaint(); }
+      });
+    } else if (wdTab === 'sew') {
+      body.innerHTML = `<p class="sub">단계마다 문제를 풀면 옷이 완성돼요 (문제 4개)</p><div class="wd-grid">${SEWABLE.map(k => `<button class="wd-item ${own(k) ? 'on' : ''}" data-sew="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${ITEMS[k].name}</b><small>${own(k) ? '만들었어요 · 다시 만들기' : '만들기'}</small></button>`).join('')}</div>`;
+      body.querySelectorAll('[data-sew]').forEach(b => b.onclick = () => { Snd.tap(); overlay('ov-wd', false); startSew(b.dataset.sew); });
+    } else {
+      const ids = Object.keys(ITEMS).filter(k => !own(k) && ITEMS[k].price && !ITEMS[k].sew && !ITEMS[k].gift).sort((a, b) => (ITEMS[a].kind === 'acc' ? 0 : 1) - (ITEMS[b].kind === 'acc' ? 0 : 1));
+      body.innerHTML = `<p class="sub">가진 별사탕 <b>${S.candy}</b>개</p><div class="wd-grid">${ids.map(k => `<button class="wd-item" data-buy="${k}"><span class="ia">${ITEMS[k].kind === 'acc' ? Art.wearIcon(k, S.kind) : Scene.item(k)}</span><b>${ITEMS[k].name}</b><small>${ITEMS[k].kind === 'acc' ? '옷' : '가구'} · 별사탕 ${ITEMS[k].price}</small></button>`).join('') || '<p class="sub">모두 모았어요!</p>'}</div>`;
+      body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
+        const k = b.dataset.buy, I = ITEMS[k];
+        if (S.candy < I.price) { Snd.no(); toast(`별사탕이 ${I.price - S.candy}개 더 필요해요. 나들이에서 문제를 풀어 모아요!`); return; }
+        S.candy -= I.price; S.items.push(k); Snd.combo(); hud(); save();
+        toast(`<b>${I.name}</b>${Prob.jo(I.name, '이').slice(I.name.length)} 도착했어요!`);
+        if (I.kind === 'acc') { wdSlot = I.slot; wdTab = 'wear'; } renderWd();
+      });
+    }
+  }
+  function renderPresets() {
+    $('wd-presets').innerHTML = S.outfits.map((o, i) => `<div class="preset"><button class="pre-load" data-load="${i}" ${o ? '' : 'disabled'}>${o ? Art.draw(S.kind, Math.max(3, S.stage), 'idle', { wear: o.wear, tint: o.tint }) : `<span>코디 ${i + 1}</span>`}</button><button class="pre-save" data-save="${i}">저장</button></div>`).join('');
+    $('wd-presets').querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
+      const o = S.outfits[+b.dataset.load]; if (!o) return; Snd.pop();
+      S.wear = Object.assign({}, Object.fromEntries(Object.entries(o.wear).filter(([, id]) => S.items.includes(id)))); if (S.tints.includes(o.tint)) S.tint = o.tint;
+      save(); wdPet('happy'); wdSay(level() === 'talk' ? '이 코디 좋아!' : L3('care')); renderWd();
+    });
+    $('wd-presets').querySelectorAll('[data-save]').forEach(b => b.onclick = () => { Snd.combo(); S.outfits[+b.dataset.save] = { wear: Object.assign({}, S.wear), tint: S.tint }; save(); toast(`지금 모습을 <b>코디 ${+b.dataset.save + 1}</b>에 저장했어요`); renderPresets(); });
+  }
+  // 물감 공방: 분수 문제 2개를 맞히면 새 색 물감이 완성
+  function renderPaint() {
+    const body = $('wd-body'), P = paintQ;
+    P.q = Prob.themed('paint');
+    body.innerHTML = `<div class="paint-head"><span class="paint-pot" style="--c:${(Art.TINT_DEF[S.kind][P.tint].g || Art.TINT_DEF[S.kind][P.tint].lin || ['#fff'])[2] || '#FFD3E2'}"></span><b>${TINT_NAME[P.tint]} 물감 만들기</b><span>${P.got} / 2</span></div>
+      <div class="qcard small"><div class="qtag">물감 공방</div><div class="qtext long">${P.q.q}</div></div><div class="choices${P.q.choices.length === 3 ? ' three' : ''}" id="paint-ch"></div><button class="btn ghost" id="paint-stop">그만할래요</button>`;
+    P.q.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch'; b.innerHTML = c; b.onclick = () => paintAnswer(b, c); $('paint-ch').appendChild(b); });
+    $('paint-stop').onclick = () => { Snd.tap(); paintQ = null; renderWd(); };
+    P.lock = false;
+  }
+  function paintAnswer(btn, c) {
+    const P = paintQ; if (P.lock) return; P.lock = true; const q = P.q, ok = c === q.ans, st = S.stats[q.unit] || (S.stats[q.unit] = { c: 0, w: 0 }); S.total++;
+    const all = [...$('paint-ch').children];
+    if (ok) {
+      btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; P.got++; Snd.ok();
+      if (P.got >= 2) {
+        S.tints.push(P.tint); S.tint = P.tint; S.log.push({ e: 'tint', id: P.tint }); paintQ = null; save();
+        setTimeout(() => { Snd.level(); wdPet('happy'); sparks($('wd-mirror'), 20); wdSay(level() === 'talk' ? `${TINT_NAME[P.tint]} 색이 됐어! 나 어때?` : L3('care')); renderWd(); }, 700);
+        return;
+      }
+    } else { btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === q.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++; Snd.no(); }
+    save(); setTimeout(renderPaint, ok ? 800 : 1800);
+  }
+  document.querySelectorAll('#wd-tabs .tab').forEach(b => b.onclick = () => { Snd.tap(); wdTab = b.dataset.tab; paintQ = null; renderWd(); });
+  $('wd-close').onclick = () => { Snd.tap(); overlay('ov-wd', false); paintQ = null; renderHome(); react('happy', 'hop'); if (S.stage < MAX_STAGE && S.xp >= STAGE_XP[S.stage + 1]) setTimeout(() => levelUp(), 300); };
+
+  // ---------- 재봉 공방 (나들이처럼 단계마다 문제) ----------
+  const SEW_STEPS = [['천 자르기', 'cut', 'area'], ['바느질하기', 'stitch', 'rule'], ['무늬 넣기', 'pattern', 'sym'], ['리본·레이스 달기', 'ribbon', 'frac']];
+  const SEW_COLOR = { apron: '#FFE0EA', cape: '#D9CCFF', pajama: '#D6E7FF', dress: '#FFC7D9', bag: '#FFD3C4', tie: '#BFDCFF' };
+  function startSew(id) { initWear(); OUT = { type: 'sew', id, step: 0, n: 4, res: [], finds: [], fill: 0, anim: false }; beginOut(); }
+
   // ---------- 바람 들어주기 ----------
   function fulfill(t, id, where = 'home') {
     const w = S.wishes.find(x => !x.done && x.t === t && x.id === id); if (!w) return false;
@@ -1412,17 +1518,25 @@
     if (editing) { editing = false; $('room').classList.remove('editing'); document.querySelector('.home').classList.remove('editing'); $('edit-layer').innerHTML = ''; $('edit-bar').innerHTML = ''; }
     stopBall(); clearTimeout(wanderT); clearTimeout(idleT); if (sulking) { sulking = false; clearTimeout(sulkT); $('walker').classList.remove('sulk'); }
     show('scr-out'); S.combo = 0;
-    const st = $('stage'); st.classList.toggle('cooking', OUT.type === 'cook');
-    $('out-title').textContent = OUT.type === 'cook' ? `${FOODS[OUT.id].name} 만들기` : `${PLACES[OUT.id].name} 산책`;
+    const st = $('stage'); st.classList.toggle('cooking', OUT.type !== 'walk'); st.classList.toggle('sewing', OUT.type === 'sew');
+    $('out-title').textContent = OUT.type === 'cook' ? `${FOODS[OUT.id].name} 만들기` : OUT.type === 'sew' ? `${ITEMS[OUT.id].name} 만들기` : `${PLACES[OUT.id].name} 산책`;
     $('stage-bg').dataset.place = '';
-    drawOutPet('idle'); renderOut(); speak('out', line(OUT.type === 'cook' ? 'cookStart' : 'walkStart'));
+    drawOutPet('idle'); renderOut(); speak('out', OUT.type === 'sew' && level() === 'talk' ? pick(['옷 만들기다! 두근두근.', '내 옷을 만들어 준다고? 고마워!']) : line(OUT.type === 'walk' ? 'walkStart' : 'cookStart'));
     st.classList.toggle('walking-scene', OUT.type === 'walk'); $('opet').style.left = ''; $('stage-bg').style.background = '';
     if (OUT.type === 'walk') { renderOut(); placeOutPet(0, true); } else { $('cook-fx').innerHTML = ''; placeCookFx(); }
-    Snd.music(OUT.type === 'cook' ? 'cook' : 'walk');
+    Snd.music(OUT.type === 'walk' ? 'walk' : 'cook');
     nextQ();
   }
   function renderOut() {
-    if (OUT.type === 'cook') {
+    if (OUT.type === 'sew') {
+      if ($('stage-bg').dataset.place !== 'sew-' + OUT.id) {
+        $('stage-bg').innerHTML = Scene.sewroom() + `<div id="sew-piece"><div class="cloth" style="background:${SEW_COLOR[OUT.id]}"></div><div class="garm">${Art.wearIcon(OUT.id, S.kind)}</div></div>`;
+        $('stage-bg').dataset.place = 'sew-' + OUT.id;
+      }
+      placeCookFx(); const fx = $('cook-fx'), pc = $('sew-piece');
+      if (pc) { Object.assign(pc.style, { left: fx.style.left, top: (parseFloat(fx.style.top) + parseFloat(fx.style.height) * .28) + 'px', width: fx.style.width, height: (parseFloat(fx.style.height) * .72) + 'px' }); pc.className = 's' + OUT.fill; }
+      if (!OUT.anim) $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${SEW_STEPS[OUT.step][0]}` : '완성!';
+    } else if (OUT.type === 'cook') {
       const F = FOODS[OUT.id];
       // 부엌은 한 번만 그리고, 그릇 내용물은 재료가 실제로 들어간 만큼만 채운다
       if ($('stage-bg').dataset.place !== 'cook-' + OUT.id) { $('stage-bg').innerHTML = Scene.kitchen(0, F.color, false); $('stage-bg').dataset.place = 'cook-' + OUT.id; }
@@ -1462,7 +1576,7 @@
     clearTimeout(outReact.t); outReact.t = setTimeout(() => drawOutPet('idle'), 1500);
   }
   function nextQ() {
-    cur = Prob.next(S.rot, S.review, S.total);
+    cur = OUT.type === 'sew' ? Prob.themed(SEW_STEPS[OUT.step][2]) : Prob.next(S.rot, S.review, S.total);
     const U = Prob.UNITS[cur.unit];
     const tag = $('qtag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
     $('qfig').innerHTML = cur.fig; $('qtext').innerHTML = cur.q;
@@ -1483,21 +1597,33 @@
       const bonus = S.combo % 5 === 0 ? 1 : 0; S.candy += 1 + bonus; S.xp += 1 + bonus;
       const big = S.combo === 3 || S.combo === 5 || S.combo === 10 || (S.combo > 10 && S.combo % 5 === 0);
       if (big) { Snd.combo(); speak('out', line(S.combo === 3 ? 'c3' : S.combo === 5 ? 'c5' : 'c10')); const cw = $('hud-combo-wrap'); cw.classList.remove('hot'); void cw.offsetWidth; cw.classList.add('hot'); }
-      else { Snd.ok(); speak('out', line(OUT.type === 'cook' ? 'cookOk' : 'walkOk')); }
+      else { Snd.ok(); speak('out', line(OUT.type === 'walk' ? 'walkOk' : OUT.type === 'sew' ? 'sewOk' : 'cookOk')); }
       outReact('happy', 'hop'); sparks($('ofx'), S.combo >= 5 ? 16 : 10);
     } else {
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === cur.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); });
       st.w++; S.combo = 0;
       if (!S.review.some(r => r.unit === cur.unit && r.type === cur.type)) S.review.push({ unit: cur.unit, type: cur.type, due: S.total + R(3, 6) });
       if (S.review.length > 12) S.review.shift();
-      Snd.no(); speak('out', line(OUT.type === 'cook' ? 'cookNo' : 'walkNo', { a: cur.ans })); outReact('sad', 'shake');
+      Snd.no(); speak('out', line(OUT.type === 'walk' ? 'walkNo' : OUT.type === 'sew' ? 'sewNo' : 'cookNo', { a: cur.ans })); outReact('sad', 'shake');
     }
-    OUT.res[OUT.step] = ok; OUT.step++; if (OUT.type === 'cook') OUT.anim = true; // 답을 고른 순간부터 애니메이션이 끝날 때까지 단계 이름을 바꾸지 않는다
+    OUT.res[OUT.step] = ok; OUT.step++; if (OUT.type !== 'walk') OUT.anim = true; // 답을 고른 순간부터 애니메이션이 끝날 때까지 단계 이름을 바꾸지 않는다
     save(); renderOut();
     setTimeout(advance, ok ? 1300 : 2400);
   }
   function advance() {
     if (!$('scr-out').classList.contains('on')) return;
+    if (OUT.type === 'sew') {
+      const st = SEW_STEPS[OUT.step - 1]; placeCookFx(); OUT.anim = true;
+      $('step-label').textContent = `${OUT.step}. ${st[0]}`;
+      const T = CookFX.sew($('cook-fx'), st[1], OUT.res[OUT.step - 1]);
+      setTimeout(() => { OUT.fill++; const pc = $('sew-piece'); if (pc) pc.className = 's' + OUT.fill; Snd.pop(); }, T * .6);
+      setTimeout(() => {
+        OUT.anim = false; renderOut();
+        if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); const pc = $('sew-piece'); if (pc) pc.classList.add('done'); setTimeout(finishOut, 1300); }
+        else nextQ();
+      }, T);
+      return;
+    }
     if (OUT.type === 'cook') {
       // 방금 푼 단계의 동작을 보여 준 뒤 그릇을 채우고 다음 단계로
       const F = FOODS[OUT.id], st = F.steps[OUT.step - 1]; placeCookFx();
@@ -1525,6 +1651,19 @@
   function finishOut() {
     const good = OUT.res.filter(Boolean).length; let gets = [];
     const o = OUT;
+    if (o.type === 'sew') {
+      const I = ITEMS[o.id], first = !S.items.includes(o.id); if (first) S.items.push(o.id);
+      addFriend(3); S.log.push({ e: 'sew', id: o.id, good });
+      $('res-art').innerHTML = Art.wearIcon(o.id, S.kind);
+      $('res-title').innerHTML = `${I.name} 완성!`;
+      $('res-line').innerHTML = level() === 'talk' ? pick(['우와, 내 옷이야? 빨리 입어 보고 싶어!', '한 땀 한 땀 정성이 느껴져. 고마워!']) : L3('care');
+      $('res-gets').innerHTML = [`맞힌 문제 ${good} / ${o.n}`, first ? `${I.name} +1` : '한 벌 더 만들었어요'].map(g => `<span>${g}</span>`).join('');
+      $('res-btns').innerHTML = `<button class="btn big primary" id="rb-wear">바로 입혀 주기</button><button class="btn" id="rb-home">옷장에 넣기</button>`;
+      overlay('ov-result', true);
+      $('rb-wear').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(() => { initWear(); if (S.stage >= 3) S.wear[I.slot] = o.id; save(); renderHome(); react('happy', 'hop'); speak('home', level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].acc[(TASTE[S.kind].acc || {})[o.id] || 'like'], 'ta'), '{x}', I.name) : L3('care')); }); };
+      $('rb-home').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(); };
+      save(); return;
+    }
     if (o.type === 'cook') {
       const stars = good >= 5 ? 3 : good >= 3 ? 2 : 1;
       S.foods[o.id] = (S.foods[o.id] || 0) + 1; addNeed('full', -5); addNeed('mood', 5); addFriend(3);
@@ -1612,7 +1751,7 @@
     $('book-body').innerHTML =
       sec('좋아하는 간식', 'food', Object.keys(FOODS), id => FOODS[id].name, id => Scene.food(id)) +
       sec('좋아하는 장소', 'place', Object.keys(PLACES), id => PLACES[id].name, () => ICON.walk.replace(/#fff/g, '#55C3A3')) +
-      sec('좋아하는 장식', 'acc', Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc'), id => ITEMS[id].name, id => Scene.item(id)) +
+      sec('좋아하는 옷과 장식', 'acc', Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc'), id => ITEMS[id].name, id => Art.wearIcon(id, S.kind)) +
       `<div class="book-sec"><h4>산책길 이웃</h4><div class="book-items">${Object.keys(NEIGH).map(k => { const N = NEIGH[k], n = (S.nb || {})[N.id] || 0; return `<span class="bi ${n ? '' : 'unk'}"><span class="bic">${NB_ART[N.id]}</span>${n ? N.name : '???'}${n ? `<em class="love">${'♥'.repeat(Math.min(5, n))}</em>` : `<em>${PLACES[k].name}</em>`}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>그림책</h4><div class="book-items">${Object.keys(BOOKS).map(id => { const has = ownBooks().includes(id), n = (S.read || {})[id] || 0; return `<span class="bi ${has ? '' : 'unk'}">${has ? BOOKS[id].title : '???'}${n ? `<em class="like">${n}번 읽음</em>` : ''}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>이야기</h4>${stories}</div>` +
@@ -1667,7 +1806,7 @@
     if (S.candy < I.price) { toast(`별사탕이 ${I.price - S.candy}개 더 필요해요. 나들이에서 문제를 풀어 모아요!`); return; }
     S.candy -= I.price; S.items.push(k); Snd.combo(); toast(`<b>${I.name}</b>${bat(I.name) ? '이' : '가'} 도착했어요!`); save(); hud(); openCloset(I.kind === 'acc' ? 'acc' : 'decor');
   }
-  $('btn-closet').onclick = () => { Snd.tap(); poked(); openCloset('acc'); };
+  $('btn-closet').onclick = () => { Snd.tap(); poked(); openWardrobe(); };
 
   // ---------- 일기 ----------
   function diaryText(log) {
@@ -1684,6 +1823,8 @@
     if (log.some(e => e.e === 'party')) out.push(talk ? '오늘은 내 생일이었어! 케이크도, 풍선도, 고깔모자도… 평생 잊지 못할 거야.' : '생일 파티를 했어요!');
     [...new Set(log.filter(e => e.e === 'help').map(e => e.id))].forEach(id => { const N = Object.values(NEIGH).find(x => x.id === id); out.push(talk ? `${N.name}의 부탁을 들어줬어. 우리 이웃이 생겼어!` : `${N.name}${Prob.jo(N.name, '을').slice(N.name.length)} 도와줬어요.`); });
     [...new Set(log.filter(e => e.e === 'read').map(e => e.id))].forEach(id => out.push(talk ? `같이 「${BOOKS[id].title}」${Prob.hasBatchim(BOOKS[id].title) ? '을' : '를'} 읽었어. ${BOOKS[id].chat[1]}` : `「${BOOKS[id].title}」${Prob.hasBatchim(BOOKS[id].title) ? '을' : '를'} 읽었어요.`));
+    [...new Set(log.filter(e => e.e === 'sew').map(e => e.id))].forEach(id => out.push(talk ? `너랑 ${Prob.jo(ITEMS[id].name, '을')} 만들었어. 내 옷이 생겼어!` : `${Prob.jo(ITEMS[id].name, '을')} 만들었어요.`));
+    if (log.some(e => e.e === 'tint')) out.push(talk ? '물감 공방에서 새 색 물감을 만들어서 몸 색을 바꿨어!' : '몸 색을 바꿨어요.');
     if (log.some(e => e.e === 'plant')) out.push(talk ? '텃밭에 씨앗을 심었어. 빨리 자랐으면 좋겠다.' : '텃밭에 씨앗을 심었어요.');
     if (log.some(e => e.e === 'water')) out.push(talk ? '텃밭에 물도 줬어. 내일 쑥 자라 있겠지?' : '텃밭에 물을 줬어요.');
     log.filter(e => e.e === 'harvest').forEach(e => out.push(talk ? `${ING_NAME[e.id]}${Prob.jo(ING_NAME[e.id], '을').slice(ING_NAME[e.id].length)} 거뒀어! 우리가 키운 거야.` : `${ING_NAME[e.id]}${Prob.jo(ING_NAME[e.id], '을').slice(ING_NAME[e.id].length)} 거뒀어요.`));

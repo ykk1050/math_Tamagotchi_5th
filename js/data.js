@@ -17,18 +17,36 @@ const DATA = (() => {
   };
   // slot: 꾸미는 자리 / acc: 친구가 쓰는 것
   const ITEMS = {
-    flower:   { name: '꽃핀',        kind: 'acc', price: 20 },
-    crown:    { name: '작은 왕관',    kind: 'acc', price: 30 },
-    berryhat: { name: '딸기 모자',    kind: 'acc', price: 25 },
-    scarf:    { name: '포근 목도리',  kind: 'acc', price: 20 },
-    bow:      { name: '분홍 리본',    kind: 'acc', price: 15 },
+    flower:   { name: '꽃핀',        kind: 'acc', slot: 'head', price: 20 },
+    crown:    { name: '작은 왕관',    kind: 'acc', slot: 'head', price: 30 },
+    berryhat: { name: '딸기 모자',    kind: 'acc', slot: 'head', price: 25 },
+    scarf:    { name: '포근 목도리',  kind: 'acc', slot: 'neck', price: 20 },
+    bow:      { name: '분홍 리본',    kind: 'acc', slot: 'head', price: 15 },
     shell:    { name: '조개 장식',    kind: 'decor', slot: 'sill', price: 15 },
     plant:    { name: '꽃 화분',      kind: 'decor', slot: 'floorL', price: 15 },
     lamp:     { name: '별 조명',      kind: 'decor', slot: 'shelf', price: 20 },
     cushion:  { name: '구름 쿠션',    kind: 'decor', slot: 'floorR', price: 20 },
     rug:      { name: '딸기 러그',    kind: 'decor', slot: 'rug', price: 25 },
     frame:    { name: '우리 사진 액자', kind: 'decor', slot: 'wall', price: 15 },
-    phat:     { name: '생일 고깔모자', kind: 'acc', price: 0, gift: true },
+    phat:     { name: '생일 고깔모자', kind: 'acc', slot: 'head', price: 0, gift: true },
+    earmuff:  { name: '폭신 귀마개',   kind: 'acc', slot: 'head', price: 20 },
+    beret:    { name: '보라 베레모',   kind: 'acc', slot: 'head', price: 20 },
+    strawhat: { name: '밀짚모자',     kind: 'acc', slot: 'head', price: 25 },
+    glasses:  { name: '동그란 안경',   kind: 'acc', slot: 'face', price: 20 },
+    sticker:  { name: '하트 볼 스티커', kind: 'acc', slot: 'face', price: 10 },
+    freckle:  { name: '별 주근깨',     kind: 'acc', slot: 'face', price: 10 },
+    pearl:    { name: '진주 목걸이',   kind: 'acc', slot: 'neck', price: 25 },
+    tie:      { name: '나비넥타이',    kind: 'acc', slot: 'neck', sew: true },
+    apron:    { name: '앞치마',       kind: 'acc', slot: 'body', sew: true },
+    cape:     { name: '별 망토',      kind: 'acc', slot: 'body', sew: true },
+    pajama:   { name: '별 잠옷',      kind: 'acc', slot: 'body', sew: true },
+    dress:    { name: '물방울 원피스', kind: 'acc', slot: 'body', sew: true },
+    balloon:  { name: '풍선',         kind: 'acc', slot: 'hand', price: 15 },
+    umbrella: { name: '우산',         kind: 'acc', slot: 'hand', price: 20 },
+    wand:     { name: '요술봉',       kind: 'acc', slot: 'hand', price: 30 },
+    bouquet:  { name: '꽃다발',       kind: 'acc', slot: 'hand', price: 15 },
+    bag:      { name: '작은 가방',     kind: 'acc', slot: 'back', sew: true },
+    wings:    { name: '나비 날개',     kind: 'acc', slot: 'back', price: 35 },
     chair:    { name: '별 의자',      kind: 'decor', price: 20 },
     table:    { name: '동그란 탁자',   kind: 'decor', price: 25 },
     teddy:    { name: '곰 인형',      kind: 'decor', price: 30 },
@@ -53,12 +71,12 @@ const DATA = (() => {
     cloud: {
       food: { cotton: 'love', pudding: 'love', milk: 'like', cookie: 'like', pancake: 'like', cake: 'hate' },
       place: { hill: 'love', beach: 'like', garden: 'like', berry: 'like' },
-      acc: { crown: 'love', scarf: 'like', flower: 'like', bow: 'like', berryhat: 'hate', phat: 'love' }
+      acc: { crown: 'love', scarf: 'like', flower: 'like', bow: 'like', berryhat: 'hate', phat: 'love', cape: 'love', wand: 'love', umbrella: 'hate' }
     },
     bunny: {
       food: { cake: 'love', milk: 'love', cookie: 'like', pudding: 'like', pancake: 'like', cotton: 'hate' },
       place: { berry: 'love', garden: 'like', beach: 'like', hill: 'like' },
-      acc: { flower: 'love', berryhat: 'like', bow: 'like', scarf: 'like', crown: 'hate', phat: 'love' }
+      acc: { flower: 'love', berryhat: 'like', bow: 'like', scarf: 'like', crown: 'hate', phat: 'love', dress: 'love', bouquet: 'love', earmuff: 'hate' }
     }
   };
   const TASTE_LINE = {

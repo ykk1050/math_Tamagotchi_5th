@@ -24,6 +24,7 @@ const Scene = (() => {
   };
   function item(id) {
     if (DECOR[id]) return svg('0 0 64 64', DECOR[id]);
+    if (Art.WEAR && Art.WEAR[id]) return Art.wearIcon(id);
     if (Art.ACC[id]) { Art.installDefs(); return svg('-22 -22 44 44', `<g transform="scale(1.3)">${Art.ACC[id]()}</g>`); }
     return '';
   }
@@ -198,6 +199,21 @@ const Scene = (() => {
     `, 'xMidYMax slice');
   }
 
+  // ---------- 재봉 공방 (부엌과 같은 600×420 배치: 작업대 가운데 x=360) ----------
+  function sewroom() {
+    return svg('0 0 600 420', `
+      <defs><pattern id="sw-dot" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="2.4" fill="#E3D8FF"/><path d="M22 20 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z" fill="#FFE4EE" transform="scale(.6) translate(14 10)"/></pattern></defs>
+      <rect width="600" height="300" fill="#FBF6FF"/><rect width="600" height="300" fill="url(#sw-dot)"/>
+      <rect x="40" y="60" width="200" height="12" rx="6" fill="#F2D3B6"/>
+      ${[['#F7A0C1', 60], ['#9EC2F2', 95], ['#FFD36E', 130], ['#8FE0C9', 165], ['#C9B8FF', 200]].map(([c, x]) => `<g transform="translate(${x} 28)"><rect x="-10" y="0" width="20" height="32" rx="4" fill="#E8C58F"/><rect x="-8" y="4" width="16" height="24" fill="${c}"/></g>`).join('')}
+      <g transform="translate(460 70)"><rect width="110" height="150" rx="10" fill="#fff" stroke="#E3D8FF" stroke-width="3"/><path d="M20 30 h70 M20 60 h50 M20 90 h70 M20 120 h40" stroke="#F3D3E2" stroke-width="6" stroke-linecap="round"/></g>
+      <rect x="0" y="300" width="600" height="120" fill="#E8C9A8"/><rect x="0" y="292" width="600" height="16" rx="6" fill="#F2DCC2"/>
+      <rect x="250" y="300" width="220" height="70" rx="10" fill="#BDE7D2" stroke="#8FD3B4" stroke-width="3"/>
+      ${[280, 310, 340, 370, 400, 430].map(x => `<path d="M${x} 304 v62" stroke="#A9DCC4" stroke-width="2"/>`).join('')}
+      <g transform="translate(140 300)"><ellipse cx="0" cy="-14" rx="26" ry="20" fill="#F7A0C1" stroke="#E5679A" stroke-width="3"/>${[[-10, -26], [4, -30], [14, -22], [-4, -18]].map(([x, y], i) => `<path d="M${x} ${y} l-4 -14" stroke="#A8A3B8" stroke-width="2"/><circle cx="${x - 4}" cy="${y - 14}" r="3.4" fill="${['#FFD36E', '#9EC2F2', '#8FE0C9', '#C9B8FF'][i]}"/>`).join('')}</g>
+    `, 'xMidYMax slice');
+  }
+
   // ---------- 산책길 ----------
   function path(placeId, steps, night, aspect = 600 / 420) {
     const W = Math.max(200, Math.round(420 * aspect)), k = W / 600;
@@ -294,5 +310,5 @@ const Scene = (() => {
     if (id === 'rug') return svg('-250 -70 500 70', `<ellipse cx="0" cy="-32" rx="250" ry="58" fill="#FFC7D9" stroke="#E5679A" stroke-width="5"/><ellipse cx="0" cy="-32" rx="190" ry="40" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="14 12"/>`, 'none');
     return svg('0 0 64 64', DECOR[id] || '', 'none');
   }
-  return { food, item, need, room, kitchen, path, pathNodes, ball, itemBox, itemAlone, clampPos, walkScene, WALK_F, layerOf, DEF_POS, WALLS, FLOORS, swatch };
+  return { food, item, need, room, kitchen, path, pathNodes, ball, itemBox, itemAlone, clampPos, walkScene, WALK_F, sewroom, layerOf, DEF_POS, WALLS, FLOORS, swatch };
 })();

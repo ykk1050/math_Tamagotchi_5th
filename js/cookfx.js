@@ -106,6 +106,35 @@ const CookFX = (() => {
     setTimeout(() => { host.innerHTML = ''; }, T + 150);
     return T;
   }
+  // 재봉 동작: 자르기 · 바느질 · 대칭 무늬 · 리본 달기
+  const SCISSORS = `<g fill="none" stroke="#8D9AB0" stroke-width="4" stroke-linecap="round"><path d="M10 34 L44 18"/><path d="M10 18 L44 34"/></g><circle cx="10" cy="14" r="7" fill="#F7A0C1" stroke="#E5679A" stroke-width="2.4"/><circle cx="10" cy="38" r="7" fill="#F7A0C1" stroke="#E5679A" stroke-width="2.4"/>`;
+  const NEEDLE = `<path d="M8 52 L48 12" stroke="#A8A3B8" stroke-width="3" stroke-linecap="round"/><ellipse cx="46" cy="14" rx="2" ry="4" transform="rotate(45 46 14)" fill="none" stroke="#6E6A86" stroke-width="1.4"/><path d="M47 13 q10 -6 6 10 q-4 10 -14 4" stroke="#F28DB2" stroke-width="1.8" fill="none"/>`;
+  function sew(host, action, ok) {
+    host.innerHTML = '';
+    const T = { cut: 1600, stitch: 1700, pattern: 1800, ribbon: 1400 }[action] || 1400;
+    if (action === 'cut') {
+      host.appendChild(el('cutline', ''));
+      host.appendChild(el('ing scissors', S('0 0 54 52', SCISSORS)));
+      [300, 700, 1100].forEach(t => setTimeout(() => host.appendChild(el('tok', '싹둑', `left:${20 + t / 30}%;top:12%`)), t));
+    } else if (action === 'stitch') {
+      host.appendChild(el('stitchline', ''));
+      host.appendChild(el('ing needle', S('0 0 60 60', NEEDLE)));
+    } else if (action === 'pattern') {
+      host.appendChild(el('axis', ''));
+      [[30, 40], [22, 60], [34, 74]].forEach(([x, y], i) => {
+        host.appendChild(el('motif l', '★', `left:${x}%;top:${y}%;animation-delay:${.2 + i * .2}s`));
+        host.appendChild(el('motif r', '★', `left:${100 - x}%;top:${y}%;animation-delay:${.9 + i * .2}s`));
+      });
+      setTimeout(() => host.appendChild(el('tok', '똑같이 겹쳐요!', 'left:20%;top:0')), 1100);
+    } else if (action === 'ribbon') {
+      host.appendChild(el('ing ribbonfx', S('-16 -12 32 24', '<path d="M0 0 C-6 -9 -13 -7 -12 0 C-13 7 -6 9 0 0 Z M0 0 C6 -9 13 -7 12 0 C13 7 6 9 0 0 Z" fill="#FF9CC0" stroke="#C9578A" stroke-width="1.3"/><circle r="3.2" fill="#D9628E"/>')));
+      [0, 1, 2].forEach(i => host.appendChild(el('button-pop', '', `left:${40 + i * 10}%;top:${58 + (i % 2) * 6}%;animation-delay:${.6 + i * .2}s`)));
+    }
+    if (!ok) setTimeout(() => host.appendChild(el('oops', '앗, 삐뚤빼뚤해졌다!')), T * .6);
+    setTimeout(() => { host.innerHTML = ''; }, T + 150);
+    return T;
+  }
+
   // 완성: 그릇 위로 간식이 솟아오른다
   function done(host, foodSvg) {
     host.innerHTML = '';
@@ -114,5 +143,5 @@ const CookFX = (() => {
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; host.appendChild(el('drop-p star-p', '', `background:${cols[i % 4]};--dx:${Math.cos(a) * 90}px;--dy:${Math.sin(a) * 70 - 40}px;animation-delay:.5s`)); }
     return 1300;
   }
-  return { play, done, ing, land };
+  return { play, done, ing, land, sew };
 })();
