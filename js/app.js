@@ -81,11 +81,37 @@
   function speak(where, html, opt = {}) {
     const b = $(where === 'out' ? 'obubble' : 'bubble'), tx = $(where === 'out' ? 'obubble-txt' : 'bubble-txt');
     tx.innerHTML = html; b.classList.remove('hide');
+    b._who = opt.who === 'N' ? $('nbw') : where === 'out' ? $('opet') : $('walker');
+    $('walker').classList.toggle('talking', where === 'home'); followBubbles();
     b.classList.toggle('act', html.startsWith('('));
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
     const lv = level();
     if (!opt.silent) { if (lv === 'babble' || lv === 'word') Snd.babble(lv === 'babble' ? 2 : 3, S.kind); else if (lv === 'talk') Snd.babble(1, S.kind); }
-    if (where === 'home') { clearTimeout(speak.t); speak.t = setTimeout(() => b.classList.add('hide'), 6500); }
+    if (where === 'home') { clearTimeout(speak.t); speak.t = setTimeout(() => { b.classList.add('hide'); $('walker').classList.remove('talking'); }, 6500); }
+  }
+  // 말풍선 위치: 말하는 캐릭터 머리 바로 위. 화면 밖으로 나가지 않게 막고, 꼬리는 머리를 가리킨다
+  function placeBubble(b) {
+    const host = b.parentElement, who = b._who; if (!host || !who || who.style.display === 'none') return;
+    const hr = host.getBoundingClientRect(); if (!hr.width) return;
+    const art = who.querySelector('svg') || who, tr = (who.id === 'walker' ? $('pet') : who).getBoundingClientRect();
+    const headX = tr.left + tr.width / 2 - hr.left, headY = tr.top - hr.top + tr.height * (who.id === 'nbw' ? .02 : .1);
+    const bw = b.offsetWidth, bh = b.offsetHeight;
+    const left = Math.max(8, Math.min(hr.width - bw - 8, headX - bw / 2));
+    const top = Math.max(8, headY - bh - 16);
+    b.style.left = left + 'px'; b.style.top = top + 'px'; b.style.right = 'auto';
+    b.style.setProperty('--tx', Math.max(22, Math.min(bw - 22, headX - left)) + 'px');
+    b.classList.toggle('below', headY - bh - 16 < 8 && false);
+  }
+  function followBubbles() {
+    if (followBubbles.on) return; followBubbles.on = true;
+    const tick = () => {
+      let any = false;
+      [['bubble', 'scr-home'], ['obubble', 'scr-out']].forEach(([id, scr]) => {
+        const b = $(id); if ($(scr).classList.contains('on') && !b.classList.contains('hide') && b._who) { placeBubble(b); any = true; }
+      });
+      if (any) requestAnimationFrame(tick); else followBubbles.on = false;
+    };
+    requestAnimationFrame(tick);
   }
 
   // ---------- 효과 ----------
@@ -190,7 +216,7 @@
   };
   $('gi-cook').innerHTML = ICON.cook; $('gi-walk').innerHTML = ICON.walk;
   $('mi-garden').innerHTML = `<svg viewBox="0 0 32 32"><path d="M16 26 v-10" stroke="#4FAA6C" stroke-width="2.6"/><path d="M16 17 c-8 0 -10 -6 -10 -9 c6 0 10 3 10 9 c0 -6 4 -9 10 -9 c0 3 -2 9 -10 9" fill="#9FDDB4" stroke="#4FAA6C" stroke-width="1.8"/><path d="M5 27 h22" stroke="#B98A6A" stroke-width="4" stroke-linecap="round"/></svg>`;
-  $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-diary').innerHTML = ICON.diary;
+  $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-shop').innerHTML = '<svg viewBox="0 0 32 32"><path d="M7 11 h18 l-1.6 15 a2 2 0 0 1 -2 1.8 H10.6 a2 2 0 0 1 -2 -1.8z" fill="#FFC7D9" stroke="#E5679A" stroke-width="2" stroke-linejoin="round"/><path d="M12 11 v-2 a4 4 0 0 1 8 0 v2" fill="none" stroke="#E5679A" stroke-width="2"/><path d="M16 14.5 l1.4 2.9 3.2 .4 -2.3 2.2 .6 3.1 -2.9 -1.5 -2.9 1.5 .6 -3.1 -2.3 -2.2 3.2 -.4z" fill="#FFD36E" stroke="#D9962E" stroke-width="1" stroke-linejoin="round"/></svg>'; $('mi-diary').innerHTML = ICON.diary;
   const wishIcon = (w) => w.t === 'food' ? Scene.food(w.id) : w.t === 'place' ? ICON.walk.replace(/#fff/g, '#55C3A3') : ICON[w.id];
   const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
   const napName = () => (isNight() ? '밤잠 재우기' : '낮잠 재우기');
@@ -1125,7 +1151,7 @@
     nbs.i++;
     if (nbs.i >= nbs.lines.length) { nbs.phase = 'ask'; nbAsk(); return; }
     const [who, t] = nbs.lines[nbs.i];
-    if (who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${t}`, { silent: true }); Snd.babble(2, 'bunny'); bounce($('nbw')); }
+    if (who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${t}`, { silent: true, who: 'N' }); Snd.babble(2, 'bunny'); bounce($('nbw')); }
     else { speak('out', level() === 'talk' ? t : line('poke')); bounce($('opet')); }
     clearTimeout(nbs.t); nbs.t = setTimeout(nextNbLine, 2600);
   }
@@ -1156,9 +1182,9 @@
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === nq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
       Snd.no(); msg = `${N.miss}<br><small style="font-size:.8em;color:#7A6283">정답은 ${nq.ans}</small>`;
     }
-    speak('out', `<b class="spk">${N.name}</b> ${msg}`, { silent: true }); bounce($('nbw')); save(); hud();
+    speak('out', `<b class="spk">${N.name}</b> ${msg}`, { silent: true, who: 'N' }); bounce($('nbw')); save(); hud();
     // 인사하고 왼쪽으로 걸어 나간다
-    setTimeout(() => { speak('out', `<b class="spk">${N.name}</b> ${pick(['또 놀러 와! 안녕~', '고마웠어! 다음에 또 만나!', '잘 가! 조심히 가!'])}`, { silent: true }); $('nbw').classList.add('bye'); }, 3200);
+    setTimeout(() => { speak('out', `<b class="spk">${N.name}</b> ${pick(['또 놀러 와! 안녕~', '고마웠어! 다음에 또 만나!', '잘 가! 조심히 가!'])}`, { silent: true, who: 'N' }); $('nbw').classList.add('bye'); }, 3200);
     setTimeout(() => { $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; const d = nbs.done; nbs = null; d(); }, 5000);
   }
 
@@ -1911,6 +1937,7 @@
     S.candy -= I.price; S.items.push(k); Snd.combo(); toast(`<b>${I.name}</b>${bat(I.name) ? '이' : '가'} 도착했어요!`); save(); hud(); openCloset(I.kind === 'acc' ? 'acc' : 'decor');
   }
   $('btn-closet').onclick = () => { Snd.tap(); poked(); openWardrobe(); };
+  $('btn-shop').onclick = () => { Snd.tap(); poked(); openWardrobe('shop'); };
 
   // ---------- 일기 ----------
   function diaryText(log) {

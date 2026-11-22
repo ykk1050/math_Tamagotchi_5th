@@ -57,7 +57,7 @@
 .care:active{transform:translateY(3px)}
 .care .ci{width:32px;height:32px}.care .ci svg{width:100%;height:100%}
 .care.want::after{content:"!";position:absolute;top:-4px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--rose);color:#fff;font-family:var(--fh);font-size:15px;display:grid;place-items:center}
-.menu-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.menu-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .menu{min-height:72px;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:var(--shadow-s);font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .menu .mi{width:26px;height:26px}.menu .mi svg{width:100%;height:100%}
 .menu.new::after{content:"새 이야기";position:absolute;transform:translate(26px,-26px);background:var(--rose);color:#fff;font-size:11px;padding:2px 6px;border-radius:999px}
@@ -620,3 +620,12 @@ body.lowfx .wl{transition-duration:.4s}
 .objcup{position:absolute;z-index:2;pointer-events:none;animation:cupin 2.6s ease forwards}
 .objcup svg{width:100%;height:100%}
 @keyframes cupin{0%{opacity:0;transform:translateY(-10px)}12%,85%{opacity:1;transform:none}100%{opacity:0}}
+
+/* 말풍선: 말하는 캐릭터 머리 위 */
+.room .bubble,.stage .bubble{right:auto;width:max-content;max-width:min(62%,420px);text-align:center;transition:opacity .25s,transform .25s}
+.room .bubble{z-index:6}
+.stage .bubble{max-width:min(78%,420px)}
+.room .bubble::after,.stage .bubble::after{left:var(--tx,50%)}
+.walker.talking .think{opacity:0;pointer-events:none}
+.think{transition:opacity .25s}
+.menu{white-space:nowrap;font-size:13.5px;letter-spacing:-.3px;padding:0 2px;overflow:hidden}
