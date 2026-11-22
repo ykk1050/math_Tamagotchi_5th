@@ -240,10 +240,11 @@ body.lowfx .tear{animation:none;opacity:1}
 @keyframes cglow{from{fill:#FFB25A}to{fill:#FFE08A}}
 .ding{right:0;top:2%;font-family:var(--fh);font-size:30px;color:#E5679A;text-shadow:0 2px 0 #fff;opacity:0;animation:cding .5s ease 1.25s forwards}
 @keyframes cding{0%{opacity:0;transform:scale(.4) rotate(-20deg)}60%{opacity:1;transform:scale(1.3) rotate(8deg)}100%{opacity:1;transform:scale(1)}}
-.shaking-tool{left:52%;top:0;width:32%;transform-origin:50% 80%;animation:ctilt .35s ease-in-out 4}
-@keyframes ctilt{0%,100%{transform:rotate(150deg)}50%{transform:rotate(170deg) translateY(6px)}}
-.sprk{top:30%;width:8px;height:12px;border-radius:3px;opacity:0;animation:csprk .7s ease-in forwards}
-@keyframes csprk{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(120px) rotate(200deg)}}
+.shaking-tool{transform-origin:50% 25%;animation:ctilt .35s ease-in-out 4}
+.shaking-tool svg{width:100%;height:100%;display:block}
+@keyframes ctilt{0%,100%{transform:translateY(-4px) rotate(-7deg)}50%{transform:translateY(7px) rotate(7deg)}}
+.sprk{width:6px;height:10px;border-radius:3px;opacity:0;animation:csprk .62s ease-in forwards}
+@keyframes csprk{0%{opacity:1;transform:translate(0,0) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--fall,120px)) rotate(200deg)}}
 .spinner{left:50%;top:10%;width:64%;aspect-ratio:1;transform:translateX(-50%);animation:cspin 1.5s ease-out forwards}
 @keyframes cspin{0%{opacity:0;transform:translateX(-50%) scale(.3) rotate(0)}20%{opacity:1}80%{opacity:1;transform:translateX(-50%) scale(1) rotate(600deg)}100%{opacity:0;transform:translateX(-50%) scale(1.1) rotate(720deg)}}
 .topping{left:50%;width:40%;transform:translateX(-50%);animation:ctop 1.1s cubic-bezier(.3,1.4,.5,1) forwards}

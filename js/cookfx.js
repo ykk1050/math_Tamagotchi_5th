@@ -109,9 +109,16 @@ const CookFX = (() => {
       setTimeout(() => bg.classList.remove('shaking'), T);
       [200, 600].forEach(t => setTimeout(() => splash(host, color, 3), t));
     } else if (action === 'sprinkle') {
-      host.appendChild(el('ing shaking-tool', ing('shaker')));
+      // 병을 그릇 바로 위에 거꾸로 들고 흔든다. 흔들어 내려올 때마다 뚜껑 구멍에서 가루가 그릇으로 떨어진다
+      const H = host.clientHeight || 200, W = host.clientWidth || 180, sw = W * .3;
+      const tool = el('shaking-tool', `<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(180 32 32)">${ING.shaker}</g></svg>`, `width:${sw}px;height:${sw}px;left:${W / 2 - sw / 2}px;top:${H * .04}px`);
+      host.appendChild(tool);
+      const hy = H * .04 + sw * .76 + 7, fall = H * .8 - hy; // 구멍 높이 → 그릇 테두리까지
       const cols = ['#F7A0C1', '#8FE0C9', '#FFD36E', '#B9A7F5'];
-      for (let i = 0; i < 18; i++) host.appendChild(el('sprk', '', `left:${40 + Math.random() * 30}%;background:${cols[i % 4]};animation-delay:${.3 + Math.random() * .7}s`));
+      for (let i = 0; i < 20; i++) {
+        const k = i % 4, dl = .18 + k * .35 + Math.random() * .12, dx = (Math.random() - .5) * sw * .28;
+        host.appendChild(el('sprk', '', `left:${W / 2 + dx - 3}px;top:${hy}px;--fall:${fall + Math.random() * 10}px;--dx:${(Math.random() - .5) * 14}px;background:${cols[i % 4]};animation-delay:${dl}s`));
+      }
     } else if (action === 'spin') {
       host.appendChild(el('spinner', S('0 0 100 100', `<g fill="none" stroke-width="7" stroke-linecap="round"><circle cx="50" cy="50" r="40" stroke="#E6DDF7" stroke-dasharray="40 20"/><circle cx="50" cy="50" r="28" stroke="${color}" stroke-dasharray="30 14"/><circle cx="50" cy="50" r="15" stroke="#FFC7D9" stroke-dasharray="18 10"/></g>`)));
     } else if (action === 'top') {
