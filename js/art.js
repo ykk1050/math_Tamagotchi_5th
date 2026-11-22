@@ -235,6 +235,8 @@ const Art = (() => {
   // ---------- 옷: 부위(slot)와 그리는 층(layer) ----------
   // 그림은 친구 그림 좌표 안에서 그린다. P = [x, y, 크기] (구름, 토끼)
   const heart = (x, y, s, c) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 3 s-4 -2.5 -4 -5 c0 -2 2.5 -3 4 -1 c1.5 -2 4 -1 4 1 c0 2.5 -4 5 -4 5z" fill="${c}"/>`;
+  // 재봉 공방의 마지막 단계(리본 달기)에서 다는 작은 리본
+  const rbn = (x, y, sc = 1, c = '#FF9CC0', d = '#C9578A') => `<g class="rbn" transform="translate(${x} ${y}) scale(${sc})"><path d="M0 0 C-3 -5 -8 -4 -7.5 0 C-8 4 -3 5 0 0 Z M0 0 C3 -5 8 -4 7.5 0 C8 4 3 5 0 0 Z" fill="${c}" stroke="${d}" stroke-width=".9"/><path d="M-1 1 l-2.6 5 M1 1 l2.6 5" stroke="${d}" stroke-width="1.3" stroke-linecap="round"/><circle r="1.8" fill="${d}"/></g>`;
   const W = {
     // 머리
     flower: { slot: 'head', P: { cloud: [-16, -24, 1], bunny: [-14, -14, .9] }, g: () => ACC.flower() },
@@ -252,27 +254,27 @@ const Art = (() => {
     // 목
     scarf: { slot: 'neck', P: { cloud: [0, 22, 1.25], bunny: [0, 17, .9] }, g: () => ACC.scarf() },
     pearl: { slot: 'neck', P: { cloud: [0, 19, 1.25], bunny: [0, 15, .85] }, g: () => [-14, -9, -4.5, 0, 4.5, 9, 14].map(x => `<circle cx="${x}" cy="${(4 - Math.abs(x) * .22).toFixed(1)}" r="2.4" fill="#fff" stroke="#D3CBE6" stroke-width=".9"/>`).join('') },
-    tie: { slot: 'neck', P: { cloud: [0, 22, .9], bunny: [0, 17, .75] }, g: () => `<path d="M0 0 L-9 -5 L-9 5 Z M0 0 L9 -5 L9 5 Z" fill="#7FB0EA" stroke="#5D8FD0" stroke-width="1.2"/><circle r="2.4" fill="#5D8FD0"/>` },
+    tie: { slot: 'neck', P: { cloud: [0, 22, .9], bunny: [0, 17, .75] }, g: () => `<path d="M0 0 L-9 -5 L-9 5 Z M0 0 L9 -5 L9 5 Z" fill="#7FB0EA" stroke="#5D8FD0" stroke-width="1.2"/><g class="rbn"><path d="M-7 -2.5 v5 M-4.5 -3.5 v7 M7 -2.5 v5 M4.5 -3.5 v7" stroke="#fff" stroke-width=".9" stroke-dasharray="1.2 1"/><circle r="2.6" fill="#FFD36E" stroke="#D9962E" stroke-width=".8"/></g>` },
     // 몸 (친구마다 모양이 다르다)
     apron: { slot: 'body', layer: 'body', k: {
-      cloud: () => `<path d="M-18 14 h36 v12 a8 8 0 0 1 -8 8 h-20 a8 8 0 0 1 -8 -8z" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><path d="M-18 14 l-10 -6 M18 14 l10 -6" stroke="#F7A0C1" stroke-width="2"/><rect x="-6" y="20" width="12" height="7" rx="2" fill="#FFE0EA" stroke="#F7A0C1" stroke-width="1.2"/>`,
-      bunny: () => `<path d="M-10 19 h20 v10 a7 7 0 0 1 -7 7 h-6 a7 7 0 0 1 -7 -7z" fill="#fff" stroke="#F7A0C1" stroke-width="1.6"/><path d="M-10 19 l-3 -3 M10 19 l3 -3" stroke="#F7A0C1" stroke-width="1.6"/><rect x="-4" y="24" width="8" height="5" rx="1.5" fill="#FFE0EA"/>` } },
+      cloud: () => `<path d="M-18 21 h36 v10 a8 8 0 0 1 -8 8 h-20 a8 8 0 0 1 -8 -8z" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><path d="M-18 21 l-11 -4 M18 21 l11 -4" stroke="#F7A0C1" stroke-width="2"/><rect x="-6" y="26" width="12" height="7" rx="2" fill="#FFE0EA" stroke="#F7A0C1" stroke-width="1.2"/>${rbn(0, 21.5, .75)}`,
+      bunny: () => `<path d="M-10 19 h20 v10 a7 7 0 0 1 -7 7 h-6 a7 7 0 0 1 -7 -7z" fill="#fff" stroke="#F7A0C1" stroke-width="1.6"/><path d="M-10 19 l-3 -3 M10 19 l3 -3" stroke="#F7A0C1" stroke-width="1.6"/><rect x="-4" y="24" width="8" height="5" rx="1.5" fill="#FFE0EA"/>${rbn(0, 19.5, .55)}` } },
     cape: { slot: 'body', layer: 'back', k: {
-      cloud: () => `<path d="M-30 -4 Q0 6 30 -4 L40 34 Q0 44 -40 34 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.8"/>${star(-26, 28, .35)}${star(24, 30, .3)}`,
-      bunny: () => `<path d="M-12 17 Q0 21 12 17 L20 44 Q0 48 -20 44 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.6"/>${star(-14, 38, .25)}` } },
+      cloud: () => `<path d="M-30 -4 Q0 6 30 -4 L40 34 Q0 44 -40 34 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.8"/>${star(-26, 28, .35)}${star(24, 30, .3)}${rbn(0, 1, .9, '#FFD36E', '#D9962E')}`,
+      bunny: () => `<path d="M-12 17 Q0 21 12 17 L20 44 Q0 48 -20 44 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.6"/>${star(-14, 38, .25)}${rbn(0, 19, .6, '#FFD36E', '#D9962E')}` } },
     pajama: { slot: 'body', layer: 'body', k: {
-      cloud: () => `<path d="M-33 12 Q0 22 33 12 Q36 22 30 26 Q0 34 -30 26 Q-36 22 -33 12Z" fill="#CFE3FF" stroke="#9EC2F2" stroke-width="1.6"/>${[[-18, 21], [0, 25], [18, 21]].map(([x, y]) => star(x, y, .3)).join('')}`,
-      bunny: () => `<ellipse cx="0" cy="29" rx="11.5" ry="10" fill="#CFE3FF" stroke="#9EC2F2" stroke-width="1.6"/>${star(-4, 27, .26)}${star(5, 32, .22)}<circle cx="0" cy="22" r="1.4" fill="#9EC2F2"/>` } },
+      cloud: () => `<path d="M-33 12 Q0 22 33 12 Q36 22 30 26 Q0 34 -30 26 Q-36 22 -33 12Z" fill="#CFE3FF" stroke="#9EC2F2" stroke-width="1.6"/>${[[-18, 21], [0, 25], [18, 21]].map(([x, y]) => star(x, y, .3)).join('')}${rbn(-24, 16, .6, '#9EC2F2', '#5D8FD0')}${rbn(24, 16, .6, '#9EC2F2', '#5D8FD0')}`,
+      bunny: () => `<ellipse cx="0" cy="29" rx="11.5" ry="10" fill="#CFE3FF" stroke="#9EC2F2" stroke-width="1.6"/>${star(-4, 27, .26)}${star(5, 32, .22)}${rbn(0, 21, .5, '#9EC2F2', '#5D8FD0')}` } },
     dress: { slot: 'body', layer: 'body', k: {
-      cloud: () => `<path d="M-30 16 Q0 24 30 16 L36 32 Q24 38 12 33 Q0 39 -12 33 Q-24 38 -36 32 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.6"/>${[-20, -6, 8, 22].map(x => `<circle cx="${x}" cy="27" r="2" fill="#fff"/>`).join('')}`,
-      bunny: () => `<path d="M-12 22 Q0 25 12 22 L17 38 Q8 42 0 39 Q-8 42 -17 38 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.6"/>${[-8, 0, 8].map(x => `<circle cx="${x}" cy="33" r="1.6" fill="#fff"/>`).join('')}` } },
+      cloud: () => `<path d="M-30 16 Q0 24 30 16 L36 32 Q24 38 12 33 Q0 39 -12 33 Q-24 38 -36 32 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.6"/>${[-20, -6, 8, 22].map(x => `<circle cx="${x}" cy="27" r="2" fill="#fff"/>`).join('')}<g class="rbn"><path d="M-34 31 Q-30 35 -26 33 Q-22 37 -18 34 Q-14 38 -10 35 Q-6 39 0 36 Q6 39 10 35 Q14 38 18 34 Q22 37 26 33 Q30 35 34 31" fill="none" stroke="#fff" stroke-width="1.8"/></g>${rbn(-22, 18, .7)}`,
+      bunny: () => `<path d="M-12 22 Q0 25 12 22 L17 38 Q8 42 0 39 Q-8 42 -17 38 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.6"/>${[-8, 0, 8].map(x => `<circle cx="${x}" cy="33" r="1.6" fill="#fff"/>`).join('')}${rbn(0, 23, .55)}` } },
     // 손 (구름이는 옆에 띄워 든다)
     balloon: { slot: 'hand', H: true, g: () => `<path d="M0 0 q4 -16 -2 -34" stroke="#B9A7C4" stroke-width="1.2" fill="none"/><ellipse cx="-2" cy="-44" rx="9" ry="11" fill="#F7A0C1" stroke="#E5679A" stroke-width="1.2"/><ellipse cx="-5" cy="-48" rx="2.4" ry="3.6" fill="#fff" opacity=".6"/><path d="M-2 -33 l-2 3 h4z" fill="#E5679A"/>` },
     umbrella: { slot: 'hand', H: true, g: () => `<path d="M0 4 V-30" stroke="#8C6248" stroke-width="2"/><path d="M0 6 q0 4 -4 4" stroke="#8C6248" stroke-width="2" fill="none"/><path d="M-20 -30 Q0 -52 20 -30 Q15 -34 10 -30 Q5 -34 0 -30 Q-5 -34 -10 -30 Q-15 -34 -20 -30Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.4"/>` },
     wand: { slot: 'hand', H: true, g: () => `<path d="M0 6 L8 -16" stroke="#C99A6E" stroke-width="2.6" stroke-linecap="round"/>${star(9, -19, .6, 12)}` },
     bouquet: { slot: 'hand', H: true, g: () => `<path d="M-4 8 L0 -6 L4 8Z" fill="#9FDDB4" stroke="#4FAA6C" stroke-width="1.2"/>${[[-5, -9, '#F7A0C1'], [0, -13, '#FFD36E'], [5, -9, '#C9B8FF'], [0, -7, '#FFB9A6']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="4" fill="${c}"/>`).join('')}<path d="M-4 3 h8" stroke="#F28DB2" stroke-width="2"/>` },
     // 등
-    bag: { slot: 'back', layer: 'back', P: { cloud: [-37, 12, 1], bunny: [-17, 26, .75] }, g: () => `<rect x="-8" y="-9" width="16" height="18" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="1.6"/><rect x="-5" y="-2" width="10" height="7" rx="2" fill="#FFE0D6"/><path d="M-5 -9 q5 -6 10 0" stroke="#D9776A" stroke-width="1.6" fill="none"/>` },
+    bag: { slot: 'back', layer: 'back', P: { cloud: [-37, 12, 1], bunny: [-17, 26, .75] }, g: () => `<rect x="-8" y="-9" width="16" height="18" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="1.6"/><rect x="-5" y="-2" width="10" height="7" rx="2" fill="#FFE0D6"/><path d="M-5 -9 q5 -6 10 0" stroke="#D9776A" stroke-width="1.6" fill="none"/>${rbn(0, -2, .6)}` },
     wings: { slot: 'back', layer: 'back', P: { cloud: [0, -4, 1.25], bunny: [0, 22, .8] }, g: () => `<path d="M0 0 C-14 -22 -36 -18 -30 -2 C-36 10 -16 16 0 4 Z M0 0 C14 -22 36 -18 30 -2 C36 10 16 16 0 4Z" fill="#FFC7E6" stroke="#E5679A" stroke-width="1.4" opacity=".95"/><circle cx="-20" cy="-6" r="3" fill="#fff"/><circle cx="20" cy="-6" r="3" fill="#fff"/>` }
   };
   const HAND_AT = { cloud: [36, 10], bunny: [15, 25] };

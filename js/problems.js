@@ -279,9 +279,23 @@ const Prob = (() => {
   ];
 
   // 5-2 3단원 합동과 대칭
-  const polys = [['정삼각형', 3], ['정사각형', 4], ['정오각형', 5], ['정육각형', 6], ['정팔각형', 8]];
+  const polys = [['정삼각형', 3], ['정사각형', 4], ['정오각형', 5], ['정육각형', 6], ['정팔각형', 8], ['직사각형', 2], ['마름모', 2], ['이등변삼각형', 1]];
+  // 대칭축을 세어 볼 도형 그림 (축은 그리지 않는다)
+  function symFig(name) {
+    const st = 'fill="#FCE3EE" stroke="#E38DB0" stroke-width="3" stroke-linejoin="round"';
+    const reg = { 정삼각형: 3, 정사각형: 4, 정오각형: 5, 정육각형: 6, 정팔각형: 8 }[name];
+    let body;
+    if (reg) {
+      const r = reg === 3 ? 70 : 62, cy = reg === 3 ? 82 : 72, a0 = reg === 4 || reg === 8 ? -Math.PI / 2 + Math.PI / reg : -Math.PI / 2;
+      const pts = Array.from({ length: reg }, (_, i) => { const a = a0 + i * 2 * Math.PI / reg; return `${(150 + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`; });
+      body = `<polygon points="${pts.join(' ')}" ${st}/>`;
+    } else if (name === '직사각형') body = `<rect x="60" y="22" width="180" height="100" rx="3" ${st}/>`;
+    else if (name === '마름모') body = `<polygon points="150,8 235,72 150,136 65,72" ${st}/>`;
+    else body = `<polygon points="150,8 210,136 90,136" ${st}/>`;
+    return `<svg viewBox="0 -8 300 158" aria-hidden="true">${body}</svg>`;
+  }
   G.u23 = [
-    () => { const p = pick(polys); return { q: `${p[0]}의 대칭축은 모두 몇 개일까요?`, ...numChoices(p[1], [p[1] - 1, p[1] + 1, p[1] * 2, 1], '개'), txt: true }; },
+    () => { const p = pick(polys); return { fig: symFig(p[0]), q: `이 ${p[0]}의 대칭축은 모두 몇 개일까요?`, ...numChoices(p[1], [p[1] - 1 || 3, p[1] + 1, p[1] * 2, p[1] === 1 ? 2 : 1], '개'), txt: true }; },
     () => ({ q: '점대칭도형은 대칭의 중심을 중심으로 몇 도 돌렸을 때 처음 도형과 완전히 겹쳐질까요?', ...numChoices(180, [90, 360, 270], '°') }),
     () => { const L = R(4, 15) * 2; return { q: `점대칭도형에서 대응점끼리 이은 선분의 길이가 ${L} cm예요. 대칭의 중심에서 한 대응점까지는 몇 cm일까요?`, ...numChoices(L / 2, [L, L * 2, L / 2 + 1], ' cm'), txt: true }; },
     () => ({ q: '선대칭도형에서 대응점끼리 이은 선분은 대칭축과 몇 도로 만날까요?', ...numChoices(90, [45, 180, 60], '°') }),
@@ -443,7 +457,7 @@ const Prob = (() => {
       () => { const x = R(2, 9); return { q: `무늬를 선대칭이 되게 넣으려고 해요. 대칭축에서 ${x} cm 떨어진 별의 대응점은 대칭축에서 몇 cm 떨어져 있어야 할까요?`, ...numChoices(x, [x * 2, x + 1, x - 1 > 0 ? x - 1 : x + 2], ' cm'), unit: 'u23' }; },
       () => ({ q: '선대칭 무늬에서 대응점끼리 이은 선분과 대칭축은 몇 도로 만날까요?', ...numChoices(90, [45, 180, 60], '°'), unit: 'u23' }),
       () => ({ q: '점대칭 무늬는 대칭의 중심을 중심으로 몇 도 돌리면 처음 무늬와 완전히 겹칠까요?', ...numChoices(180, [90, 360, 270], '°'), unit: 'u23' }),
-      () => { const p = pick([['정사각형', 4], ['정육각형', 6], ['정오각형', 5]]); return { q: `${p[0]} 모양 무늬 조각의 대칭축은 모두 몇 개일까요?`, ...numChoices(p[1], [p[1] - 1, p[1] + 1, p[1] * 2], '개'), txt: true, unit: 'u23' }; }
+      () => { const p = pick([['정사각형', 4], ['정육각형', 6], ['정오각형', 5], ['직사각형', 2], ['마름모', 2]]); return { fig: symFig(p[0]), q: `이 ${p[0]} 모양 무늬 조각의 대칭축은 모두 몇 개일까요?`, ...numChoices(p[1], [p[1] - 1, p[1] + 1, p[1] * 2], '개'), txt: true, unit: 'u23' }; }
     ],
     frac: [
       () => { const a = properRand(2, 6), w = R(1, 3), b = properRand(2, 5); const L = mixedF(w, a.n, a.d), ans = fmul(L, b);

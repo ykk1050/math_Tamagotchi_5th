@@ -765,6 +765,57 @@
       Snd.combo(); S.log.push({ e: 'harvest', id: k }); addFriend(2); save(); renderGarden(); toast(`<b>${ING_NAME[k]} 2개</b>를 거뒀어요! 요리에 쓸 수 있어요`);
     } else if (act === 'water') { gPlot = i; nextGardenQ(); }
   }
+  // ---------- 물 주기: 물뿌리개를 손가락으로 끌어 흙 위에서 기울이면 물이 쏟아진다 ----------
+  const CAN = `<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M30 30 h50 a6 6 0 0 1 6 6 v40 a8 8 0 0 1 -8 8 h-46 a8 8 0 0 1 -8 -8 v-40 a6 6 0 0 1 6 -6z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="3"/>
+    <path d="M86 40 q24 -4 24 22 q0 12 -14 16" fill="none" stroke="#5D8FD0" stroke-width="5" stroke-linecap="round"/>
+    <path d="M26 44 L6 22" stroke="#5D8FD0" stroke-width="7" stroke-linecap="round"/><ellipse cx="5" cy="20" rx="6" ry="8" transform="rotate(-40 5 20)" fill="#7FB0EA" stroke="#5D8FD0" stroke-width="2.4"/>
+    <path d="M36 50 h38" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"/><path d="M50 62 l2 4 4.5 .6 -3.3 3.1 .8 4.5 -4 -2.2 -4 2.2 .8 -4.5 -3.3 -3.1 4.5 -.6z" fill="#FFD36E"/></svg>`;
+  let wcan = null;
+  function startWatering(i) {
+    const p = S.garden[i], N = 8;
+    $('garden-quiz').style.display = 'none'; const box = $('garden-plots'); box.style.display = '';
+    box.innerHTML = `<div class="wstage" id="wstage"><p class="sub whint">물뿌리개를 끌어다 흙 위에서 물을 뿌려 주세요</p>
+      <div class="wplant">${plantSVG(p.seed, p.stage)}</div>
+      <div class="wsoil" id="wsoil">${'<i></i>'.repeat(N)}</div>
+      <div class="wbar"><i id="wbar"></i></div>
+      <div class="wcan" id="wcan">${CAN}</div></div>`;
+    const st = $('wstage'), can = $('wcan'), soil = $('wsoil'), cells = [...soil.children], wet = new Array(N).fill(0);
+    let drag = null, pour = false, last = 0, dripT = 0, raf = 0, done = false;
+    wcan = { stop: () => { cancelAnimationFrame(raf); done = true; } };
+    const place = (x, y) => { can.style.left = x + 'px'; can.style.top = y + 'px'; };
+    const sr = () => st.getBoundingClientRect();
+    place(sr().width * .74, sr().height * .12);
+    can.addEventListener('pointerdown', (e) => { const r = can.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; try { can.setPointerCapture(e.pointerId); } catch (x) {} can.classList.add('held'); e.preventDefault(); });
+    can.addEventListener('pointermove', (e) => { if (!drag) return; const r = sr(); place(Math.max(-20, Math.min(r.width - can.offsetWidth + 20, e.clientX - r.left - drag.dx)), Math.max(0, Math.min(r.height - can.offsetHeight, e.clientY - r.top - drag.dy))); });
+    const up = () => { drag = null; can.classList.remove('held', 'pour'); pour = false; };
+    can.addEventListener('pointerup', up); can.addEventListener('pointercancel', up);
+    const tick = (t) => {
+      if (done) return; raf = requestAnimationFrame(tick);
+      const r = sr(), c = can.getBoundingClientRect(), so = soil.getBoundingClientRect();
+      // 물뿌리개 주둥이(왼쪽 위) 끝: 기울이면 아래쪽으로
+      const sx = c.left + c.width * .06, sy = c.top + c.height * .3;
+      pour = !!drag && sx > so.left - 10 && sx < so.right + 10 && sy < so.top - 10;
+      can.classList.toggle('pour', pour);
+      if (!pour) return;
+      if (t - last > 45) {
+        last = t; const d = document.createElement('i'); d.className = 'wdrop';
+        const x0 = sx - r.left + (Math.random() * 14 - 7); d.style.left = x0 + 'px'; d.style.top = (sy - r.top) + 'px'; d.style.setProperty('--fall', (so.top - sy + 6) + 'px');
+        st.appendChild(d); setTimeout(() => d.remove(), 520);
+        const k = Math.floor((sx - so.left) / so.width * N);
+        [k - 1, k, k + 1].forEach((j, q) => { if (j >= 0 && j < N) { wet[j] = Math.min(1, wet[j] + (q === 1 ? .06 : .025)); cells[j].style.setProperty('--w', wet[j]); cells[j].classList.toggle('full', wet[j] >= 1); } });
+        const tot = wet.reduce((a, b) => a + b, 0) / N; $('wbar').style.width = (tot * 100) + '%';
+        if (t - dripT > 380) { dripT = t; Snd.drip(); }
+        if (wet.every(w => w >= 1)) finishWater(i);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+  }
+  function finishWater(i) {
+    if (!wcan) return; wcan.stop(); wcan = null;
+    const p = S.garden[i]; p.watered = S.days; S.log.push({ e: 'water' }); save();
+    Snd.combo(); const st = $('wstage'); if (st) { st.classList.add('done'); sparks(st, 14); $('wstage').querySelector('.whint').textContent = '흙이 촉촉해졌어요! 내일 쑥 자랄 거예요'; }
+    setTimeout(() => { if ($('ov-garden').classList.contains('on')) renderGarden(); }, 1800);
+  }
   function nextGardenQ() {
     gq = Prob.next(S.rot, S.review, S.total); renderGarden();
     const U = Prob.UNITS[gq.unit]; const tag = $('gq-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
@@ -779,12 +830,8 @@
     const all = [...$('gq-choices').children];
     if (ok) {
       btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy++;
-      Snd.ok(); $('gq-msg').textContent = '정답! 물을 주러 가요';
-      setTimeout(() => {
-        const p = S.garden[gPlot]; p.watered = S.days; S.log.push({ e: 'water' }); gq = null; save(); renderGarden(); hud();
-        const el = $('garden-plots').children[gPlot]; if (el) { el.classList.add('watering'); setTimeout(() => el.classList.remove('watering'), 1400); }
-        [0, 300, 600].forEach(t => setTimeout(() => Snd.pop(), t));
-      }, 900);
+      Snd.ok(); $('gq-msg').textContent = '정답! 물뿌리개에 물이 가득 찼어요';
+      setTimeout(() => { gq = null; save(); hud(); startWatering(gPlot); }, 900);
     } else {
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === gq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
       if (!S.review.some(r => r.unit === gq.unit && r.type === gq.type)) S.review.push({ unit: gq.unit, type: gq.type, due: S.total + R(3, 6) });
@@ -795,7 +842,7 @@
   }
   $('btn-garden').onclick = () => { Snd.tap(); poked(); openGarden(); };
   $('garden-close').onclick = () => {
-    Snd.tap(); overlay('ov-garden', false); gq = null;
+    Snd.tap(); overlay('ov-garden', false); gq = null; if (wcan) { wcan.stop(); wcan = null; }
     if (S.stage < MAX_STAGE && S.xp >= STAGE_XP[S.stage + 1]) setTimeout(() => levelUp(), 300);
   };
 
@@ -1227,13 +1274,14 @@
       const ids = Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc' && ITEMS[k].slot === wdSlot);
       body.innerHTML = `<div class="slot-row">${SLOTS.map(([k, n]) => `<button class="slot ${wdSlot === k ? 'on' : ''}" data-slot="${k}">${n}${S.wear[k] ? ' ●' : ''}</button>`).join('')}</div>
         <div class="wd-grid"><button class="wd-item off" data-off="1"><span class="ia"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="#C9B8D9" stroke-width="3"/><path d="M10 30 L30 10" stroke="#C9B8D9" stroke-width="3"/></svg></span><b>안 입기</b></button>
-        ${ids.map(k => { const I = ITEMS[k], o = own(k), on = S.wear[wdSlot] === k; return `<button class="wd-item ${o ? '' : 'lock'} ${on ? 'on' : ''}" data-wear="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${I.name}</b><small>${o ? (on ? '입는 중' : '') : I.sew ? '재봉 공방에서 만들어요' : I.gift ? '생일 선물' : `주문 · 별사탕 ${I.price}`}</small></button>`; }).join('')}</div>`;
+        ${ids.map(k => { const I = ITEMS[k], o = own(k), on = S.wear[wdSlot] === k; return `<button class="wd-item ${o ? '' : 'lock'} ${on ? 'on' : ''}" data-wear="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${I.name}</b><small>${o ? (on ? '입는 중 · 누르면 벗기' : '') : I.sew ? '재봉 공방에서 만들어요' : I.gift ? '생일 선물' : `주문 · 별사탕 ${I.price}`}</small></button>`; }).join('')}</div>`;
       body.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { Snd.tap(); wdSlot = b.dataset.slot; renderWd(); });
       body.querySelector('[data-off]').onclick = () => { Snd.tap(); delete S.wear[wdSlot]; save(); wdPet(); renderWd(); };
       body.querySelectorAll('[data-wear]').forEach(b => b.onclick = () => {
         const k = b.dataset.wear;
         if (!own(k)) { Snd.no(); if (ITEMS[k].sew) { wdTab = 'sew'; renderWd(); } else if (!ITEMS[k].gift) { wdTab = 'shop'; renderWd(); } return; }
         if (S.stage < 3) { toast('알에서 나오면 입을 수 있어요'); return; }
+        if (S.wear[wdSlot] === k) { delete S.wear[wdSlot]; Snd.tap(); save(); wdPet(); wdSay(level() === 'talk' ? `${Prob.jo(ITEMS[k].name, '을')} 벗었어.` : L3('care')); renderWd(); return; }
         S.wear[wdSlot] = k; Snd.pop();
         const ts = (TASTE[S.kind].acc || {})[k] || 'like', first = !S.known.acc[k]; S.known.acc[k] = ts; if (first) addFriend(ts === 'love' ? 6 : 2);
         wdPet(ts === 'hate' ? 'sad' : 'happy'); const p = $('wd-pet'); p.classList.remove('hop'); void p.offsetWidth; p.classList.add('hop');

@@ -654,3 +654,28 @@ body.lowfx .wl{transition-duration:.4s}
 .done-tok{transform:translateX(-50%);font-size:24px;animation:cding .45s ease forwards}
 /* 요리 화면: 말풍선이 오븐·찜기를 가리지 않게 좁게 */
 .stage.cooking .bubble{max-width:38%}
+
+/* 재봉: 리본은 마지막 단계에서 달린다 */
+#sew-piece .rbn{transition:opacity .4s,transform .4s}
+#sew-piece:not(.s4) .rbn{opacity:0}
+
+/* 텃밭 물 주기 */
+.wstage{position:relative;width:100%;height:min(56vh,380px);border-radius:22px;background:linear-gradient(180deg,#EAF7FF 0,#F6FCF3 60%,#EBD9C4 60%);overflow:hidden;touch-action:none}
+.whint{position:absolute;left:0;right:0;top:10px;text-align:center;margin:0;z-index:2}
+.wplant{position:absolute;left:50%;bottom:30%;width:min(34%,190px);aspect-ratio:1;transform:translateX(-50%)}
+.wplant svg{width:100%;height:100%}
+.wsoil{position:absolute;left:18%;right:18%;bottom:20%;height:15%;display:flex;border-radius:50% 50% 14px 14px/40% 40% 14px 14px;overflow:hidden;background:#C99A6E;box-shadow:inset 0 6px 0 rgba(255,255,255,.18)}
+.wsoil i{flex:1;background:#7A4E2E;opacity:calc(var(--w,0) * .85);transition:opacity .2s}
+.wsoil i.full{box-shadow:inset 0 -4px 0 rgba(126,176,240,.45)}
+.wbar{position:absolute;left:30%;right:30%;bottom:8%;height:12px;border-radius:999px;background:#fff;box-shadow:var(--shadow-s);overflow:hidden}
+.wbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9EC2F2,#7FB0EA);transition:width .15s}
+.wcan{position:absolute;width:clamp(110px,18%,170px);aspect-ratio:120/90;cursor:grab;touch-action:none;z-index:3;transform-origin:70% 60%;transition:transform .25s;filter:drop-shadow(0 6px 6px rgba(0,0,0,.12))}
+.wcan svg{width:100%;height:100%;pointer-events:none}
+.wcan.held{cursor:grabbing;transform:scale(1.05)}
+.wcan.pour{transform:rotate(-28deg) scale(1.05)}
+.wdrop{position:absolute;width:6px;height:10px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#7FB0EA;z-index:2;pointer-events:none;animation:wdrop .5s ease-in forwards}
+@keyframes wdrop{0%{opacity:.95;transform:translateY(0)}100%{opacity:.6;transform:translateY(var(--fall))}}
+.wstage.done .wplant{animation:hop .6s cubic-bezier(.3,1.5,.5,1) 2}
+@media (orientation:portrait){.wstage{height:46vh}}
+.wstage{grid-column:1/-1}
+.wplant{bottom:23%;z-index:1}
