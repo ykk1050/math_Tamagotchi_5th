@@ -637,7 +637,7 @@ body.lowfx .wl{transition-duration:.4s}
 /* 나들이에서는 포근한 바구니에 담겨 함께 간다 */
 .opet.egg::after{content:"";position:absolute;left:14%;right:14%;bottom:-2%;height:26%;border-radius:0 0 46% 46%/0 0 90% 90%;background:repeating-linear-gradient(90deg,#E8B983 0 8px,#D9A56B 8px 10px);box-shadow:inset 0 5px 0 #F2CF9F,0 4px 0 rgba(0,0,0,.08);z-index:1}
 .opet.egg svg{position:relative;z-index:0}
-.care-row.egg{grid-template-columns:repeat(4,1fr)}
+.care-row.egg{grid-template-columns:repeat(3,1fr)}
 
 /* 오븐: 그릇째 들어갔다 나온다 (3.6초) */
 .stage-bg.bowl-away .bowlg{opacity:0}
@@ -938,12 +938,12 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .pf-warm{color:#F28D6B;animation-name:petup}
 .pf-breeze{color:#9CC8FF;animation-name:petpuff}
 /* ---------- 알 따뜻함 막대 ---------- */
-.need.temp{gap:6px}
-.need.temp .thermo{width:24px;height:24px;flex:none}.need.temp .thermo svg{width:100%;height:100%}
+.need.eggtemp{gap:6px}
+.need.eggtemp .thermo{width:24px;height:24px;flex:none}.need.eggtemp .thermo svg{width:100%;height:100%}
 .need .nb.tb{position:relative;background:linear-gradient(90deg,#9CC8FF 0 30%,#A8E6CF 30% 70%,#FFB3B3 70%)}
 .need .nb.tb i{position:absolute;top:-3px;width:6px!important;height:calc(100% + 6px);border-radius:3px;background:#fff;box-shadow:0 0 0 2px #7A6283;transform:translateX(-50%)}
-.need.temp b{font-size:12px;font-weight:700;color:#7A6283;white-space:nowrap}
-.need.temp.cold b{color:#5D8FD0}.need.temp.hot b{color:#E5679A}
+.need.eggtemp b{font-size:12px;font-weight:700;color:#7A6283;white-space:nowrap}
+.need.eggtemp.t-cold b{color:#5D8FD0}.need.eggtemp.t-hot b{color:#E5679A}
 /* ---------- 둥지 ---------- */
 .walker .nest{position:absolute;left:50%;width:96%;transform:translateX(-50%);pointer-events:none}
 .walker .nest svg{width:100%;height:auto;display:block}

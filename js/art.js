@@ -115,27 +115,44 @@ const Art = (() => {
   const rainbowAura = () => `<g opacity=".8">${['#F7A3A3', '#F9D27A', '#9EDFA9', '#9CC8F5', '#C3A9F2'].map((c, i) => `<path d="M${-46 + i * 4.4} 6 A${46 - i * 4.4} ${44 - i * 4.4} 0 0 1 ${46 - i * 4.4} 6" fill="none" stroke="${c}" stroke-width="4.6"/>`).join('')}</g>`;
   const auroraTail = () => `<g opacity=".9" fill="none" stroke-linecap="round"><path class="aur" d="M-18 24 C-30 30 -38 22 -46 30 C-50 34 -54 32 -53 27" stroke="url(#cn-aur)" stroke-width="6.5"/><path class="aur" d="M-10 28 C-22 38 -32 34 -42 40" stroke="url(#cn-aur)" stroke-width="4.2" opacity=".75"/></g>`;
 
+// ---------- 알: 금이 가면 껍데기 윗부분이 들려 올라가고, 그 틈으로 아기가 빼꼼 ----------
+  // 껍데기 = 타원(가운데 0,10 / 가로 40 세로 50). 금은 가장자리에서 가장자리까지 한 줄로 이어진다.
+  const ZIG = 'L-30 -6 L-20 2 L-10 -6 L0 2 L10 -6 L20 2 L30 -6';
+  const SHELL_LOW = `M-39.2 0 ${ZIG} L39.2 0 A40 50 0 1 1 -39.2 0 Z`;
+  const SHELL_TOP = `M-39.2 0 ${ZIG} L39.2 0 A40 50 0 0 0 -39.2 0 Z`;
+  const LID = 'translate(-4 -21) rotate(-13 0 -20)';
+  function eggEyes(ink, mood, y) {
+    if (mood === 'cry') return `<path d="M-13 ${y - 3} L-7 ${y} L-13 ${y + 3} M13 ${y - 3} L7 ${y} L13 ${y + 3}" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M-14 ${y + 4} q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/>`;
+    if (mood === 'pout') return `<path d="M-13 ${y - 1} h7 M6 ${y - 1} h7" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-7.5" cy="${y + 1.4}" r="2" fill="${ink}"/><circle cx="11.5" cy="${y + 1.4}" r="2" fill="${ink}"/>`;
+    if (mood === 'happy') return `<path d="M-13 ${y + 1} Q-9.5 ${y - 4} -6 ${y + 1} M6 ${y + 1} Q9.5 ${y - 4} 13 ${y + 1}" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+    return `<g class="look"><g class="eyes"><ellipse cx="-9.5" cy="${y}" rx="3.4" ry="4" fill="${ink}"/><ellipse cx="9.5" cy="${y}" rx="3.4" ry="4" fill="${ink}"/><circle cx="-8.4" cy="${y - 1.4}" r="1.3" fill="#fff"/><circle cx="10.6" cy="${y - 1.4}" r="1.3" fill="#fff"/></g></g>`;
+  }
   function eggC(stage, mood) {
-    const crack = stage >= 2;
-    let peek = '';
-    if (crack) {
-      const ink = '#45346A';
-      peek = mood === 'cry' ? `<path d="M-13 -20 L-7 -17 L-13 -14 M13 -20 L7 -17 L13 -14" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g class="tears"><path class="tear" d="M-14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/><path class="tear t2" d="M14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/></g>`
-        : mood === 'pout' ? `<path d="M-13 -18 h7 M6 -18 h7" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-7.5" cy="-15.6" r="2" fill="${ink}"/><circle cx="11.5" cy="-15.6" r="2" fill="${ink}"/>`
-        : mood === 'happy'
-        ? `<path d="M-13 -17 Q-9.5 -22 -6 -17 M6 -17 Q9.5 -22 13 -17" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
-        : `<g class="eyes"><ellipse cx="-9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><ellipse cx="9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><circle cx="-8.4" cy="-18.4" r="1.3" fill="#fff"/><circle cx="10.6" cy="-18.4" r="1.3" fill="#fff"/></g>`;
-    }
-    return `<g class="anim-egg">
-      ${crack ? `<g fill="#fff" stroke="#CFC4F6" stroke-width="2"><circle cx="-14" cy="-50" r="7"/><circle cx="0" cy="-55" r="9"/><circle cx="14" cy="-50" r="7"/></g>` : ''}
-      <ellipse cx="0" cy="10" rx="40" ry="50" fill="url(#cn-egg-c)" stroke="#C9BDF3" stroke-width="3"/>
-      <g fill="#DCD3FB"><circle cx="-18" cy="22" r="9"/><circle cx="-4" cy="18" r="12"/><circle cx="12" cy="22" r="9"/><circle cx="24" cy="25" r="6"/><ellipse cx="2" cy="28" rx="28" ry="7"/></g>
-      ${star(16, -8, .75, 12)}${star(-20, -2, .45, -10)}${star(26, 42, .35)}
-      <path d="M-24 -22 q6 -14 18 -18" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
-      ${crack ? `<path d="M-38 -6 l9 -7 7 7 8 -8 8 8 8 -8 7 7 9 -6" fill="none" stroke="#9C8BE0" stroke-width="2.8" stroke-linejoin="round"/>` : ''}
-      ${peek}
-      ${crack ? `<ellipse cx="-17" cy="-9" rx="5" ry="2.8" fill="url(#cn-blush)"/><ellipse cx="17" cy="-9" rx="5" ry="2.8" fill="url(#cn-blush)"/>` : ''}
-    </g>`;
+    const crack = stage >= 2, sh = 'fill="url(#cn-egg-c)" stroke="#C9BDF3" stroke-width="3" stroke-linejoin="round"';
+    const lowDeco = `<g fill="#DCD3FB"><circle cx="-18" cy="22" r="9"/><circle cx="-4" cy="18" r="12"/><circle cx="12" cy="22" r="9"/><circle cx="24" cy="25" r="6"/><ellipse cx="2" cy="28" rx="28" ry="7"/></g>${star(-22, 8, .45, -10)}${star(26, 42, .35)}`;
+    const topDeco = `${star(16, -16, .7, 12)}<path d="M-24 -22 q6 -14 18 -18" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    if (!crack) return `<g class="anim-egg"><ellipse cx="0" cy="10" rx="40" ry="50" ${sh}/>${lowDeco}${topDeco}</g>`;
+    // 틈으로 보이는 아기 구름: 몽글몽글 머리, 눈, 볼
+    const baby = `<g fill="#fff" stroke="#CFC4F6" stroke-width="2.4"><circle cx="-15" cy="-4" r="15"/><circle cx="15" cy="-4" r="15"/><circle cx="0" cy="-12" r="18"/></g><g fill="#fff"><circle cx="-15" cy="-4" r="12.6"/><circle cx="15" cy="-4" r="12.6"/><circle cx="0" cy="-12" r="15.6"/></g>`;
+    return `<g class="anim-egg">${baby}${eggEyes('#45346A', mood, -12)}<ellipse cx="-17" cy="-6" rx="4.6" ry="2.6" fill="url(#cn-blush)"/><ellipse cx="17" cy="-6" rx="4.6" ry="2.6" fill="url(#cn-blush)"/>
+      <path d="${SHELL_LOW}" ${sh}/>${lowDeco}
+      <g transform="${LID}"><path d="${SHELL_TOP}" ${sh}/>${topDeco}</g>
+      <path d="M-34 -20 l-4 -3 M36 -26 l5 -2 M-30 -28 l-2 -5" stroke="#B9A7F5" stroke-width="2" stroke-linecap="round"/></g>`;
+  }
+
+  function eggB(stage, mood) {
+    const crack = stage >= 2, sh = `fill="url(#cn-egg-b)" stroke="${BS}" stroke-width="3" stroke-linejoin="round"`;
+    const seed = (x, y, r) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M0 -3.4 C2.4 -1 2.2 2.6 0 3.4 C-2.2 2.6 -2.4 -1 0 -3.4Z" fill="#F7A9C6"/>`;
+    const lowDeco = `${seed(-20, 12, -20)}${seed(18, 8, 15)}${seed(-4, 24, 5)}${seed(22, 30, 30)}${seed(-22, 36, -35)}${seed(6, 42, 0)}`;
+    const topDeco = `<path d="M-16 -42 q8 -10 16 -6 q8 -4 16 6 q-8 4 -16 2 q-8 2 -16 -2z" fill="#9FDDB4" stroke="#6CC08F" stroke-width="1.6" stroke-linejoin="round"/>${seed(-6, -14, 10)}${seed(14, -22, -15)}<path d="M-24 -22 q6 -14 18 -18" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    if (!crack) return `<g class="anim-egg"><ellipse cx="0" cy="8" rx="40" ry="50" ${sh}/>${lowDeco}${topDeco}</g>`;
+    const feet = `<g><ellipse cx="-14" cy="58" rx="9" ry="5.6" fill="url(#cn-bun)" stroke="${BS}" stroke-width="${BW}"/><ellipse cx="14" cy="58" rx="9" ry="5.6" fill="url(#cn-bun)" stroke="${BS}" stroke-width="${BW}"/><ellipse cx="-14" cy="58.8" rx="3.2" ry="2.2" fill="#FAC9DB"/><ellipse cx="14" cy="58.8" rx="3.2" ry="2.2" fill="#FAC9DB"/></g>`;
+    // 틈으로 보이는 아기 토끼: 둥근 머리, 양옆으로 삐져나온 귀 끝
+    const baby = `<g fill="url(#cn-bun)" stroke="${BS}" stroke-width="2.4"><ellipse cx="-33" cy="-14" rx="6" ry="12" transform="rotate(-58 -33 -14)"/><ellipse cx="33" cy="-14" rx="6" ry="12" transform="rotate(58 33 -14)"/></g><ellipse cx="-33" cy="-14" rx="2.6" ry="7" transform="rotate(-58 -33 -14)" fill="#FAC9DB"/><ellipse cx="33" cy="-14" rx="2.6" ry="7" transform="rotate(58 33 -14)" fill="#FAC9DB"/><circle cx="0" cy="-6" r="28" fill="url(#cn-bun)" stroke="${BS}" stroke-width="2.4"/>`;
+    return `<g class="anim-egg">${feet}${baby}${eggEyes('#5E2B47', mood, -13)}<path d="M-1.8 -7.4 L1.8 -7.4 L0 -5.4 Z" fill="#E26A97"/><ellipse cx="-17" cy="-8" rx="4.6" ry="2.6" fill="url(#cn-blush)"/><ellipse cx="17" cy="-8" rx="4.6" ry="2.6" fill="url(#cn-blush)"/>
+      <path d="${SHELL_LOW.replace('A40 50', 'A40 50').replace(/(-?\d+(\.\d+)?) (-?\d+) /g, (m) => m)}" transform="translate(0 -2)" ${sh}/>${lowDeco}
+      <g transform="translate(0 -2) ${LID}"><path d="${SHELL_TOP}" ${sh}/>${topDeco}</g>
+      <path d="M-34 -22 l-4 -3 M36 -28 l5 -2" stroke="#E07FA6" stroke-width="2" stroke-linecap="round"/></g>`;
   }
 
   // 깨끗함이 줄면 몸에 얼룩·먼지가 묻는다 (lv 0~1). 많이 더러우면 먼지 냄새 줄이 피어오른다
@@ -199,29 +216,7 @@ const Art = (() => {
   }
   const ribbon = `<g transform="translate(13 -18) rotate(12)"><path d="M0 0 C-6 -9 -13 -7 -12 0 C-13 7 -6 9 0 0 Z M0 0 C6 -9 13 -7 12 0 C13 7 6 9 0 0 Z" fill="url(#cn-rib)" stroke="#C9578A" stroke-width="1.3"/><circle r="3.2" fill="#D9628E"/></g>`;
 
-  function eggB(stage, mood) {
-    const crack = stage >= 2;
-    let peek = '';
-    if (crack) {
-      const ink = '#5E2B47';
-      peek = mood === 'cry' ? `<path d="M-13 -20 L-7 -17 L-13 -14 M13 -20 L7 -17 L13 -14" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g class="tears"><path class="tear" d="M-14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/><path class="tear t2" d="M14 -12 q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/></g>`
-        : mood === 'pout' ? `<path d="M-13 -18 h7 M6 -18 h7" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-7.5" cy="-15.6" r="2" fill="${ink}"/><circle cx="11.5" cy="-15.6" r="2" fill="${ink}"/>`
-        : mood === 'happy'
-        ? `<path d="M-13 -17 Q-9.5 -22 -6 -17 M6 -17 Q9.5 -22 13 -17" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
-        : `<g class="eyes"><ellipse cx="-9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><ellipse cx="9.5" cy="-17" rx="3.4" ry="4" fill="${ink}"/><circle cx="-8.4" cy="-18.4" r="1.3" fill="#fff"/><circle cx="10.6" cy="-18.4" r="1.3" fill="#fff"/></g>`;
-    }
-    const seed = (x, y, r) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M0 -3.4 C2.4 -1 2.2 2.6 0 3.4 C-2.2 2.6 -2.4 -1 0 -3.4Z" fill="#F7A9C6"/>`;
-    const feet = crack ? `<g><ellipse cx="-14" cy="58" rx="9" ry="5.6" fill="url(#cn-bun)" stroke="${BS}" stroke-width="${BW}"/><ellipse cx="14" cy="58" rx="9" ry="5.6" fill="url(#cn-bun)" stroke="${BS}" stroke-width="${BW}"/><ellipse cx="-14" cy="58.8" rx="3.2" ry="2.2" fill="#FAC9DB"/><ellipse cx="14" cy="58.8" rx="3.2" ry="2.2" fill="#FAC9DB"/></g>` : '';
-    return `<g class="anim-egg">${feet}
-      <ellipse cx="0" cy="8" rx="40" ry="50" fill="url(#cn-egg-b)" stroke="${BS}" stroke-width="3"/>
-      <path d="M-16 -42 q8 -10 16 -6 q8 -4 16 6 q-8 4 -16 2 q-8 2 -16 -2z" fill="#9FDDB4" stroke="#6CC08F" stroke-width="1.6" stroke-linejoin="round"/>
-      ${seed(-20, 8, -20)}${seed(18, 0, 15)}${seed(-4, 24, 5)}${seed(22, 30, 30)}${seed(-22, 36, -35)}${seed(6, 42, 0)}${seed(-6, -6, 10)}
-      <path d="M-24 -22 q6 -14 18 -18" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
-      ${crack ? `<path d="M-38 -6 l9 -7 7 7 8 -8 8 8 8 -8 7 7 9 -6" fill="none" stroke="#E07FA6" stroke-width="2.8" stroke-linejoin="round"/>` : ''}
-      ${peek}
-      ${crack ? `<ellipse cx="-17" cy="-9" rx="5" ry="2.8" fill="url(#cn-blush)"/><ellipse cx="17" cy="-9" rx="5" ry="2.8" fill="url(#cn-blush)"/>` : ''}
-    </g>`;
-  }
+
 
   function bunny(stage, mood = 'idle', look = null) {
     if (stage <= 2) return wrap(eggB(stage, mood));

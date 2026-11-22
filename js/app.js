@@ -402,9 +402,9 @@
   }
   function renderNeeds() {
     if (S.stage <= 2) {
-      const t = S.temp == null ? 50 : S.temp, cls = t < 30 ? 'cold' : t > 70 ? 'hot' : 'good';
+      const t = S.temp == null ? 50 : S.temp, cls = t < 30 ? 't-cold' : t > 70 ? 't-hot' : 't-good';
       $('needs').innerHTML = `<div class="need ${S.needs.mood < 35 ? 'low' : ''}" title="기분">${Scene.need('mood')}<span class="nb"><i style="width:${S.needs.mood}%"></i></span></div>
-        <div class="need temp ${cls}" title="따뜻함"><span class="thermo"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="13" rx="3" fill="#fff" stroke="#E5679A" stroke-width="1.8"/><circle cx="12" cy="18" r="4" fill="${cls === 'cold' ? '#7FB0EA' : cls === 'hot' ? '#F2678F' : '#8FE0C9'}" stroke="#E5679A" stroke-width="1.8"/></svg></span><span class="nb tb"><i style="left:${t}%"></i></span><b>${cls === 'cold' ? '추워요' : cls === 'hot' ? '더워요' : '딱 좋아요'}</b></div>`;
+        <div class="need eggtemp ${cls}" title="따뜻함"><span class="thermo"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="13" rx="3" fill="#fff" stroke="#E5679A" stroke-width="1.8"/><circle cx="12" cy="18" r="4" fill="${cls === 't-cold' ? '#7FB0EA' : cls === 't-hot' ? '#F2678F' : '#8FE0C9'}" stroke="#E5679A" stroke-width="1.8"/></svg></span><span class="nb tb"><i style="left:${t}%"></i></span><b>${cls === 't-cold' ? '추워요' : cls === 't-hot' ? '더워요' : '딱 좋아요'}</b></div>`;
       return;
     }
     const L = { full: '배부름', mood: '기분', clean: '깨끗함', energy: '기운' };
@@ -418,7 +418,7 @@
     $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
   }
   function renderCare() {
-    const items = S.stage <= 2 ? [['pet', '알 쓰다듬기'], ['warm', '담요 덮기'], ['cool', '부채질'], ['sing', '노래 불러 주기']] : [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']];
+    const items = S.stage <= 2 ? [['warm', '담요 덮기'], ['cool', '부채질'], ['sing', '노래 불러 주기']] : [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']];
     const want = { warm: S.temp != null && S.temp < 35, cool: S.temp != null && S.temp > 65, feed: S.needs.full < 40 || S.wishes.some(w => !w.done && w.t === 'food' && S.foods[w.id]), bath: S.needs.clean < 40, nap: S.needs.energy < 35, play: S.needs.mood < 45 };
     S.wishes.forEach(w => { if (!w.done && w.t === 'care' && (w.id !== 'pet' || S.stage <= 2)) want[w.id] = true; });
     $('care-row').classList.toggle('egg', S.stage <= 2);
@@ -490,7 +490,8 @@
   function idleTalk() {
     if ($('scr-home').classList.contains('on') && !document.querySelector('.overlay.on')) {
       const ln = lowNeed(), w = S.wishes.find(x => !x.done);
-      if (S.stage <= 2 && S.temp != null && S.temp < 30) speak('home', pick(['(알이 바들바들 떨어요… 추운가 봐요)', '(알이 오들오들… 담요가 필요해 보여요)']), { silent: true });
+      if (S.stage <= 2 && S.wishes.some(w => !w.done && w.t === 'care' && w.id === 'pet') && Math.random() < .55) { speak('home', pick(['(저를 쓰다듬어 주세요…)', '(알이 손길을 기다리는 것 같아요. 살살 문질러 주세요)', '(쓰담쓰담 해 줄래요?)']), { silent: true }); petFx('heart', $('pet')); }
+      else if (S.stage <= 2 && S.temp != null && S.temp < 30) speak('home', pick(['(알이 바들바들 떨어요… 추운가 봐요)', '(알이 오들오들… 담요가 필요해 보여요)']), { silent: true });
       else if (S.stage <= 2 && S.temp != null && S.temp > 70) speak('home', pick(['(알이 땀을 뻘뻘… 너무 더운가 봐요)', '(알이 뜨끈뜨끈해요. 시원한 바람이 필요해 보여요)']), { silent: true });
       else if (sulking) speak('home', L3('sulk'), { silent: true });
       else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
