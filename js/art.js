@@ -14,6 +14,9 @@ const Art = (() => {
       <radialGradient id="cn-blush"><stop offset="0" stop-color="#F7A0C1" stop-opacity=".85"/><stop offset="1" stop-color="#F7A0C1" stop-opacity="0"/></radialGradient>
       <linearGradient id="cn-wing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D3E5FF"/></linearGradient>
       <linearGradient id="cn-star" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFEFA8"/><stop offset="1" stop-color="#FFC24E"/></linearGradient>
+      <linearGradient id="cn-wing2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#FFF6D6"/><stop offset="1" stop-color="#FFE08A"/></linearGradient>
+      <linearGradient id="cn-aur" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9EEBC9"/><stop offset=".5" stop-color="#A9C8FF"/><stop offset="1" stop-color="#D7A8F5"/></linearGradient>
+      <radialGradient id="cn-glow"><stop offset="0" stop-color="#FFF4B8" stop-opacity=".95"/><stop offset="1" stop-color="#FFF4B8" stop-opacity="0"/></radialGradient>
       <linearGradient id="cn-rib" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9CC0"/><stop offset="1" stop-color="#E5679A"/></linearGradient>
       ${tintDefs()}
     </defs>`;
@@ -76,9 +79,15 @@ const Art = (() => {
       <path d="M-26 -2 q4 -8 12 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
       <g transform="translate(0 4)">${face(mood, '#45346A')}</g>${tear}`;
   }
-  const cloudWings = (s = 1) => `<g transform="scale(${s})">
-    <path class="wing wl" d="M-30 -2 C-50 -18 -62 -6 -54 6 C-48 14 -36 10 -30 4 Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="2"/>
-    <path class="wing wr" d="M30 -2 C50 -18 62 -6 54 6 C48 14 36 10 30 4 Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="2"/></g>`;
+  const cloudWings = (s = 1, gold = false) => `<g transform="scale(${s})">
+    <path class="wing wl" d="M-30 -2 C-50 -18 -62 -6 -54 6 C-48 14 -36 10 -30 4 Z" fill="url(#${gold ? 'cn-wing2' : 'cn-wing'})" stroke="${gold ? '#E8B94A' : '#9EC2F2'}" stroke-width="2"/>
+    <path class="wing wr" d="M30 -2 C50 -18 62 -6 54 6 C48 14 36 10 30 4 Z" fill="url(#${gold ? 'cn-wing2' : 'cn-wing'})" stroke="${gold ? '#E8B94A' : '#9EC2F2'}" stroke-width="2"/></g>`;
+  // 6단계 이후 꾸밈 (단계가 오를수록 하나씩 더해진다)
+  const moonMark = (x, y, s) => `<path transform="translate(${x} ${y}) scale(${s})" d="M2 -7 A7 7 0 1 0 6 5 A5.6 5.6 0 1 1 2 -7Z" fill="url(#cn-star)" stroke="#E8A93C" stroke-width="1.3" stroke-linejoin="round"/>`;
+  const crown = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-11 4 L-12 -7 L-5 -1 L0 -10 L5 -1 L12 -7 L11 4 Z" fill="url(#cn-star)" stroke="#E0A030" stroke-width="1.4" stroke-linejoin="round"/><circle cx="0" cy="-10" r="1.8" fill="#F28DB2"/><circle cx="-12" cy="-7" r="1.4" fill="#9CC8F5"/><circle cx="12" cy="-7" r="1.4" fill="#9CC8F5"/><circle cx="0" cy="0.5" r="2" fill="#F28DB2"/></g>`;
+  const sparkle = (x, y, s) => `<path class="spk" transform="translate(${x} ${y}) scale(${s})" d="M0 -6 Q1 -1 6 0 Q1 1 0 6 Q-1 1 -6 0 Q-1 -1 0 -6Z" fill="#FFF3B0" stroke="#F2C75C" stroke-width=".8"/>`;
+  const rainbowAura = () => `<g opacity=".8">${['#F7A3A3', '#F9D27A', '#9EDFA9', '#9CC8F5', '#C3A9F2'].map((c, i) => `<path d="M${-46 + i * 4.4} 6 A${46 - i * 4.4} ${44 - i * 4.4} 0 0 1 ${46 - i * 4.4} 6" fill="none" stroke="${c}" stroke-width="4.6"/>`).join('')}</g>`;
+  const auroraTail = () => `<g opacity=".9" fill="none" stroke-linecap="round"><path class="aur" d="M-18 24 C-30 30 -38 22 -46 30 C-50 34 -54 32 -53 27" stroke="url(#cn-aur)" stroke-width="6.5"/><path class="aur" d="M-10 28 C-22 38 -32 34 -42 40" stroke="url(#cn-aur)" stroke-width="4.2" opacity=".75"/></g>`;
 
   function eggC(stage, mood) {
     const crack = stage >= 2;
@@ -118,8 +127,14 @@ const Art = (() => {
     const L = normLook(look); setTint('cloud', L.tint);
     const s = [0, 0, 0, 1.0, 1.16, 1.28, 1.34, 1.38, 1.42, 1.46, 1.5][stage] || 1.2;
     let back = '', front = '';
-    if (stage >= 5) back += cloudWings(stage >= 7 ? 1.15 : .85);
-    if (stage >= 4 && !L.wear.head) front += star(15, -27, .62, 14);
+    if (stage >= 10) back += `<circle cy="-4" r="52" fill="url(#cn-glow)"/>`;
+    if (stage >= 6) back += rainbowAura();
+    if (stage >= 9) back += auroraTail();
+    if (stage >= 5) back += cloudWings(stage >= 7 ? 1.22 / s : .85, stage >= 7);
+    if (stage >= 4 && stage < 10 && !L.wear.head) front += star(15, -27, .62, 14);
+    if (stage >= 8 && !L.wear.head) front += moonMark(-17, -29, .78);
+    if (stage >= 10 && !L.wear.head) front += crown(4, -33, .95);
+    if (stage >= 7) front += sparkle(-40, -20, .6) + sparkle(42, 14, .5);
     const ws = (ly) => wearSVG('cloud', L.wear, ly);
     return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${ws('back')}${back}${cloudBody(mood)}${dirt('cloud', L.dirt)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
   }
@@ -182,9 +197,16 @@ const Art = (() => {
     const L = normLook(look); setTint('bunny', L.tint);
     const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2;
     const ty = 60 - 44 * s;
-    const extra = stage >= 5 && !L.wear.head ? ribbon : '';
+    let extra = stage >= 5 && !L.wear.head ? ribbon : '', back = '';
+    if (stage >= 10) back += `<circle cy="4" r="48" fill="url(#cn-glow)"/>`;
+    if (stage >= 8) back += `<g opacity=".95"><path d="M-12 18 C-30 4 -40 14 -34 24 C-30 30 -20 28 -12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/><path d="M12 18 C30 4 40 14 34 24 C30 30 20 28 12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/></g>`;
+    let tail = stage >= 9 ? `<circle cx="24" cy="31" r="11" fill="url(#cn-glow)"/>` + star(24, 31, .72, 10) : '';
+    if (stage >= 6 && !L.wear.head) extra += `<g transform="translate(-15 -15) rotate(-18)">${[0, 90, 180, 270].map(r => `<path transform="rotate(${r})" d="M0 0 C-4 -3 -4 -8 0 -6 C4 -8 4 -3 0 0Z" fill="#8ED79A" stroke="#4FAA6C" stroke-width=".9"/>`).join('')}<circle r="1.3" fill="#4FAA6C"/></g>`;
+    if (stage >= 7) extra += moonMark(0, -16, .55);
+    if (stage >= 10 && !L.wear.head) extra += crown(0, -26, .8);
+    if (stage >= 7) extra += sparkle(-30, -8, .55) + sparkle(30, 20, .5);
     const ws = (ly) => wearSVG('bunny', L.wear, ly);
-    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
+    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${ws('back')}${back}${bunnyBody(stage, mood)}${tail}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
     setTint('bunny', 'base'); return wrap(out);
   }
 

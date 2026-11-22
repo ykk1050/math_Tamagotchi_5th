@@ -745,3 +745,7 @@ body.lowfx .wl{transition-duration:.4s}
 .rbow.out{transition:opacity .8s;opacity:0}
 @keyframes rbowIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%)}}
 @keyframes rbowDraw{to{stroke-dashoffset:0}}
+
+.objcup .steam path{animation:cupsteam 1.4s ease-in-out infinite;opacity:0}
+.objcup .steam .s1{animation-delay:.6s}
+@keyframes cupsteam{0%{opacity:0;transform:translateY(3px)}40%{opacity:.9}100%{opacity:0;transform:translateY(-5px)}}

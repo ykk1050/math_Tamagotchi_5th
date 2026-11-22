@@ -23,13 +23,15 @@
   if (S.acc) { S.wear = S.wear || {}; const SL = { flower: 'head', crown: 'head', berryhat: 'head', phat: 'head', bow: 'head', scarf: 'neck' }; S.wear[SL[S.acc] || 'head'] = S.acc; S.acc = null; }
 
   // ---------- 친구 정보 ----------
-  const MAX_STAGE = 5; // 시험판은 5단계까지
-  const STAGE_XP = [0, 0, 5, 14, 28, 48];
-  const STAGE_NAME = { cloud: ['', '별빛 알', '톡톡 알', '솜뭉치', '몽글 구름', '새싹 날개'], bunny: ['', '딸기 알', '톡톡 알', '솜털 아기', '깡총 토끼', '리본 토끼'] };
+  const MAX_STAGE = 10;
+  const STAGE_XP = [0, 0, 5, 14, 28, 48, 75, 108, 148, 196, 252];
+  const STAGE_NAME = { cloud: ['', '별빛 알', '톡톡 알', '솜뭉치', '몽글 구름', '새싹 날개', '무지개 구름', '금빛 날개 구름', '달빛 구름', '오로라 구름', '하늘 수호 구름'], bunny: ['', '딸기 알', '톡톡 알', '솜털 아기', '깡총 토끼', '리본 토끼', '클로버 토끼', '달님 토끼', '요정 날개 토끼', '별꼬리 토끼', '별나라 수호 토끼'] };
   const NAMES = { cloud: ['몽실', '구름이', '솜이', '포근이', '뭉게'], bunny: ['콩이', '딸기', '보리', '말랑이', '토토'] };
   const LV_MSG = {
-    cloud: ['', '', '알에 금이 갔어요! 누군가 빼꼼 내다봐요.', '알에서 나왔어요! 첫마디는 "몽!"', '"좋아!" 처음으로 말을 했어요.', '"나 날개가 생겼어! 이제 하고 싶은 말 다 할 수 있어!"'],
-    bunny: ['', '', '알에 금이 가고 발이 쏙 나왔어요!', '알에서 나왔어요! 첫마디는 "콩!"', '"깡총!" 귀가 쭉 자랐어요.', '"리본 예쁘지? 나 이제 말 잘해!"']
+    cloud: ['', '', '알에 금이 갔어요! 누군가 빼꼼 내다봐요.', '알에서 나왔어요! 첫마디는 "몽!"', '"좋아!" 처음으로 말을 했어요.', '"나 날개가 생겼어! 이제 하고 싶은 말 다 할 수 있어!"',
+      '"내 뒤에 무지개가 떴어! 비 온 뒤처럼 마음이 반짝반짝해."', '"날개가 금빛으로 바뀌었어! 이제 더 높이 날 수 있어."', '"머리 위에 달님이 내려앉았어. 밤에도 무섭지 않아."', '"오로라 꼬리가 생겼어! 하늘에서 제일 예쁜 색이야."', '"하늘 수호 구름이 됐어! 이 왕관은 너랑 같이 받은 거야."'],
+    bunny: ['', '', '알에 금이 가고 발이 쏙 나왔어요!', '알에서 나왔어요! 첫마디는 "콩!"', '"깡총!" 귀가 쭉 자랐어요.', '"리본 예쁘지? 나 이제 말 잘해!"',
+      '"네잎클로버를 찾았어! 행운이 우리한테 올 거야."', '"이마에 달 모양이 생겼어. 나 진짜 달토끼 같지?"', '"등에 작은 날개가 생겼어! 깡총 뛰면 둥실 떠."', '"꼬리가 별처럼 반짝여! 어두워도 길을 찾을 수 있어."', '"별나라 수호 토끼가 됐어! 왕관은 너랑 나랑 같이 쓴 거야."']
   };
   const level = () => (S.stage <= 2 ? 'egg' : S.stage === 3 ? 'babble' : S.stage === 4 ? 'word' : 'talk');
   const bat = (w) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0; };
@@ -513,7 +515,7 @@
     rug:     { pet: 'roll', it: '', fx: 'heart', snd: 'pop', at: 'on', up: 0 },
     frame:   { pet: 'hop', it: 'tilt', fx: 'heart', snd: 'heart', at: 'under' },
     chair:   { pet: 'squish', it: 'squash', fx: 'star', snd: 'pop', at: 'on', up: .8 },
-    table:   { pet: 'squish', it: '', fx: 'steam', snd: 'sip', at: 'side', cup: true },
+    table:   { pet: 'squish', it: '', fx: '', snd: 'sip', at: 'side', cup: true },
     teddy:   { pet: 'squish', it: 'squash', fx: 'heart', snd: 'heart', at: 'side' },
     books:   { pet: 'squish', it: 'wiggle', fx: 'star', snd: 'pop', at: 'side' },
     cactus:  { pet: 'shake', it: 'wiggle', fx: 'prick', snd: 'prick', at: 'side', mood: 'sad' },
@@ -566,7 +568,7 @@
     else if (id === 'vase' && S.kind === 'bunny') setTimeout(() => Snd.sneeze(), 700);
     else if (Snd[o.snd]) Snd[o.snd]();
     objFx(o.fx, b);
-    if (o.cup) objCup(b);
+    if (o.cup) objCup(b, parseFloat(wk.style.left) < b.cx);
     // 말
     let t;
     if (level() === 'talk') {
@@ -599,11 +601,14 @@
     }
   }
   // 탁자 위에 찻잔이 놓이고 김이 오른다
-  function objCup(b) {
+  function objCup(b, petLeft) {
+    // 탁자 윗면(그림 64칸 중 y 13~31, 가운데 꽃병)에서 친구가 서 있는 쪽 가장자리에 찻잔을 내려놓는다
     const c = document.createElement('div'); c.className = 'objcup';
-    c.innerHTML = `<svg viewBox="0 0 40 30"><path d="M6 10 h22 v8 a11 11 0 0 1 -22 0z" fill="#fff" stroke="#E5679A" stroke-width="2"/><path d="M28 12 a5 5 0 0 1 0 9" fill="none" stroke="#E5679A" stroke-width="2"/><ellipse cx="17" cy="11" rx="10" ry="2.4" fill="#C98B5A"/><ellipse cx="17" cy="28" rx="15" ry="2" fill="#F3D3E2"/></svg>`;
-    const w = Math.max(34, b.width * .32);
-    Object.assign(c.style, { left: (b.left + b.width / 2 - w / 2) + 'px', top: (b.top + b.height * .08 - w * .6) + 'px', width: w + 'px', height: w * .75 + 'px' });
+    c.innerHTML = `<svg viewBox="0 -18 40 48"><g class="steam" fill="none" stroke="#C9B6C2" stroke-width="1.8" stroke-linecap="round"><path class="s0" d="M13 6 q-3 -4 0 -8 q3 -4 0 -8"/><path class="s1" d="M21 6 q-3 -4 0 -8 q3 -4 0 -8"/></g>
+      <ellipse cx="17" cy="27.4" rx="15" ry="2.4" fill="#F3D3E2" stroke="#E5679A" stroke-width="1"/><path d="M6 10 h22 v8 a11 11 0 0 1 -22 0z" fill="#fff" stroke="#E5679A" stroke-width="2"/><path d="M28 12 a5 5 0 0 1 0 9" fill="none" stroke="#E5679A" stroke-width="2"/><ellipse cx="17" cy="11" rx="10" ry="2.4" fill="#C98B5A"/></svg>`;
+    const w = b.width * .3, h = w * 48 / 40, surf = b.top + b.height * (24 / 64);
+    const cx = b.left + b.width * (petLeft ? .24 : .76);
+    Object.assign(c.style, { left: (cx - w * 17 / 40) + 'px', top: (surf - h * (47.5 / 48)) + 'px', width: w + 'px', height: h + 'px' });
     $('room').appendChild(c); setTimeout(() => c.remove(), 2700);
   }
 
@@ -2248,7 +2253,7 @@
     $('level-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
     const la = $('level-art'); la.classList.remove('grow-in'); void la.offsetWidth; la.classList.add('grow-in');
     $('level-title').textContent = `${S.stage}단계 ${STAGE_NAME[S.kind][S.stage]}`;
-    let msg = LV_MSG[S.kind][S.stage]; if (S.stage >= MAX_STAGE) msg += '<br><small>이제 친구가 이야기를 들려줄 수 있어요. 시험판은 5단계까지예요.</small>';
+    let msg = LV_MSG[S.kind][S.stage]; if (S.stage === 5) msg += '<br><small>이제 친구가 이야기를 들려줄 수 있어요.</small>'; if (S.stage >= MAX_STAGE) msg += '<br><small>가장 높은 단계까지 다 자랐어요! 정말 잘했어요.</small>';
     $('level-line').innerHTML = msg; overlay('ov-level', true); S.log.push({ e: 'grow', stage: S.stage });
   }
   $('btn-level').onclick = () => {
