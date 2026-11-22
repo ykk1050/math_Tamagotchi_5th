@@ -488,7 +488,7 @@ const Prob = (() => {
   // 단원 안에서도 문제 유형을 섞은 순서대로 돌아가며 낸다.
   // 틀린 문제 종류는 몇 문제 뒤에 한 번 다시 끼워 넣는다(바로 앞 단원과 겹치지 않게).
   // rot = { bag:[단원...], types:{단원:[유형...]}, last:'단원' } 은 저장 데이터에 들어간다.
-  function next(rot, review, total) {
+  function next(rot, review, total, weak) {
     const keys = Object.keys(G);
     if (review && review.length) {
       const i = review.findIndex(r => r.due <= total && r.unit !== rot.last);
@@ -496,6 +496,8 @@ const Prob = (() => {
     }
     if (!rot.bag || !rot.bag.length) {
       let b; do { b = shuffle(keys); } while (b[0] === rot.last && keys.length > 1);
+      // 약한 단원은 뒤쪽 절반에 한 번 더 끼운다 (바로 이어서 나오지 않게)
+      (weak || []).filter(u => G[u]).forEach(u => { const h = Math.ceil(b.length / 2); b.splice(h + Math.floor(Math.random() * (b.length - h + 1)), 0, u); });
       rot.bag = b;
     }
     const unit = rot.bag.shift();

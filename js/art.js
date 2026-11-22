@@ -56,6 +56,31 @@ const Art = (() => {
       // 쪼옥: 오므린 입
       eyes = `<path d="M-12 3 Q-8.5 5.5 -5 3 M5 3 Q8.5 5.5 12 3" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
       mouth = `<ellipse cx="0" cy="11" rx="2.6" ry="2.4" fill="none" stroke="#C9466F" stroke-width="2"/>`;
+    } else if (mood === 'dizzy') {
+      // 눈이 뱅글뱅글 (소용돌이가 돈다), 꼬불꼬불 입
+      const sp = (x) => `<g transform="translate(${x} 2.5)"><g class="spiral"><path d="M0 0 m-.8 0 a.8 .8 0 1 1 1.6 0 a1.8 1.8 0 1 1 -3.6 0 a2.8 2.8 0 1 1 5.6 0 a3.8 3.8 0 1 1 -7.6 0" stroke="${ink}" stroke-width="1.6" fill="none" stroke-linecap="round"/></g></g>`;
+      eyes = sp(-8.5) + sp(8.5);
+      mouth = `<path d="M-4.5 11 q1.5 -2 3 0 q1.5 2 3 0 q1.5 -2 3 0" stroke="${ink}" stroke-width="1.7" fill="none" stroke-linecap="round"/>`;
+    } else if (mood === 'sleepy') {
+      // 반쯤 감긴 눈 + 하품하는 입
+      eyes = `<path d="M-12.5 2 h8 M4.5 2 h8" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><path d="M-11.5 2 q3 3.4 6 0 M5.5 2 q3 3.4 6 0" fill="${ink}"/>`;
+      mouth = `<ellipse class="yawn" cx="0" cy="11.5" rx="3.6" ry="4.6" fill="#C9466F"/><ellipse cx="0" cy="13.8" rx="2.2" ry="1.4" fill="#FF9CB8"/>`;
+    } else if (mood === 'full') {
+      // 배불러: 만족스레 감은 눈, 빵빵한 볼
+      eyes = `<path d="M-12 2 Q-8.5 5.5 -5 2 M5 2 Q8.5 5.5 12 2" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M-3 10 Q0 12.6 3 10" stroke="${ink}" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="-15" cy="9" rx="7.6" ry="5.6" fill="#F7A0C1" opacity=".6"/><ellipse cx="15" cy="9" rx="7.6" ry="5.6" fill="#F7A0C1" opacity=".6"/>`;
+    } else if (mood === 'smug') {
+      // 에헴: 눈을 감고 새침하게 웃는 얼굴
+      eyes = `<path d="M-12 3.5 Q-8.5 0.5 -5 3.5 M5 3.5 Q8.5 0.5 12 3.5" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M-3.5 9.5 Q0.5 12.5 4.5 8.5" stroke="${ink}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    } else if (mood === 'wide') {
+      // 눈이 말똥말똥: 크게 뜬 반짝 눈
+      eyes = `<g><circle cx="-8.5" cy="2" r="5" fill="${ink}"/><circle cx="8.5" cy="2" r="5" fill="${ink}"/><circle cx="-6.8" cy="0" r="2" fill="#fff"/><circle cx="10.2" cy="0" r="2" fill="#fff"/><circle cx="-10" cy="4" r="1" fill="#fff"/><circle cx="7" cy="4" r="1" fill="#fff"/></g>`;
+      mouth = `<path d="M-4 9 Q0 14.5 4 9 Z" fill="#E26A97"/>`;
+    } else if (mood === 'tickle') {
+      // 간지러워: > < 눈, 웃음 참는 입
+      eyes = `<path d="M-12.5 -0.5 L-6 3 L-12.5 6.5 M12.5 -0.5 L6 3 L12.5 6.5" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      mouth = `<path d="M-5 10 Q0 15 5 10 Z" fill="#E26A97"/><path d="M-19 -2 q2 2 0 4 M19 -2 q-2 2 0 4" stroke="#E5679A" stroke-width="1.4" fill="none"/>`;
     } else if (mood === 'sleep') {
       eyes = `<path d="M-12 3 Q-8.5 5.5 -5 3 M5 3 Q8.5 5.5 12 3" stroke="${ink}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
       mouth = `<ellipse cx="0" cy="11" rx="1.8" ry="2.2" fill="${ink}" opacity=".7"/>`;
