@@ -130,13 +130,13 @@ const Art = (() => {
     if (stage >= 10) back += `<circle cy="-4" r="52" fill="url(#cn-glow)"/>`;
     if (stage >= 6) back += rainbowAura();
     if (stage >= 9) back += auroraTail();
-    if (stage >= 5) back += cloudWings(stage >= 7 ? 1.22 / s : .85, stage >= 7);
+    if (stage >= 5 && L.wear.back !== 'wings') back += cloudWings(stage >= 7 ? 1.22 / s : .85, stage >= 7);
     if (stage >= 4 && stage < 10 && !L.wear.head) front += star(15, -27, .62, 14);
     if (stage >= 8 && !L.wear.head) front += moonMark(-17, -29, .78);
     if (stage >= 10 && !L.wear.head) front += crown(4, -33, .95);
     if (stage >= 7) front += sparkle(-40, -20, .6) + sparkle(42, 14, .5);
     const ws = (ly) => wearSVG('cloud', L.wear, ly);
-    return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${ws('back')}${back}${cloudBody(mood)}${dirt('cloud', L.dirt)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
+    return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${back}${ws('back')}${cloudBody(mood)}${dirt('cloud', L.dirt)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
   }
 
   // ---------- 아기 토끼 ----------
@@ -199,14 +199,14 @@ const Art = (() => {
     const ty = 60 - 44 * s;
     let extra = stage >= 5 && !L.wear.head ? ribbon : '', back = '';
     if (stage >= 10) back += `<circle cy="4" r="48" fill="url(#cn-glow)"/>`;
-    if (stage >= 8) back += `<g opacity=".95"><path d="M-12 18 C-30 4 -40 14 -34 24 C-30 30 -20 28 -12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/><path d="M12 18 C30 4 40 14 34 24 C30 30 20 28 12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/></g>`;
-    let tail = stage >= 9 ? `<circle cx="24" cy="31" r="11" fill="url(#cn-glow)"/>` + star(24, 31, .72, 10) : '';
+    if (stage >= 8 && L.wear.back !== 'wings') back += `<g opacity=".95"><path d="M-12 18 C-30 4 -40 14 -34 24 C-30 30 -20 28 -12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/><path d="M12 18 C30 4 40 14 34 24 C30 30 20 28 12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/></g>`;
+    let tail = stage >= 9 ? `<circle cx="24" cy="31" r="11" fill="url(#cn-glow)"/>` + star(25, 33, .6, 10) : '';
     if (stage >= 6 && !L.wear.head) extra += `<g transform="translate(-15 -15) rotate(-18)">${[0, 90, 180, 270].map(r => `<path transform="rotate(${r})" d="M0 0 C-4 -3 -4 -8 0 -6 C4 -8 4 -3 0 0Z" fill="#8ED79A" stroke="#4FAA6C" stroke-width=".9"/>`).join('')}<circle r="1.3" fill="#4FAA6C"/></g>`;
-    if (stage >= 7) extra += moonMark(0, -16, .55);
+    if (stage >= 7 && !L.wear.head) extra += moonMark(0, -16, .55);
     if (stage >= 10 && !L.wear.head) extra += crown(0, -26, .8);
     if (stage >= 7) extra += sparkle(-30, -8, .55) + sparkle(30, 20, .5);
     const ws = (ly) => wearSVG('bunny', L.wear, ly);
-    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${ws('back')}${back}${bunnyBody(stage, mood)}${tail}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
+    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
     setTint('bunny', 'base'); return wrap(out);
   }
 
@@ -223,7 +223,7 @@ const Art = (() => {
     bow: () => `<g><path d="M0 0 C-6 -9 -13 -7 -12 0 C-13 7 -6 9 0 0 Z M0 0 C6 -9 13 -7 12 0 C13 7 6 9 0 0 Z" fill="url(#cn-rib)" stroke="#C9578A" stroke-width="1.3"/><circle r="3.2" fill="#D9628E"/></g>`
   };
   const ACC_POS = {
-    cloud: { phat: [-6, -28, 1.05], flower: [-16, -24, 1], crown: [0, -33, 1.1], berryhat: [0, -24, 1.05], scarf: [0, 22, 1.25], bow: [-16, -25, .9] },
+    cloud: { phat: [-6, -28, 1.05], flower: [-16, -24, 1], crown: [0, -33, 1.1], berryhat: [0, -24, 1.05], scarf: [0, 25.5, 1.2], bow: [-16, -25, .9] },
     bunny: { phat: [0, -20, .95], flower: [-14, -14, .9], crown: [0, -21, .95], berryhat: [0, -15, 1], scarf: [0, 17, .9], bow: [13, -18, 1] }
   };
   function accSVG(kind, acc) {
@@ -276,7 +276,7 @@ const Art = (() => {
     berryhat: { slot: 'head', P: { cloud: [0, -24, 1.05], bunny: [0, -15, 1] }, g: () => ACC.berryhat() },
     phat: { slot: 'head', P: { cloud: [-6, -28, 1.05], bunny: [0, -20, .95] }, g: () => ACC.phat() },
     bow: { slot: 'head', P: { cloud: [-16, -25, .9], bunny: [13, -18, 1] }, g: () => ACC.bow() },
-    earmuff: { slot: 'head', P: { cloud: [0, -10, 1.15], bunny: [0, -2, 1.15] }, g: () => `<path d="M-20 2 Q0 -22 20 2" stroke="#F28DB2" stroke-width="3" fill="none"/><circle cx="-20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="-20" cy="4" r="3.5" fill="#FFD3E4"/><circle cx="20" cy="4" r="3.5" fill="#FFD3E4"/>` },
+    earmuff: { slot: 'head', P: { cloud: [0, -10, 1.15], bunny: [0, 0, 1] }, g: (kind) => kind === 'bunny' ? `<path d="M-9 -19 Q0 -29 9 -19" stroke="#F28DB2" stroke-width="2.6" fill="none"/><circle cx="-9" cy="-18" r="6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="9" cy="-18" r="6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="-9" cy="-18" r="3" fill="#FFD3E4"/><circle cx="9" cy="-18" r="3" fill="#FFD3E4"/>` : `<path d="M-20 2 Q0 -22 20 2" stroke="#F28DB2" stroke-width="3" fill="none"/><circle cx="-20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="-20" cy="4" r="3.5" fill="#FFD3E4"/><circle cx="20" cy="4" r="3.5" fill="#FFD3E4"/>` },
     beret: { slot: 'head', P: { cloud: [5, -29, 1.15], bunny: [-5, -19, 1.05] }, g: () => `<ellipse rx="16" ry="6.5" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.6" transform="rotate(-12)"/><path d="M-2 -6 q1 -4 3 -5" stroke="#8F7BE0" stroke-width="2" fill="none"/>` },
     strawhat: { slot: 'head', P: { cloud: [0, -27, 1.2], bunny: [0, -17, 1.1] }, g: () => `<ellipse cx="0" cy="2" rx="24" ry="6" fill="#F7DCA0" stroke="#D9AE52" stroke-width="1.6"/><path d="M-12 2 q0 -16 12 -16 q12 0 12 16z" fill="#F9E3B0" stroke="#D9AE52" stroke-width="1.6"/><path d="M-12 -1 h24" stroke="#F28DB2" stroke-width="3.4"/><circle cx="9" cy="-2" r="3" fill="#FFD36E"/>` },
     // 얼굴
@@ -284,16 +284,17 @@ const Art = (() => {
     sticker: { slot: 'face', P: { cloud: [0, 12, 1], bunny: [0, 8, 1] }, g: () => heart(-15.5, 0, 1, '#F28DB2') + heart(15.5, 0, 1, '#F28DB2') },
     freckle: { slot: 'face', P: { cloud: [0, 12, 1], bunny: [0, 8, 1] }, g: () => [[-17, -1], [-13, 2], [13, 2], [17, -1]].map(([x, y]) => star(x, y, .24)).join('') },
     // 목
-    scarf: { slot: 'neck', P: { cloud: [0, 22, 1.25], bunny: [0, 17, .9] }, g: () => ACC.scarf() },
+    scarf: { slot: 'neck', P: { cloud: [0, 25.5, 1.2], bunny: [0, 17, .9] }, g: () => ACC.scarf() },
     pearl: { slot: 'neck', P: { cloud: [0, 19, 1.25], bunny: [0, 15, .85] }, g: () => [-14, -9, -4.5, 0, 4.5, 9, 14].map(x => `<circle cx="${x}" cy="${(4 - Math.abs(x) * .22).toFixed(1)}" r="2.4" fill="#fff" stroke="#D3CBE6" stroke-width=".9"/>`).join('') },
     tie: { slot: 'neck', P: { cloud: [0, 22, .9], bunny: [0, 17, .75] }, g: () => `<path d="M0 0 L-9 -5 L-9 5 Z M0 0 L9 -5 L9 5 Z" fill="#7FB0EA" stroke="#5D8FD0" stroke-width="1.2"/><g class="rbn"><path d="M-7 -2.5 v5 M-4.5 -3.5 v7 M7 -2.5 v5 M4.5 -3.5 v7" stroke="#fff" stroke-width=".9" stroke-dasharray="1.2 1"/><circle r="2.6" fill="#FFD36E" stroke="#D9962E" stroke-width=".8"/></g>` },
     // 몸 (친구마다 모양이 다르다)
     apron: { slot: 'body', layer: 'body', k: {
       cloud: () => `<path d="M-18 21 h36 v10 a8 8 0 0 1 -8 8 h-20 a8 8 0 0 1 -8 -8z" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><path d="M-18 21 l-11 -4 M18 21 l11 -4" stroke="#F7A0C1" stroke-width="2"/><rect x="-6" y="26" width="12" height="7" rx="2" fill="#FFE0EA" stroke="#F7A0C1" stroke-width="1.2"/>${rbn(0, 21.5, .75)}`,
-      bunny: () => `<path d="M-10 19 h20 v10 a7 7 0 0 1 -7 7 h-6 a7 7 0 0 1 -7 -7z" fill="#fff" stroke="#F7A0C1" stroke-width="1.6"/><path d="M-10 19 l-3 -3 M10 19 l3 -3" stroke="#F7A0C1" stroke-width="1.6"/><rect x="-4" y="24" width="8" height="5" rx="1.5" fill="#FFE0EA"/>${rbn(0, 19.5, .55)}` } },
+      bunny: () => `<path d="M-10 19 h20 v10 a7 7 0 0 1 -7 7 h-6 a7 7 0 0 1 -7 -7z" fill="#FFE1EC" stroke="#E5679A" stroke-width="1.7"/><path d="M-8.5 33 q1.5 2 3 0 q1.5 2 3 0 q1.5 2 3 0 q1.5 2 3 0 q1.5 2 3 0" fill="none" stroke="#fff" stroke-width="1.3"/><path d="M-10 19 l-3 -3 M10 19 l3 -3" stroke="#E5679A" stroke-width="1.6"/><rect x="-4" y="23.5" width="8" height="5" rx="1.5" fill="#fff" stroke="#F28DB2" stroke-width=".9"/>${rbn(0, 19.5, .55)}` } },
     cape: { slot: 'body', layer: 'back', k: {
       cloud: () => `<path d="M-30 -4 Q0 6 30 -4 L40 34 Q0 44 -40 34 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.8"/>${star(-26, 28, .35)}${star(24, 30, .3)}${rbn(0, 1, .9, '#FFD36E', '#D9962E')}`,
-      bunny: () => `<path d="M-12 17 Q0 21 12 17 L20 44 Q0 48 -20 44 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.6"/>${star(-14, 38, .25)}${rbn(0, 19, .6, '#FFD36E', '#D9962E')}` } },
+      bunny: () => `<path d="M-12 15 Q0 19 12 15 L27 43 Q0 50 -27 43 Z" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.6"/>${star(-21, 38, .28)}${star(21, 39, .24)}` },
+      kf: { bunny: () => `<path d="M-11 15 L-3 19 L-7 25 Z M11 15 L3 19 L7 25 Z" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="1.3" stroke-linejoin="round"/>${rbn(0, 19, .6, '#FFD36E', '#D9962E')}` } },
     pajama: { slot: 'body', layer: 'body', k: {
       cloud: () => `<path d="M-33 12 Q0 22 33 12 Q36 22 30 26 Q0 34 -30 26 Q-36 22 -33 12Z" fill="#CFE3FF" stroke="#9EC2F2" stroke-width="1.6"/>${[[-18, 21], [0, 25], [18, 21]].map(([x, y]) => star(x, y, .3)).join('')}${rbn(-24, 16, .6, '#9EC2F2', '#5D8FD0')}${rbn(24, 16, .6, '#9EC2F2', '#5D8FD0')}`,
       bunny: () => `<ellipse cx="0" cy="29" rx="11.5" ry="10" fill="#CFE3FF" stroke="#9EC2F2" stroke-width="1.6"/>${star(-4, 27, .26)}${star(5, 32, .22)}${rbn(0, 21, .5, '#9EC2F2', '#5D8FD0')}` } },
@@ -301,23 +302,26 @@ const Art = (() => {
       cloud: () => `<path d="M-30 16 Q0 24 30 16 L36 32 Q24 38 12 33 Q0 39 -12 33 Q-24 38 -36 32 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.6"/>${[-20, -6, 8, 22].map(x => `<circle cx="${x}" cy="27" r="2" fill="#fff"/>`).join('')}<g class="rbn"><path d="M-34 31 Q-30 35 -26 33 Q-22 37 -18 34 Q-14 38 -10 35 Q-6 39 0 36 Q6 39 10 35 Q14 38 18 34 Q22 37 26 33 Q30 35 34 31" fill="none" stroke="#fff" stroke-width="1.8"/></g>${rbn(-22, 18, .7)}`,
       bunny: () => `<path d="M-12 22 Q0 25 12 22 L17 38 Q8 42 0 39 Q-8 42 -17 38 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.6"/>${[-8, 0, 8].map(x => `<circle cx="${x}" cy="33" r="1.6" fill="#fff"/>`).join('')}${rbn(0, 23, .55)}` } },
     // 손 (구름이는 옆에 띄워 든다)
-    balloon: { slot: 'hand', H: true, g: () => `<path d="M0 0 q4 -16 -2 -34" stroke="#B9A7C4" stroke-width="1.2" fill="none"/><ellipse cx="-2" cy="-44" rx="9" ry="11" fill="#F7A0C1" stroke="#E5679A" stroke-width="1.2"/><ellipse cx="-5" cy="-48" rx="2.4" ry="3.6" fill="#fff" opacity=".6"/><path d="M-2 -33 l-2 3 h4z" fill="#E5679A"/>` },
-    umbrella: { slot: 'hand', H: true, g: () => `<path d="M0 4 V-30" stroke="#8C6248" stroke-width="2"/><path d="M0 6 q0 4 -4 4" stroke="#8C6248" stroke-width="2" fill="none"/><path d="M-20 -30 Q0 -52 20 -30 Q15 -34 10 -30 Q5 -34 0 -30 Q-5 -34 -10 -30 Q-15 -34 -20 -30Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.4"/>` },
-    wand: { slot: 'hand', H: true, g: () => `<path d="M0 6 L8 -16" stroke="#C99A6E" stroke-width="2.6" stroke-linecap="round"/>${star(9, -19, .6, 12)}` },
+    balloon: { slot: 'hand', H: true, rot: { bunny: 36 }, g: () => `<path d="M0 0 q4 -16 -2 -34" stroke="#B9A7C4" stroke-width="1.2" fill="none"/><ellipse cx="-2" cy="-44" rx="9" ry="11" fill="#F7A0C1" stroke="#E5679A" stroke-width="1.2"/><ellipse cx="-5" cy="-48" rx="2.4" ry="3.6" fill="#fff" opacity=".6"/><path d="M-2 -33 l-2 3 h4z" fill="#E5679A"/>` },
+    umbrella: { slot: 'hand', H: true, rot: { bunny: 48 }, g: () => `<path d="M0 4 V-30" stroke="#8C6248" stroke-width="2"/><path d="M0 6 q0 4 -4 4" stroke="#8C6248" stroke-width="2" fill="none"/><path d="M-20 -30 Q0 -52 20 -30 Q15 -34 10 -30 Q5 -34 0 -30 Q-5 -34 -10 -30 Q-15 -34 -20 -30Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.4"/>` },
+    wand: { slot: 'hand', H: true, rot: { bunny: 14 }, g: () => `<path d="M0 6 L8 -16" stroke="#C99A6E" stroke-width="2.6" stroke-linecap="round"/>${star(9, -19, .6, 12)}` },
     bouquet: { slot: 'hand', H: true, g: () => `<path d="M-4 8 L0 -6 L4 8Z" fill="#9FDDB4" stroke="#4FAA6C" stroke-width="1.2"/>${[[-5, -9, '#F7A0C1'], [0, -13, '#FFD36E'], [5, -9, '#C9B8FF'], [0, -7, '#FFB9A6']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="4" fill="${c}"/>`).join('')}<path d="M-4 3 h8" stroke="#F28DB2" stroke-width="2"/>` },
     // 등
-    bag: { slot: 'back', layer: 'back', P: { cloud: [-37, 12, 1], bunny: [-17, 26, .75] }, g: () => `<rect x="-8" y="-9" width="16" height="18" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="1.6"/><rect x="-5" y="-2" width="10" height="7" rx="2" fill="#FFE0D6"/><path d="M-5 -9 q5 -6 10 0" stroke="#D9776A" stroke-width="1.6" fill="none"/>${rbn(0, -2, .6)}` },
-    wings: { slot: 'back', layer: 'back', P: { cloud: [0, -4, 1.25], bunny: [0, 22, .8] }, g: () => `<path d="M0 0 C-14 -22 -36 -18 -30 -2 C-36 10 -16 16 0 4 Z M0 0 C14 -22 36 -18 30 -2 C36 10 16 16 0 4Z" fill="#FFC7E6" stroke="#E5679A" stroke-width="1.4" opacity=".95"/><circle cx="-20" cy="-6" r="3" fill="#fff"/><circle cx="20" cy="-6" r="3" fill="#fff"/>` }
+    bag: { slot: 'back', layer: 'body', k: {
+      cloud: () => `<path d="M-31 -1 Q-41 6 -34 15" fill="none" stroke="#D9776A" stroke-width="2.6" stroke-linecap="round"/><g transform="translate(-32 22) rotate(-8)"><rect x="-8" y="-8" width="16" height="15" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="1.6"/><path d="M-8 -3 h16 v3 a5 5 0 0 1 -5 0 h-6 a5 5 0 0 1 -5 0z" fill="#FFD3C7" stroke="#D9776A" stroke-width="1.2"/>${rbn(0, 0, .55)}</g>`,
+      bunny: () => `<path d="M9 16 Q0 24 -11 30" fill="none" stroke="#D9776A" stroke-width="1.8" stroke-linecap="round"/><g transform="translate(-12 32) rotate(-8) scale(.62)"><rect x="-8" y="-8" width="16" height="15" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="2"/><path d="M-8 -3 h16 v3 a5 5 0 0 1 -5 0 h-6 a5 5 0 0 1 -5 0z" fill="#FFD3C7" stroke="#D9776A" stroke-width="1.4"/>${rbn(0, 0, .6)}</g>` } },
+    wings: { slot: 'back', layer: 'back', P: { cloud: [0, 8, 1.4], bunny: [0, 22, .8] }, g: () => `<path d="M0 0 C-14 -22 -36 -18 -30 -2 C-36 10 -16 16 0 4 Z M0 0 C14 -22 36 -18 30 -2 C36 10 16 16 0 4Z" fill="#FFC7E6" stroke="#E5679A" stroke-width="1.4" opacity=".95"/><circle cx="-20" cy="-6" r="3" fill="#fff"/><circle cx="20" cy="-6" r="3" fill="#fff"/>` }
   };
   const HAND_AT = { cloud: [36, 10], bunny: [15, 25] };
   const layerOfW = (id) => W[id].layer || (W[id].slot === 'hand' ? 'hand' : W[id].slot);
   function wearSVG(kind, wear, layer) {
     if (!wear) return '';
-    return Object.values(wear).filter(id => W[id] && layerOfW(id) === layer).map(id => {
+    const fr = layer === 'neck' ? Object.values(wear).filter(id => W[id] && W[id].kf && W[id].kf[kind]).map(id => W[id].kf[kind]()).join('') : '';
+    return fr + Object.values(wear).filter(id => W[id] && layerOfW(id) === layer).map(id => {
       const w = W[id];
       if (w.k) return w.k[kind]();
-      if (w.H) { const [x, y] = HAND_AT[kind]; return `<g transform="translate(${x} ${y}) scale(${kind === 'bunny' ? .8 : 1})">${w.g()}</g>`; }
-      const [x, y, sc] = w.P[kind]; return `<g transform="translate(${x} ${y}) scale(${sc})">${w.g()}</g>`;
+      if (w.H) { const [x, y] = HAND_AT[kind]; return `<g transform="translate(${x} ${y}) rotate(${(w.rot && w.rot[kind]) || 0}) scale(${kind === 'bunny' ? .8 : 1})">${w.g(kind)}</g>`; }
+      const [x, y, sc] = w.P[kind]; return `<g transform="translate(${x} ${y}) scale(${sc})">${w.g(kind)}</g>`;
     }).join('');
   }
   // look: 예전 방식(장식 이름 문자열) 또는 { wear: {부위: 옷}, tint }
@@ -330,7 +334,8 @@ const Art = (() => {
   function wearIcon(id, kind = 'bunny') {
     installDefs(); const w = W[id]; if (!w) return '';
     let inner;
-    if (w.k) inner = `<g transform="translate(0 ${kind === 'bunny' ? -28 : -20}) scale(${kind === 'bunny' ? 1.6 : 1})">${w.k[kind]()}</g>`;
+    if (id === 'bag') inner = `<g transform="translate(0 -4) scale(2.3)"><path d="M-6 -7 Q0 -16 6 -7" fill="none" stroke="#D9776A" stroke-width="1.6"/><rect x="-8" y="-8" width="16" height="15" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="1.4"/><path d="M-8 -3 h16 v3 a5 5 0 0 1 -5 0 h-6 a5 5 0 0 1 -5 0z" fill="#FFD3C7" stroke="#D9776A" stroke-width="1.1"/>${rbn(0, 0, .55)}</g>`;
+    else if (w.k) inner = `<g transform="translate(0 ${kind === 'bunny' ? -28 : -20}) scale(${kind === 'bunny' ? 1.6 : 1})">${w.k[kind]()}</g>`;
     else if (w.H) inner = `<g transform="translate(0 14) scale(1.3)">${w.g()}</g>`;
     else inner = `<g transform="scale(1.5)">${w.g()}</g>`;
     return `<svg viewBox="-30 -36 60 60" aria-hidden="true">${inner}</svg>`;
