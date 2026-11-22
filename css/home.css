@@ -778,15 +778,15 @@ button.grow:active{transform:scale(.97)}
 @media (max-width:560px){.grgrid{grid-template-columns:repeat(3,1fr);gap:8px}.grc b{font-size:14px}.grc small{font-size:12px}}
 
 /* 거절 몸짓 (대사에 맞춰) */
-.walker .pet.act-dizzy svg{animation:pdizzy 1.2s ease-in-out 2;transform-origin:50% 90%}
-.walker .pet.act-yawn svg{animation:pyawn 1.6s ease-in-out;transform-origin:50% 100%}
-.walker .pet.act-belly svg{animation:pbelly .38s ease-in-out 5;transform-origin:50% 100%}
-.walker .pet.act-nono svg{animation:pnono .5s ease-in-out 3}
-.walker .pet.act-boing svg{animation:pboing .42s cubic-bezier(.3,1.6,.5,1) 4;transform-origin:50% 100%}
-.walker .pet.act-sway svg{animation:psway .8s ease-in-out 2;transform-origin:50% 100%}
-.walker .pet.act-droop svg{animation:pdroop 2.2s ease forwards;transform-origin:50% 100%}
-.walker .pet.act-squirm svg{animation:psquirm .22s ease-in-out 8;transform-origin:50% 100%}
-.walker .pet.act-turn svg{animation:pturn 2.2s ease forwards}
+.act-dizzy svg{animation:pdizzy 1.2s ease-in-out 2;transform-origin:50% 90%}
+.act-yawn svg{animation:pyawn 1.6s ease-in-out;transform-origin:50% 100%}
+.act-belly svg{animation:pbelly .38s ease-in-out 5;transform-origin:50% 100%}
+.act-nono svg{animation:pnono .5s ease-in-out 3}
+.act-boing svg{animation:pboing .42s cubic-bezier(.3,1.6,.5,1) 4;transform-origin:50% 100%}
+.act-sway svg{animation:psway .8s ease-in-out 2;transform-origin:50% 100%}
+.act-droop svg{animation:pdroop 2.2s ease forwards;transform-origin:50% 100%}
+.act-squirm svg{animation:psquirm .22s ease-in-out 8;transform-origin:50% 100%}
+.act-turn svg{animation:pturn 2.2s ease forwards}
 .spiral{animation:pspin .9s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
 .yawn{animation:pyawnmouth 1.6s ease-in-out;transform-box:fill-box;transform-origin:50% 0}
 @keyframes pdizzy{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg) translateX(-4px)}75%{transform:rotate(8deg) translateX(4px)}}
@@ -809,7 +809,7 @@ button.grow:active{transform:scale(.97)}
 .petorbit i{position:absolute;left:50%;top:50%;font-style:normal;color:#FFC24E;font-size:clamp(14px,1.8vw,20px);text-shadow:0 1px 0 #fff;animation:porbit 1.2s linear infinite}
 .petorbit i:nth-child(2){animation-delay:-.4s}.petorbit i:nth-child(3){animation-delay:-.8s}
 @keyframes porbit{0%{transform:translate(-50%,-50%) translate(-120%,0) scale(.8)}25%{transform:translate(-50%,-50%) translate(0,-60%) scale(.6)}50%{transform:translate(-50%,-50%) translate(120%,0) scale(.8)}75%{transform:translate(-50%,-50%) translate(0,60%) scale(1.15)}100%{transform:translate(-50%,-50%) translate(-120%,0) scale(.8)}}
-body.lowfx .walker .pet[class*="act-"] svg{animation-iteration-count:1}
+body.lowfx [class*="act-"] svg{animation-iteration-count:1}
 /* 성장 조건 목록 */
 .grconds{width:min(560px,100%);display:flex;flex-direction:column;gap:6px;background:#fff;border-radius:18px;padding:10px 14px;box-shadow:0 3px 0 #EADBEA}
 .grconds h4{margin:0 0 2px;font-family:var(--fh);font-weight:400;font-size:16px;color:var(--ink)}
@@ -820,3 +820,20 @@ body.lowfx .walker .pet[class*="act-"] svg{animation-iteration-count:1}
 
 .grgrid .grc .grart{max-width:92px}
 @media (max-height:760px) and (orientation:landscape){.growsheet{gap:7px;padding-top:18px}.growsheet .h3{margin:0}.grc{padding:6px 4px 8px}.grc .grart{max-width:64px}.grc small{min-height:0}}
+
+/* 여러 대사 몸짓 */
+.act-nod svg{animation:pnod .5s ease-in-out 2;transform-origin:50% 100%}
+.act-tilt svg{animation:ptilt 1.4s ease-in-out;transform-origin:50% 100%}
+.act-lookup svg{animation:plookup 1.8s ease-in-out;transform-origin:50% 100%}
+.act-shiver svg{animation:pshiver .12s linear 12}
+.act-munch svg{animation:pmunch .3s ease-in-out 5;transform-origin:50% 100%}
+@keyframes pnod{0%,100%{transform:none}50%{transform:scale(1.02,.97) translateY(2px)}}
+@keyframes ptilt{0%,100%{transform:none}30%,70%{transform:rotate(-9deg)}}
+@keyframes plookup{0%,100%{transform:none}30%,70%{transform:translateY(-6px) scale(.98,1.03)}}
+@keyframes pshiver{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+@keyframes pmunch{0%,100%{transform:scale(1)}50%{transform:scale(1.04,.96)}}
+.pf-growl{color:#C99A6E;font-size:clamp(13px,1.6vw,18px);animation-name:petpuff}
+.pf-stink{color:#A9A08E;animation-name:petpuff}
+.pf-note{color:#9C86F0}.pf-star{color:#FFC24E}.pf-q{color:#9C86F0;font-size:clamp(20px,2.6vw,32px)}
+.pf-sweat{width:9px;height:13px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:#9CC8FF;box-shadow:inset -2px -2px 0 #6EA6F0;animation-name:petsweat}
+@keyframes petsweat{0%{opacity:0;transform:translate(-50%,-4px)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,18px)}}

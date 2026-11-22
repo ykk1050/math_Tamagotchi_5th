@@ -91,6 +91,7 @@
     const lv = level();
     if (!opt.silent) { if (lv === 'babble' || lv === 'word') Snd.babble(lv === 'babble' ? 2 : 3, S.kind); else if (lv === 'talk') Snd.babble(1, S.kind); }
     if (where === 'home') { clearTimeout(speak.t); speak.t = setTimeout(() => { b.classList.add('hide'); $('walker').classList.remove('talking'); }, 6500); }
+    if (opt.who !== 'N' && !opt.noEmo) emoteText(where === 'out' ? 'out' : 'home', html);
   }
   // 말풍선 위치: 말하는 캐릭터 머리 바로 위. 화면 밖으로 나가지 않게 막고, 꼬리는 머리를 가리킨다
   function placeBubble(b) {
@@ -311,13 +312,14 @@
     drawPet(); renderNeeds(); renderWishes(); renderCare(); hud(); growHint();
   }
   function drawPet(mood) {
+    if (mood) emoLock.home = Date.now();
     mood = mood || (sulking ? 'pout' : sleeping ? 'sleep' : S.needs.mood < 35 || lowNeed() ? 'sad' : 'idle');
     $('pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc());
     $('walker').classList.toggle('sleep', sleeping);
   }
   let moodT = null;
   function react(mood, anim) {
-    drawPet(mood); const p = $('pet'); p.classList.remove('hop', 'shake', 'squish', 'wobble');
+    drawPet(mood); const p = $('pet'); p.classList.remove('hop', 'shake', 'squish', 'wobble', ...ACT_CLS);
     if (anim && S.stage <= 2) anim = 'wobble';
     if (anim) { void p.offsetWidth; p.classList.add(anim); }
     clearTimeout(moodT); moodT = setTimeout(() => { drawPet(); p.classList.remove('hop', 'shake', 'squish', 'wobble'); }, 1700);
@@ -599,6 +601,7 @@
   if (/[?&]dev/.test(location.search)) window.__objPlay = (id) => { lastTouch = 0; lastObj = null; objBusy = 0; return objPlay(id); };
   if (/[?&]dev/.test(location.search)) window.__makeUp = () => { sulking = true; makeUp(); };
   if (/[?&]dev/.test(location.search)) window.__petNo = (k) => petNo(k);
+  if (/[?&]dev/.test(location.search)) window.__emoOf = (t) => emoOf(t);
   function objReact(id, o, b) {
     if (toyOn) return; // 놀잇감으로 노는 중이면 물건 놀이는 그만
     if (sulking || sleeping || document.querySelector('.overlay.on')) { objBusy = 0; return; }
@@ -1034,7 +1037,7 @@
     $('riddle-pet').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
     nextRiddle(); overlay('ov-riddle', true);
   }
-  function rsay(t) { const b = $('riddle-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  function rsay(t) { const b = $('riddle-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); emoteText('riddle', t); }
   function nextRiddle() {
     rq = Prob.next(S.rot, S.review, S.total, weakUnits()); const U = Prob.UNITS[rq.unit];
     rsay(L4('read')); $('rq-more').style.display = 'none';
@@ -1529,7 +1532,7 @@
     $('read-cover').innerHTML = bookCover(id); $('read-pet').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
     showPage(); overlay('ov-read', true);
   }
-  function readSay(t) { const b = $('read-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  function readSay(t) { const b = $('read-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); emoteText('read', t); }
   function showPage() {
     const B = BOOKS[rb.id], last = rb.page >= B.pages.length;
     $('read-title').textContent = B.title;
@@ -1652,8 +1655,8 @@
     S.wear = S.wear || {}; S.tint = S.tint || 'base'; S.tints = S.tints || ['base']; S.outfits = S.outfits || [null, null, null];
     if (S.acc && ITEMS[S.acc]) { S.wear[ITEMS[S.acc].slot || 'head'] = S.acc; S.acc = null; }
   }
-  function wdSay(t) { const b = $('wd-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
-  function wdPet(mood = 'idle') { $('wd-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
+  function wdSay(t) { const b = $('wd-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); emoteText('wd', t); }
+  function wdPet(mood = 'idle') { if (mood !== 'idle') emoLock.wd = Date.now(); $('wd-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
   let wdFromEdit = false;
   function openWardrobe(tab) {
     initWear(); wdTab = tab || 'wear'; paintQ = null; wdPet('happy');
@@ -1773,29 +1776,90 @@
     tickle: { mood: 'tickle', cls: 'act-squirm', fx: 'tick' }, // 간지러워
     upset: { mood: 'pout', cls: 'act-turn', fx: 'fume' }       // 속상해
   };
-  let noT = 0;
-  function petNo(kind) {
-    const F = NO_FX[kind] || NO_FX.upset, p = $('pet');
-    clearTimeout(moodT); clearTimeout(noT); drawPet(F.mood);
-    p.classList.remove('hop', 'shake', 'squish', 'wobble', ...Object.values(NO_FX).map(x => x.cls)); void p.offsetWidth; p.classList.add(F.cls);
-    petFx(F.fx); noT = setTimeout(() => { p.classList.remove(F.cls); drawPet(); }, 2400);
+  // ---------- 대사마다 어울리는 표정·몸짓·효과 ----------
+  // 말하는 내용(낱말)을 보고 감정을 고른다. 위에서부터 먼저 맞는 것.
+  const EMO_RULES = [
+    ['sleepy', /졸려|졸리|하암|잘 자|Zzz|새근|음냐|자고 싶|낮잠|꿈나라|눈꺼풀|눈이 자꾸 감/],
+    ['hungry', /배고|꼬르륵|출출|먹고 싶|배가 고|뭐 먹을/],
+    ['dirty', /찝찝|씻고 싶|씻겨|꼬질|더러|먼지가 묻/],
+    ['scared', /무서|천둥|깜짝|으악|덜덜|번쩍/],
+    ['cheer', /괜찮아|힘내|다음엔 (우리|꼭|맞|같이)|할 수 있|정답은|천천히|같이 해 보/],
+    ['excited', /안 아파|덕분|꺄아|행복|반가/],
+    ['sad', /슬퍼|속상|미안|흑|흐엉|으앙|훌쩍|아파|외로|시무룩|못 했|틀렸|싫어|그만|별로|우웩|저리 가|젖었/],
+    ['yum', /맛있|냠|쩝|오물|달콤|꿀꺽|맛이|고소|새콤|배부르|냄새 좋|냄새가 (나|벌써)|킁킁/],
+    ['sing', /♪|♫|노래|흥얼|랄라|룰루|피아노/],
+    ['love', /사랑|고마워|좋아해|소중|제일 친한|단짝|♥|보고 싶었|기다렸/],
+    ['proud', /정답!|맞았|맞혔|잘했|해냈|성공|완성|연속|다 모았|또 하나/],
+    ['excited', /우와|와아|야호|신나|최고|대단|멋져|좋아!|짱|깡총|폴짝|두근|재밌/],
+    ['wonder', /별|달님|무지개|하늘|구름|반짝|예쁘|노을|오로라|신기/],
+    ['curious', /\?|궁금|뭐지|어디|무슨|할까|일까/]
+  ];
+  const emoOf = (html) => { const t = String(html).replace(/<[^>]+>/g, ''); const r = EMO_RULES.find(([, re]) => re.test(t)); return r ? r[0] : 'talk'; };
+  const EMO = {
+    // 거절
+    dizzy: { mood: 'dizzy', cls: 'act-dizzy', fx: 'orbit' }, full: { mood: 'full', cls: 'act-belly', fx: 'puff' },
+    clean: { mood: 'smug', cls: 'act-nono', fx: 'shine' }, awake: { mood: 'wide', cls: 'act-boing', fx: 'bang' },
+    later: { mood: 'smug', cls: 'act-sway', fx: 'heart' }, blue: { mood: 'sad', cls: 'act-droop', fx: 'cloud' },
+    tickle: { mood: 'tickle', cls: 'act-squirm', fx: 'tick' }, upset: { mood: 'pout', cls: 'act-turn', fx: 'fume' },
+    // 여러 대사
+    sleepy: { mood: 'sleepy', cls: 'act-yawn', fx: 'zz' }, hungry: { mood: 'sad', cls: 'act-belly', fx: 'growl' },
+    dirty: { mood: 'sad', cls: 'act-squirm', fx: 'stink' }, scared: { mood: 'wide', cls: 'act-shiver', fx: 'sweat' },
+    cheer: { mood: 'happy', cls: 'act-nod', fx: 'shine' }, sad: { mood: 'sad', cls: 'act-droop', fx: 'cloud' },
+    yum: { mood: 'chew', cls: 'act-munch', fx: 'heart' }, sing: { mood: 'happy', cls: 'act-sway', fx: 'note' },
+    love: { mood: 'happy', cls: 'act-sway', fx: 'heart' }, proud: { mood: 'smug', cls: 'act-boing', fx: 'star' },
+    excited: { mood: 'happy', cls: 'act-boing', fx: 'shine' }, wonder: { mood: 'wide', cls: 'act-lookup', fx: 'shine' },
+    curious: { mood: null, cls: 'act-tilt', fx: 'q' }, talk: { mood: null, cls: 'act-nod', fx: null }
+  };
+  const ACT_CLS = [...new Set(Object.values(EMO).map(x => x.cls))];
+  // 화면마다 친구 그림이 다르다: 방, 나들이(요리·산책·바느질), 돌보기, 책 읽기, 옷장, 수수께끼
+  const emoLock = {};
+  const EMO_CTX = {
+    home: () => ({ el: $('pet'), draw: (m) => drawPet(m), ok: () => S.stage >= 3 && !sleeping && !sulking && !toyOn }),
+    out: () => ({ el: $('opet'), draw: (m) => drawOutPet(m || 'idle'), ok: () => S.stage >= 3 }),
+    act: () => ({ el: $('act-pet'), draw: (m) => actPet(m || 'idle'), ok: () => S.stage >= 3 }),
+    read: () => ({ el: $('read-pet'), draw: (m) => { $('read-pet').innerHTML = Art.draw(S.kind, S.stage, m || 'happy', showAcc()); }, ok: () => S.stage >= 3 }),
+    wd: () => ({ el: $('wd-pet'), draw: (m) => wdPet(m || 'idle'), ok: () => S.stage >= 3 }),
+    riddle: () => ({ el: $('riddle-pet'), draw: (m) => { $('riddle-pet').innerHTML = Art.draw(S.kind, S.stage, m || 'happy', showAcc()); }, ok: () => S.stage >= 3 })
+  };
+  // F: EMO 항목. soft=true면 다른 동작이 방금 정한 표정·몸짓은 두고 둘레 효과만 낸다
+  function emote(where, F, soft) {
+    const C = EMO_CTX[where] && EMO_CTX[where](); if (!C || !C.el || !C.ok()) return;
+    const el = C.el; if (!el.getBoundingClientRect().width) return;
+    if (!soft) {
+      clearTimeout(el._emoT);
+      if (F.mood) C.draw(F.mood);
+      el.classList.remove(...ACT_CLS); void el.offsetWidth; el.classList.add(F.cls);
+      el._emoT = setTimeout(() => { el.classList.remove(F.cls); if (F.mood) C.draw(); }, 2400);
+    }
+    if (F.fx) petFx(F.fx, el);
   }
-  // 친구 머리 둘레에 떠오르는 것
-  function petFx(kind) {
+  // 대사를 띄울 때 부른다: 방금 다른 동작(react 등)이 있었으면 효과만
+  function emoteText(where, html) {
+    const k = emoOf(html), F = EMO[k];
+    const soft = Date.now() - (emoLock[where] || 0) < 500;
+    if (soft && k === 'talk') return;
+    emote(where, F, soft);
+  }
+  function petNo(kind) { emoLock.home = 0; emote('home', EMO[kind] || EMO.upset); emoLock.home = Date.now(); }
+  // 친구 머리 둘레에 떠오르는 것 (그 친구 그림이 들어 있는 상자 기준)
+  function petFx(kind, el) {
     if (S.lowfx && kind !== 'zz') return;
-    const room = $('room'), r = room.getBoundingClientRect(), pr = $('pet').getBoundingClientRect();
+    el = el || $('pet');
+    const host = el.offsetParent || $('room'), r = host.getBoundingClientRect(), pr = el.getBoundingClientRect();
     const cx = pr.left - r.left + pr.width / 2, top = pr.top - r.top + pr.height * .18, w = pr.width;
     if (kind === 'orbit') {
       const o = document.createElement('div'); o.className = 'petorbit'; o.innerHTML = '<i>★</i><i>✦</i><i>★</i>';
-      Object.assign(o.style, { left: cx + 'px', top: top + 'px', width: w * .55 + 'px', height: w * .2 + 'px' }); room.appendChild(o); setTimeout(() => o.remove(), 2400); return;
+      Object.assign(o.style, { left: cx + 'px', top: top + 'px', width: w * .55 + 'px', height: w * .2 + 'px' }); host.appendChild(o); setTimeout(() => o.remove(), 2400); return;
     }
-    const CH = { zz: ['z', 'Z', 'z'], puff: ['통', '통'], shine: ['✦', '✧', '✦', '✧'], bang: ['!', '!'], heart: ['♥'], cloud: ['☁'], tick: ['~', '~', '~'], fume: ['#'] }[kind] || [];
+    const CH = { zz: ['z', 'Z', 'z'], puff: ['통', '통'], shine: ['✦', '✧', '✦', '✧'], bang: ['!', '!'], heart: ['♥', '♥'], cloud: ['☁'], tick: ['~', '~', '~'], fume: ['#'],
+      growl: ['꼬르륵'], stink: ['~', '~'], sweat: ['', ''], note: ['♪', '♫', '♪'], star: ['★', '✦'], q: ['?'] }[kind] || [];
     CH.forEach((ch, i) => {
       const e = document.createElement('span'); e.className = 'petfx pf-' + kind; e.textContent = ch;
-      const dx = kind === 'tick' ? (i % 2 ? .42 : -.42) * w : kind === 'shine' ? (i - 1.5) * w * .26 : kind === 'puff' ? (i ? .32 : -.32) * w : (i - (CH.length - 1) / 2) * w * .16 + w * .2;
-      const dy = kind === 'puff' ? pr.height * .35 : kind === 'shine' ? pr.height * (.1 + (i % 2) * .25) : kind === 'tick' ? pr.height * (.2 + i * .12) : 0;
+      const side = (i % 2 ? 1 : -1);
+      const dx = kind === 'tick' || kind === 'stink' ? side * .42 * w : kind === 'shine' ? (i - 1.5) * w * .26 : kind === 'puff' || kind === 'sweat' ? side * .34 * w : kind === 'growl' ? 0 : (i - (CH.length - 1) / 2) * w * .16 + w * .2;
+      const dy = kind === 'puff' || kind === 'growl' ? pr.height * .45 : kind === 'shine' ? pr.height * (.1 + (i % 2) * .25) : kind === 'tick' || kind === 'stink' ? pr.height * (.2 + i * .12) : kind === 'sweat' ? pr.height * .08 : 0;
       Object.assign(e.style, { left: (cx + dx) + 'px', top: (top + dy) + 'px', animationDelay: (i * .25) + 's' });
-      room.appendChild(e); setTimeout(() => e.remove(), 2600 + i * 250);
+      host.appendChild(e); setTimeout(() => e.remove(), 2600 + i * 250);
     });
   }
   function refuse(key, text, kind) {
@@ -1852,8 +1916,8 @@
   function tasteBadge(t, id) { const k = S.known[t][id]; return k === 'love' ? '<span class="badge love">좋아해</span>' : k === 'hate' ? '<span class="badge hate">별로래</span>' : ''; }
 
   let actClean = [], actGot = 0;
-  function actSay(t) { const b = $('act-bubble'); b.querySelector('span').innerHTML = t; b.style.display = 'flex'; }
-  function actPet(mood) { $('act-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
+  function actSay(t) { const b = $('act-bubble'); b.querySelector('span').innerHTML = t; b.style.display = 'flex'; emoteText('act', t); }
+  function actPet(mood) { if (mood && mood !== 'idle') emoLock.act = Date.now(); $('act-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
   function runAct(id, foodId) {
     const room = $('act-room'), field = $('act-field'), bottom = $('act-bottom');
     room.classList.remove('dark'); bottom.innerHTML = ''; $('act-bubble').style.display = 'none';
@@ -2225,7 +2289,7 @@
     const fx = $('cook-fx'), W = bw * 1.7, H = bw * 1.9;
     Object.assign(fx.style, { left: (x - W / 2) + 'px', top: (y - H * .82) + 'px', width: W + 'px', height: H + 'px' });
   }
-  function drawOutPet(mood) { const p = $('opet'); p.innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); p.classList.toggle('egg', S.stage <= 2); }
+  function drawOutPet(mood) { if (mood && mood !== 'idle') emoLock.out = Date.now(); const p = $('opet'); p.innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); p.classList.toggle('egg', S.stage <= 2); }
   function placeOutPet(i, instant) {
     // 친구는 제자리에서 걷고, 풍경 세 겹이 서로 다른 속도로 뒤로 지나간다
     const p = Math.max(0, Math.min(1, i / (OUT.n - 1)));
@@ -2237,7 +2301,7 @@
     });
   }
   function outReact(mood, anim) {
-    drawOutPet(mood); const p = $('opet'); p.classList.remove('hop', 'shake', 'walking', 'wobble'); if (anim && S.stage <= 2) anim = 'wobble'; if (anim) { void p.offsetWidth; p.classList.add(anim); }
+    drawOutPet(mood); const p = $('opet'); p.classList.remove('hop', 'shake', 'walking', 'wobble', ...ACT_CLS); emoLock.out = Date.now(); if (anim && S.stage <= 2) anim = 'wobble'; if (anim) { void p.offsetWidth; p.classList.add(anim); }
     clearTimeout(outReact.t); outReact.t = setTimeout(() => drawOutPet('idle'), 1500);
   }
   function nextQ() {
