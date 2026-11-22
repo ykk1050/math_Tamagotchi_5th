@@ -2097,15 +2097,108 @@
     if (id === 'warm' && t >= 62 && !wished('care', id)) return refuse('egg-warm', '(알이 벌써 따끈따끈해요. 더 덮으면 더울 거예요)', 'awake');
     if (id === 'cool' && t <= 38 && !wished('care', id)) return refuse('egg-cool', '(알이 벌써 서늘해요. 부채질하면 추울 거예요)', 'awake');
     if (id === 'sing' && S.singT && now - S.singT < 5 * 60000 && !wished('care', id)) return refuse('egg-sing', '(알이 노래를 듣고 새근새근 자고 있어요. 조금 이따 불러 줘요)', 'sleepy');
-    const prop = document.createElement('div'); prop.className = 'eggprop ' + id;
-    prop.innerHTML = id === 'warm' ? EGG_BLANKET : id === 'cool' ? EGG_FAN : '';
-    if (id !== 'sing') { wk.querySelectorAll('.eggprop').forEach(e => e.remove()); wk.appendChild(prop); setTimeout(() => prop.remove(), id === 'warm' ? 4200 : 2600); }
+    if (eggBusy) return; if (id === 'warm') return blanketPlay(); if (id === 'cool') return fanPlay(); if (id === 'sing') return singPlay();
+  }
+  // 알 돌보기를 끝까지 해냈을 때
+  function eggDone(id, lv = 1) {
+    const t = S.temp == null ? 50 : S.temp;
     if (id === 'warm') { S.temp = Math.min(100, t + 24); Snd.heart(); speak('home', pick(['(포근한 담요를 덮어 줬어요. 알이 따뜻해졌어요)', '(담요 속에서 알이 따끈따끈해졌어요)']), { silent: true }); }
     if (id === 'cool') { S.temp = Math.max(0, t - 24); Snd.pop(); speak('home', pick(['(살랑살랑 부채질… 알이 시원해졌어요)', '(시원한 바람에 알이 살랑 흔들려요)']), { silent: true }); }
-    if (id === 'sing') { S.singT = now; addNeed('mood', 10); Snd.chime && Snd.chime(); if (dayCap('egg-sing', 3)) addFriend(2); speak('home', pick(['(♪ 노래를 불러 줬어요. 알 속에서 콩콩 소리가 나요)', '(♪ 랄라~ 알이 노래에 맞춰 흔들흔들해요)']), { silent: true }); }
+    if (id === 'sing') { S.singT = Date.now(); addNeed('mood', lv >= 2 ? 14 : 7); if (lv >= 2 && dayCap('egg-sing', 3)) addFriend(2);
+      speak('home', lv >= 2 ? pick(['(♪ 노래에 맞춰 알이 신나게 흔들흔들 춤을 춰요!)', '(알 속에서 콩콩, 박자에 맞춰 대답해요!)']) : '(알이 노래를 듣고 살랑 흔들려요)', { silent: true }); }
     S.eggCare = (S.eggCare || 0) + 1; S.log.push({ e: 'care', id }); fulfill('care', id);
     nestGrow(); save(); renderNeeds(); renderWishes(); renderCare();
     if (canGrow()) setTimeout(() => levelUp(), 1800);
+  }
+  let eggBusy = false;
+  const roomPt = (e) => { const r = $('room').getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const eggBox = () => { const r = $('room').getBoundingClientRect(), p = $('pet').getBoundingClientRect(); return { x: p.left - r.left + p.width / 2, y: p.top - r.top + p.height * .55, w: p.width, h: p.height }; };
+  function eggHint(t) { const h = document.createElement('div'); h.className = 'egghint'; h.textContent = t; $('room').appendChild(h); return h; }
+  // 담요 덮기: 방 한쪽의 담요를 손가락으로 끌어다 알 위에 놓는다
+  function blanketPlay() {
+    eggBusy = true; poked(); const room = $('room'), E = eggBox();
+    const bl = document.createElement('div'); bl.className = 'dragprop blanket'; bl.innerHTML = EGG_BLANKET;
+    const w = E.w * .9; Object.assign(bl.style, { width: w + 'px', height: w + 'px', left: Math.max(8, E.x - E.w * 1.7) + 'px', top: (E.y - w * .55) + 'px' });
+    room.appendChild(bl); const hint = eggHint('담요를 끌어다 알 위에 덮어 주세요');
+    let drag = null;
+    const end = (ok) => { hint.remove(); bl.remove(); eggBusy = false; if (ok) { const wk = $('walker'), prop = document.createElement('div'); prop.className = 'eggprop warm'; prop.innerHTML = EGG_BLANKET; wk.querySelectorAll('.eggprop').forEach(e => e.remove()); wk.appendChild(prop); setTimeout(() => prop.remove(), 4200); eggDone('warm'); } };
+    bl.addEventListener('pointerdown', (e) => { const [x, y] = roomPt(e); drag = { dx: x - bl.offsetLeft, dy: y - bl.offsetTop }; bl.classList.add('held'); try { bl.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    bl.addEventListener('pointermove', (e) => { if (!drag) return; const [x, y] = roomPt(e); bl.style.left = (x - drag.dx) + 'px'; bl.style.top = (y - drag.dy) + 'px'; });
+    const up = () => { if (!drag) return; drag = null; bl.classList.remove('held'); const E2 = eggBox(), cx = bl.offsetLeft + bl.offsetWidth / 2, cy = bl.offsetTop + bl.offsetHeight / 2;
+      if (Math.abs(cx - E2.x) < E2.w * .45 && Math.abs(cy - E2.y) < E2.h * .55) end(true); else { Snd.tap(); hint.textContent = '조금 더 알 쪽으로! 알 위에 놓아 주세요'; } };
+    bl.addEventListener('pointerup', up); bl.addEventListener('pointercancel', up);
+    setTimeout(() => { if (bl.isConnected) end(false); }, 25000);
+  }
+  // 부채질: 부채를 손가락으로 잡고 좌우로 살랑살랑 흔든다
+  function fanPlay() {
+    eggBusy = true; poked(); const room = $('room'), E = eggBox();
+    const fan = document.createElement('div'); fan.className = 'dragprop fan'; fan.innerHTML = EGG_FAN;
+    const w = E.w * .8; Object.assign(fan.style, { width: w + 'px', height: w + 'px', left: (E.x + E.w * .25) + 'px', top: (E.y - w * .8) + 'px' });
+    room.appendChild(fan); const hint = eggHint('부채를 잡고 좌우로 살랑살랑 흔들어 주세요');
+    const bar = document.createElement('div'); bar.className = 'eggmeter'; bar.innerHTML = '<i></i>'; room.appendChild(bar);
+    Object.assign(bar.style, { left: (E.x - E.w * .4) + 'px', top: (E.y + E.h * .55) + 'px', width: E.w * .8 + 'px' });
+    let drag = null, lx = 0, dir = 0, swings = 0, lastWind = 0; const NEED = 8;
+    const end = (ok) => { hint.remove(); fan.remove(); bar.remove(); eggBusy = false; if (ok) eggDone('cool'); };
+    fan.addEventListener('pointerdown', (e) => { const [x] = roomPt(e); drag = { dx: x - fan.offsetLeft }; lx = x; fan.classList.add('held'); try { fan.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    fan.addEventListener('pointermove', (e) => {
+      if (!drag) return; const [x] = roomPt(e); fan.style.left = (x - drag.dx) + 'px';
+      const d = x - lx; if (Math.abs(d) < 14) return; const nd = Math.sign(d); lx = x;
+      fan.style.transform = `rotate(${nd * 14}deg)`;
+      if (nd !== dir) { dir = nd; swings++; bar.firstChild.style.width = Math.min(100, swings / NEED * 100) + '%';
+        const now = Date.now(); if (now - lastWind > 250) { lastWind = now; petFx('breeze', $('pet')); Snd.tap(); const p = $('pet'); p.classList.remove('act-sway'); void p.offsetWidth; p.classList.add('act-sway'); }
+        if (swings >= NEED) end(true); }
+    });
+    const up = () => { drag = null; fan.classList.remove('held'); fan.style.transform = ''; };
+    fan.addEventListener('pointerup', up); fan.addEventListener('pointercancel', up);
+    setTimeout(() => { if (fan.isConnected) end(false); }, 25000);
+  }
+  // 노래 불러 주기: 음표가 줄을 따라 알 쪽으로 오면, 하트 고리에 닿을 때 박자 맞춰 톡!
+  const SONGS = [
+    { name: '반짝반짝 작은 별', n: [[523, 1], [523, 1], [784, 1], [784, 1], [880, 1], [880, 1], [784, 2]] },
+    { name: '나비야', n: [[784, 1], [659, 1], [659, 2], [698, 1], [587, 1], [587, 2], [523, 1], [587, 1], [659, 1], [698, 1], [784, 1], [784, 1], [784, 2]] },
+    { name: '산토끼', n: [[784, 1], [659, 1], [659, 1], [784, 1], [659, 1], [523, 1], [587, 1], [659, 1], [587, 1], [523, 2]] }
+  ];
+  function singPlay() {
+    eggBusy = true; poked(); const room = $('room'), E = eggBox(), song = pick(SONGS), BEAT = 520, TRAVEL = 1900;
+    const lane = document.createElement('div'); lane.className = 'singlane'; room.appendChild(lane);
+    const tx = E.x + E.w * .62, ty = E.y - E.h * .05, laneW = room.getBoundingClientRect().width - tx;
+    Object.assign(lane.style, { left: tx + 'px', top: ty + 'px', width: Math.max(80, laneW - 10) + 'px' });
+    const ring = document.createElement('button'); ring.className = 'singring'; ring.setAttribute('aria-label', '박자 맞추기'); ring.innerHTML = '<span>♥</span>';
+    Object.assign(ring.style, { left: tx + 'px', top: ty + 'px' }); room.appendChild(ring);
+    const hint = eggHint(`🎵 ${song.name} · 음표가 하트에 닿을 때 하트를 톡!`);
+    const notes = []; let t = 900, hits = 0, done = 0;
+    song.n.forEach(([f, len]) => { notes.push({ f, at: t, hit: false }); t += BEAT * len; });
+    const t0 = performance.now(); let raf = 0;
+    notes.forEach(nt => { const el = document.createElement('i'); el.className = 'singnote'; el.textContent = '♪'; room.appendChild(el); nt.el = el; });
+    const judge = (txt, cls) => { const j = document.createElement('b'); j.className = 'singjudge ' + cls; j.textContent = txt; Object.assign(j.style, { left: tx + 'px', top: (ty - 40) + 'px' }); room.appendChild(j); setTimeout(() => j.remove(), 700); };
+    const step = () => {
+      const now = performance.now() - t0;
+      notes.forEach(nt => {
+        if (nt.gone) return; const k = (nt.at - now) / TRAVEL;
+        nt.el.style.left = (tx + Math.max(-.08, k) * Math.max(80, laneW - 30)) + 'px'; nt.el.style.top = (ty - 14) + 'px'; nt.el.style.opacity = k > 1 ? 0 : 1;
+        if (!nt.hit && now - nt.at > 230) { nt.gone = true; nt.el.classList.add('miss'); setTimeout(() => nt.el.remove(), 300); judge('앗', 'miss'); Snd.note(nt.f, false); done++; }
+      });
+      if (done >= notes.length) return finish(); raf = requestAnimationFrame(step);
+    };
+    const tap = (e) => {
+      e && e.preventDefault(); const now = performance.now() - t0;
+      const nt = notes.filter(n => !n.gone && !n.hit).sort((a, b) => Math.abs(a.at - now) - Math.abs(b.at - now))[0];
+      ring.classList.remove('pulse'); void ring.offsetWidth; ring.classList.add('pulse');
+      if (!nt) return; const d = Math.abs(nt.at - now);
+      if (d <= 230) { nt.hit = true; nt.gone = true; hits++; done++; Snd.note(nt.f, true); nt.el.classList.add('hit'); setTimeout(() => nt.el.remove(), 300); judge(d <= 110 ? '딱!' : '좋아', d <= 110 ? 'great' : 'good');
+        const p = $('pet'); p.classList.remove('act-wobble'); void p.offsetWidth; p.classList.add('act-wobble'); petFx('note', p); }
+      else if (d < 600) { Snd.tap(); }
+    };
+    ring.addEventListener('pointerdown', tap);
+    const finish = () => {
+      cancelAnimationFrame(raf); ring.remove(); lane.remove(); hint.remove(); notes.forEach(n => n.el && n.el.remove()); eggBusy = false;
+      const r = hits / notes.length;
+      if (r >= .7) { Snd.combo(); eggDone('sing', 2); }
+      else if (r >= .4) eggDone('sing', 1);
+      else { speak('home', '(알이 갸우뚱… 박자가 조금 어려웠나 봐요. 다시 불러 줄래요?)', { silent: true }); }
+      toast(`${song.name} · 박자 <b>${hits} / ${notes.length}</b>`);
+    };
+    raf = requestAnimationFrame(step);
   }
   // 둥지: 알을 돌볼수록 포근해진다 (짚 둥지 → 깃털 둥지 → 구름 요람)
   function nestGrow() {
@@ -2147,8 +2240,15 @@
     if (id === 'pet' && S.petT && now - S.petT < 10 * 60000) return ['later', talk ? '아까 많이 쓰다듬어 줬잖아. 이따 또 해 줘!' : '(헤헤, 이따가!)'];
     return null;
   }
+  // 쓰다듬기는 창을 따로 띄우지 않는다: 방에서 친구를 직접 문지르도록 손가락 모양으로 알려 준다
+  function rubHint() {
+    const wk = $('walker'); wk.querySelectorAll('.rubhint').forEach(e => e.remove());
+    const h = document.createElement('div'); h.className = 'rubhint'; h.innerHTML = Art.icon('hand'); wk.appendChild(h); setTimeout(() => h.remove(), 2600);
+    speak('home', S.stage <= 2 ? '(손가락으로 알을 살살 문질러 주세요)' : level() === 'talk' ? '여기! 손가락으로 살살 쓰다듬어 줘~' : '(손가락으로 살살 쓰다듬어 주세요)', { silent: S.stage <= 2 || level() !== 'talk' });
+  }
   function doCare(id) {
-    if (S.stage <= 2 && id !== 'pet') return eggCare(id);
+    if (id === 'pet') return rubHint();
+    if (S.stage <= 2) return eggCare(id);
     if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no[1], no[0]); return; } }
     if (id === 'feed') {
       let own = Object.keys(S.foods).filter(k => S.foods[k] > 0);

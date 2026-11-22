@@ -31,6 +31,7 @@ const Snd = (() => {
     tap() { tone(880, .08, 'sine', .15); },
     piano() { const sc = [523, 587, 659, 784, 880, 1047]; let t = 0; for (let i = 0; i < 7; i++) { tone(sc[Math.floor(Math.random() * sc.length)], .32, 'triangle', .2, t); t += .2 + (i % 3 === 2 ? .12 : 0); } },
     chime() { [1568, 2093, 2637, 2093].forEach((f, i) => tone(f, .5, 'sine', .1, i * .12)); },
+    note(f, ok = true) { if (ok) { tone(f, .38, 'triangle', .2); tone(f * 2, .2, 'sine', .05); } else tone(f * .94, .22, 'square', .05); },
     drip() { [0, .25, .5].forEach(t => tone(1300, .12, 'sine', .14, t, 600)); },
     wave() { tone(220, 1.1, 'sine', .12, 0, 140); tone(260, 1.1, 'sine', .08, .7, 150); },
     prick() { tone(1400, .07, 'square', .08); tone(500, .2, 'sine', .15, .08, 300); },

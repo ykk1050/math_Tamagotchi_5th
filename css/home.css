@@ -972,3 +972,28 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .walker .nest-c{bottom:4%;width:118%;z-index:-2}
 .walker .nest-c .mob{animation:mob 4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
 @keyframes mob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+
+/* 쓰다듬기 알림: 손가락이 친구 위를 살살 오간다 */
+.walker .rubhint{position:absolute;left:50%;top:30%;width:34%;z-index:5;pointer-events:none;animation:rubh .7s ease-in-out 3 alternate}
+.walker .rubhint svg{width:100%;height:auto;display:block;filter:drop-shadow(0 3px 3px rgba(0,0,0,.15))}
+@keyframes rubh{from{transform:translate(-80%,0) rotate(-12deg)}to{transform:translate(-10%,6%) rotate(8deg)}}
+
+/* ---------- 알 돌보기: 직접 하기 ---------- */
+.egghint{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:8;background:rgba(255,255,255,.95);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:700;color:#6E5CA3;box-shadow:var(--shadow-s);white-space:nowrap;pointer-events:none}
+.dragprop{position:absolute;z-index:7;touch-action:none;cursor:grab;filter:drop-shadow(0 6px 6px rgba(0,0,0,.15));animation:propwig 1.2s ease-in-out infinite}
+.dragprop svg{width:100%;height:100%;pointer-events:none}
+.dragprop.held{cursor:grabbing;animation:none}
+.dragprop.fan{transition:transform .12s}
+@keyframes propwig{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg) translateY(-4px)}}
+.eggmeter{position:absolute;z-index:7;height:12px;border-radius:999px;background:#fff;box-shadow:var(--shadow-s);overflow:hidden}
+.eggmeter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#B9E3FF,#7FB0EA);transition:width .15s}
+.singlane{position:absolute;z-index:6;height:6px;margin-top:-3px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.9) 0 10px,transparent 10px 18px);pointer-events:none}
+.singring{position:absolute;z-index:8;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:4px solid #F28DB2;background:rgba(255,255,255,.85);display:grid;place-items:center;font-size:24px;color:#F28DB2;touch-action:manipulation;box-shadow:0 0 0 6px rgba(242,141,178,.2)}
+.singring.pulse{animation:ringp .25s ease-out}
+@keyframes ringp{0%{transform:scale(1.18)}100%{transform:scale(1)}}
+.singnote{position:absolute;z-index:7;font-style:normal;font-size:30px;color:#9C86F0;transform:translate(-50%,-50%);text-shadow:0 2px 0 #fff;pointer-events:none}
+.singnote.hit{color:#F28DB2;transform:translate(-50%,-90%) scale(1.5);opacity:0;transition:all .3s}
+.singnote.miss{opacity:0;transition:opacity .3s}
+.singjudge{position:absolute;z-index:8;transform:translateX(-50%);font-family:var(--fh);font-weight:400;font-size:22px;pointer-events:none;animation:judge .7s ease-out forwards}
+.singjudge.great{color:#F28DB2}.singjudge.good{color:#9C86F0}.singjudge.miss{color:#B9A7C4;font-size:16px}
+@keyframes judge{0%{opacity:0;transform:translate(-50%,6px)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-18px)}}
