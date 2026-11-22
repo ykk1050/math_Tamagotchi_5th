@@ -243,14 +243,33 @@
   $('btn-pick').onclick = () => { if (!choice) return; Snd.tap(); openName(); };
   function openName() {
     $('name-art').innerHTML = Art.draw(choice, 1, 'idle'); nameSel = null; $('btn-name').disabled = true; $('name-chips').innerHTML = '';
+    $('name-input').value = '';
     NAMES[choice].forEach(n => { const b = document.createElement('button'); b.className = 'name-chip-btn'; b.textContent = n;
-      b.onclick = () => { nameSel = n; Snd.tap(); [...$('name-chips').children].forEach(x => x.classList.toggle('sel', x === b)); $('btn-name').disabled = false; };
+      b.onclick = () => { nameSel = n; Snd.tap(); [...$('name-chips').children].forEach(x => x.classList.toggle('sel', x === b)); $('name-input').value = ''; $('btn-name').disabled = false; };
       $('name-chips').appendChild(b); });
     show('scr-name');
   }
+  // 직접 짓는 이름: 한글·영어·숫자만, 8글자까지
+  const cleanName = (v) => String(v || '').replace(/[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 8);
+  const okName = (v) => /[가-힣a-zA-Z]/.test(v) && !/^[ㄱ-ㅎㅏ-ㅣ]+$/.test(v);
+  $('name-input').addEventListener('input', () => {
+    const v = cleanName($('name-input').value); [...$('name-chips').children].forEach(x => x.classList.remove('sel'));
+    nameSel = okName(v) ? v : null; $('btn-name').disabled = !nameSel;
+  });
+  $('name-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('name-input').blur(); } });
+  function renameOpen() { $('set-name').value = S.name || ''; }
+  $('btn-rename').onclick = () => {
+    const v = cleanName($('set-name').value);
+    if (!okName(v)) { Snd.no(); toast('한글이나 영어로 이름을 써 주세요 (8글자까지)'); return; }
+    if (v === S.name) { toast('지금과 같은 이름이에요'); return; }
+    S.name = v; save(); hud(); Snd.level(); $('set-name').value = v;
+    toast(`이제 친구 이름은 <b>${v}</b>예요!`);
+    if (level() === 'talk') setTimeout(() => speak('home', `새 이름 좋아! 나는 이제 ${v}${bat(v) ? '이야' : '야'}!`), 400);
+  };
+  $('set-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('btn-rename').click(); } });
   $('btn-name-back').onclick = () => { Snd.tap(); openChoose(); };
   $('btn-name').onclick = () => {
-    if (!nameSel) return;
+    if (!nameSel) return; nameSel = cleanName(nameSel); if (!okName(nameSel)) return;
     S = Object.assign(fresh(), { kind: choice, name: nameSel, sound: S.sound, lowfx: S.lowfx }); save(); Snd.level(); enterHome('new');
   };
 
@@ -2732,7 +2751,7 @@
   // ---------- 설정 ----------
   function syncSet() { $('t-music').setAttribute('aria-pressed', S.music !== false); $('t-sound').setAttribute('aria-pressed', !!S.sound); $('t-lowfx').setAttribute('aria-pressed', !!S.lowfx); }
   let resetArm = false;
-  $('btn-set').onclick = () => { Snd.tap(); syncSet(); resetArm = false; $('btn-reset').textContent = '다시 하기'; overlay('ov-set', true); };
+  $('btn-set').onclick = () => { Snd.tap(); syncSet(); renameOpen(); resetArm = false; $('btn-reset').textContent = '다시 하기'; overlay('ov-set', true); };
   $('btn-set-close').onclick = () => { Snd.tap(); overlay('ov-set', false); };
   $('t-music').onclick = () => { S.music = S.music === false; applyFx(); syncSet(); save(); Snd.tap(); };
   $('t-sound').onclick = () => { S.sound = !S.sound; applyFx(); syncSet(); save(); Snd.tap(); };
