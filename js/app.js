@@ -38,7 +38,7 @@
   const NM = () => S.name + (bat(S.name) ? '이' : ''); // 몽실 → 몽실이, 콩이 → 콩이
   const obj = (w) => w + (bat(w) ? '을' : '를');
   const SC = (t) => `<i class="sc">★${t}</i>`;
-  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base', dirt: S.needs && S.needs.clean < 65 ? Math.min(1, Math.round((65 - S.needs.clean) / 5) / 10) : 0 } : null);
+  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base', col: S.wcol || {}, dirt: S.needs && S.needs.clean < 65 ? Math.min(1, Math.round((65 - S.needs.clean) / 5) / 10) : 0 } : null);
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const isNight = () => { const h = new Date().getHours(); return h >= 18 || h < 6; };
 
@@ -145,7 +145,7 @@
     const t = todayStr();
     if (S.day === t) return;
     if (S.day && S.log.length) { S.diary.unshift({ day: S.day, text: diaryText(S.log, S.day) }); S.diary = S.diary.slice(0, 14); }
-    S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
+    S.ylog = S.day ? (S.log || []).slice(-30) : []; S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
     { const mo = new Date().getMonth() + 1, winter = mo === 12 || mo <= 2; S.weather = pick(winter ? ['sun', 'sun', 'snow', 'snow', 'rain'] : ['sun', 'sun', 'sun', 'rain', 'rain', 'rainbow']); }
     const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(Object.keys(CARE));
     S.wishes = S.stage <= 2 ? EGG_WISH() : [{ t: 'food', id: f, done: false }, { t: 'place', id: p, done: false }, { t: 'care', id: c, done: false }];
@@ -281,6 +281,7 @@
   const wishSay = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : w.id === 'nap' && isNight() ? '하암… 밤이 깊었어. 이제 자고 싶어' : CARE[w.id].wish;
 
   function enterHome(mode) {
+    const away0 = S.last ? (Date.now() - S.last) / 86400000 : 0; // 마지막으로 본 뒤 지난 날 (아래에서 last가 바뀌기 전에 잰다)
     applyTime(); newDay(); tickNeeds(); growGarden(); const bday = checkBirthday();
     if (S.fxp < (FRIEND_XP[S.flv] || 0)) S.fxp = FRIEND_XP[S.flv]; save();
     show('scr-home'); renderHome(); neighborVisit();
@@ -294,8 +295,11 @@
       if (mode === 'out') { speak('home', line('welcome')); return; }
       if (sleeping) { speak('home', lv === 'talk' ? 'Zzz… 음냐… (기운이 없어서 자고 있어요)' : '(새근새근…)', { silent: true }); return; }
       if (lv !== 'talk') { speak('home', line('idle')); return; }
-      const away = S.last ? (Date.now() - S.last) / 86400000 : 0;
-      if (away >= 2) speak('home', lineFrom(LINES[S.kind].talk.back, 'back'));
+      const away = away0;
+      if (away >= 1 && !sleeping && !sulking) {
+        const wk = $('walker'); wk.classList.add('fast'); wk.style.left = '64%'; drawPet('wide'); speak('home', '(창밖을 보며 기다리고 있었어요)', { silent: true, noEmo: true });
+        setTimeout(() => { wk.classList.remove('fast'); goTo(46, () => { react('happy', 'hop'); heartAtPet(); speak('home', lineFrom(LINES[S.kind].talk.back, 'back')); }, true); }, 1800);
+      }
       else { const h = new Date().getHours(), g = LINES[S.kind].talk.greet; speak('home', pick(h < 12 ? g.morning : h < 17 ? g.day : g.evening)); }
     }, 350);
     S.last = Date.now(); save();
@@ -314,9 +318,25 @@
   function drawPet(mood) {
     if (mood) emoLock.home = Date.now();
     mood = mood || (sulking ? 'pout' : sleeping ? 'sleep' : S.needs.mood < 35 || lowNeed() ? 'sad' : 'idle');
-    $('pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc());
+    const p = $('pet'); p.innerHTML = Art.draw(S.kind, S.stage, mood, showAcc());
+    if (drawPet.m && drawPet.m !== mood && !S.lowfx) { p.classList.remove('swap'); void p.offsetWidth; p.classList.add('swap'); }
+    drawPet.m = mood;
     $('walker').classList.toggle('sleep', sleeping);
   }
+  // 눈이 손가락을 따라본다 (기본 눈일 때)
+  function lookAt(petEl, x, y) {
+    if (!petEl) return; const r = petEl.getBoundingClientRect(); if (!r.width) return;
+    let dx = (x - (r.left + r.width / 2)) / r.width * 3.2, dy = (y - (r.top + r.height * .45)) / r.height * 3.2;
+    dx = Math.max(-2.2, Math.min(2.2, dx)); dy = Math.max(-1.6, Math.min(1.6, dy));
+    const svg = petEl.querySelector('svg'); if (svg && getComputedStyle(svg).transform.startsWith('matrix(-1')) dx = -dx;
+    petEl.style.setProperty('--lx', dx.toFixed(2)); petEl.style.setProperty('--ly', dy.toFixed(2));
+    clearTimeout(petEl._lookT); petEl._lookT = setTimeout(() => { petEl.style.setProperty('--lx', 0); petEl.style.setProperty('--ly', 0); }, 1600);
+  }
+  [['room', 'pet'], ['act-field', 'act-pet'], ['wd-mirror', 'wd-pet'], ['stage', 'opet']].forEach(([area, pet]) => {
+    const a = $(area); if (!a) return;
+    const f = (e) => lookAt($(pet), e.clientX, e.clientY);
+    a.addEventListener('pointermove', f, { passive: true }); a.addEventListener('pointerdown', f, { passive: true });
+  });
   let moodT = null;
   function react(mood, anim) {
     drawPet(mood); const p = $('pet'); p.classList.remove('hop', 'shake', 'squish', 'wobble', ...ACT_CLS);
@@ -374,13 +394,46 @@
     wanderT = setTimeout(step, 2500);
   }
   function poked() { lastTouch = Date.now(); clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
+  // 친구가 먼저 앞으로 다가와서 말을 건다
+  function comeSay(fn) {
+    if (S.stage < 3 || sleeping || sulking || toyOn || editing) return fn();
+    const ok = goTo(48, () => { drawPet('wide'); setTimeout(fn, 250); }, true); if (ok === false) fn();
+  }
+  // 어제 함께한 일 떠올리기
+  function memLine() {
+    const y = (S.ylog || []).filter(e => ['cook', 'walk', 'wear', 'read', 'harvest', 'photo', 'party'].includes(e.e)); if (!y.length) return '';
+    const e = y[(S.days * 7 + new Date().getHours()) % y.length];
+    if (e.e === 'cook' && FOODS[e.id]) return `어제 같이 만든 ${FOODS[e.id].name}, 정말 맛있었어!`;
+    if (e.e === 'walk' && PLACES[e.id]) return `어제 ${PLACES[e.id].name}에 간 거 자꾸 생각나. 재밌었지?`;
+    if (e.e === 'wear' && ITEMS[e.id]) return `어제 입은 ${ITEMS[e.id].name}, 오늘도 입고 싶다~`;
+    if (e.e === 'read') return '어제 같이 읽은 책 이야기, 아직도 기억나!';
+    if (e.e === 'harvest' && ING_NAME[e.id]) return `어제 텃밭에서 ${ING_NAME[e.id]} 거둔 거 신났지?`;
+    if (e.e === 'photo') return '어제 찍은 사진 또 보고 싶어. 옷장 앨범에 있어!';
+    if (e.e === 'party') return '어제 생일 파티 정말 고마웠어. 평생 기억할 거야!';
+    return '';
+  }
+  // 하루 한 번: 너 주려고 찾았다며 작은 선물 상자를 가져온다
+  function petGift() {
+    comeSay(() => {
+      S.giftDay = S.day; save();
+      const room = $('room'), r = room.getBoundingClientRect(), pr = $('pet').getBoundingClientRect();
+      const g = document.createElement('button'); g.className = 'petgift'; g.setAttribute('aria-label', '선물 상자');
+      g.innerHTML = '<svg viewBox="0 0 40 40"><rect x="7" y="16" width="26" height="18" rx="3" fill="#FFC7D9" stroke="#E5679A" stroke-width="2"/><rect x="5" y="11" width="30" height="7" rx="2" fill="#F7A0C1" stroke="#E5679A" stroke-width="2"/><path d="M20 11v23" stroke="#FFD36E" stroke-width="4"/><path d="M20 11 C14 2 8 6 12 10 M20 11 C26 2 32 6 28 10" fill="none" stroke="#FFD36E" stroke-width="2.6" stroke-linecap="round"/></svg>';
+      Object.assign(g.style, { left: (pr.left - r.left + pr.width * .78) + 'px', top: (pr.top - r.top + pr.height * .55) + 'px' });
+      room.appendChild(g); react('happy', 'hop'); speak('home', pick(['짜잔! 너 주려고 찾았어. 열어 봐!', '선물이야! 몰래 숨겨 뒀던 거야.', '이거 받아! 우리 우정 선물!']));
+      g.onclick = (e) => { e.stopPropagation(); Snd.combo(); const n = 2 + (S.flv >= 6 ? 1 : 0); S.candy += n; S.log.push({ e: 'gift' }); save(); hud(); sparks(room, 10); toast(`선물 상자에서 <b>별사탕 ${n}개</b>가 나왔어요!`); speak('home', '헤헤, 마음에 들어? 또 찾아 올게!'); g.remove(); };
+      setTimeout(() => g.isConnected && g.remove(), 30000);
+    });
+  }
   function idleTalk() {
     if ($('scr-home').classList.contains('on') && !document.querySelector('.overlay.on')) {
       const ln = lowNeed(), w = S.wishes.find(x => !x.done);
       if (sulking) speak('home', L3('sulk'), { silent: true });
       else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
-      else if (ln && level() === 'talk') speak('home', line(ln));
-      else if (w && level() === 'talk' && Math.random() < .5) speak('home', wishSay(w));
+      else if (ln && level() === 'talk') comeSay(() => { react('sad'); speak('home', line(ln)); });
+      else if (level() === 'talk' && S.flv >= 3 && S.giftDay !== S.day && Math.random() < .25) petGift();
+      else if (w && level() === 'talk' && Math.random() < .5) comeSay(() => { react('happy', 'hop'); speak('home', wishSay(w)); });
+      else if (level() === 'talk' && memLine() && Math.random() < .35) comeSay(() => speak('home', memLine()));
       else if (level() === 'talk' && S.read && Object.keys(S.read).length && Math.random() < .3) speak('home', BOOKS[pick(Object.keys(S.read))].mem);
       else speak('home', level() === 'talk' && Math.random() < .4 ? line('happy') : line('idle'));
     }
@@ -602,6 +655,7 @@
   if (/[?&]dev/.test(location.search)) window.__makeUp = () => { sulking = true; makeUp(); };
   if (/[?&]dev/.test(location.search)) window.__petNo = (k) => petNo(k);
   if (/[?&]dev/.test(location.search)) window.__emoOf = (t) => emoOf(t);
+  if (/[?&]dev/.test(location.search)) window.__petGift = () => petGift();
   if (/[?&]dev/.test(location.search)) window.__nbArt = (id, m) => nbArt(id, m);
   function objReact(id, o, b) {
     if (toyOn) return; // 놀잇감으로 노는 중이면 물건 놀이는 그만
@@ -1346,10 +1400,10 @@
     return eyes + mouth;
   }
   const NB_SVG = {
-    squirrel: (F) => `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/>${F}<ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="56" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
-    penguin: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="28" ry="34" fill="#4E5A8C" stroke="#323C66" stroke-width="3"/><ellipse cx="50" cy="64" rx="19" ry="25" fill="#fff"/><path d="M22 58 q-10 10 -2 20 M78 58 q10 10 2 20" stroke="#323C66" stroke-width="7" fill="none" stroke-linecap="round"/>${F}<path d="M44 51 l6 6 l6 -6z" fill="#FFB25A" stroke="#E08A2E" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="34" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="66" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="40" cy="93" rx="8" ry="4" fill="#FFB25A"/><ellipse cx="60" cy="93" rx="8" ry="4" fill="#FFB25A"/><path d="M36 22 q14 -8 28 0" stroke="#F7A0C1" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    hedgehog: (F) => `<svg viewBox="0 0 100 100"><path d="M14 72 C10 40 30 22 54 24 C76 26 90 46 86 72 Z" fill="#9C7254" stroke="#6E4C36" stroke-width="3" stroke-linejoin="round"/>${[[22, 40], [34, 28], [48, 22], [62, 24], [76, 32], [84, 46], [18, 56]].map(([x, y]) => `<path d="M${x} ${y} l-6 -8 l10 2z" fill="#9C7254" stroke="#6E4C36" stroke-width="2" stroke-linejoin="round"/>`).join('')}<ellipse cx="38" cy="66" rx="24" ry="20" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6"/>${F}<circle cx="38" cy="71" r="3.4" fill="#E5679A"/><ellipse cx="24" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="52" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><path d="M62 34 c6 -2 9 4 5 8 c-3 3 -8 2 -8 -2 c0 -3 1 -5 3 -6z" fill="#F2678F"/></svg>`,
-    owl: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="32" fill="#9C86C9" stroke="#6E5CA3" stroke-width="3"/><path d="M24 34 l-4 -16 l14 10z M76 34 l4 -16 l-14 10z" fill="#9C86C9" stroke="#6E5CA3" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="18" ry="16" fill="#E9E1FF"/><path d="M40 66 q4 4 8 0 M52 72 q4 4 8 0 M42 78 q4 4 8 0" stroke="#C9B8FF" stroke-width="2" fill="none"/><circle cx="38" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="62" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/>${F}<path d="M46 55 l4 6 l4 -6z" fill="#FFB25A"/><path d="M27 38 h22 M51 38 h22" stroke="#4A3552" stroke-width="2.4"/><circle cx="38" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><circle cx="62" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><path d="M50.5 46 h-0" stroke="#4A3552" stroke-width="2"/></svg>`
+    squirrel: (F) => `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/><path d="M28 37 q3 -9 12 -11" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".75"/>${F}<ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="56" cy="52" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
+    penguin: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="28" ry="34" fill="#4E5A8C" stroke="#323C66" stroke-width="3"/><ellipse cx="50" cy="64" rx="19" ry="25" fill="#fff"/><path d="M22 58 q-10 10 -2 20 M78 58 q10 10 2 20" stroke="#323C66" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M31 38 q4 -11 14 -13" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".45"/>${F}<path d="M44 51 l6 6 l6 -6z" fill="#FFB25A" stroke="#E08A2E" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="34" cy="53" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="66" cy="53" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="40" cy="93" rx="8" ry="4" fill="#FFB25A"/><ellipse cx="60" cy="93" rx="8" ry="4" fill="#FFB25A"/><path d="M36 22 q14 -8 28 0" stroke="#F7A0C1" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
+    hedgehog: (F) => `<svg viewBox="0 0 100 100"><path d="M14 72 C10 40 30 22 54 24 C76 26 90 46 86 72 Z" fill="#9C7254" stroke="#6E4C36" stroke-width="3" stroke-linejoin="round"/>${[[22, 40], [34, 28], [48, 22], [62, 24], [76, 32], [84, 46], [18, 56]].map(([x, y]) => `<path d="M${x} ${y} l-6 -8 l10 2z" fill="#9C7254" stroke="#6E4C36" stroke-width="2" stroke-linejoin="round"/>`).join('')}<ellipse cx="38" cy="66" rx="24" ry="20" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6"/><path d="M19 61 q3 -8 11 -10" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/>${F}<circle cx="38" cy="71" r="3.4" fill="#E5679A"/><ellipse cx="24" cy="70" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="52" cy="70" rx="6" ry="3.8" fill="url(#cn-blush)"/><path d="M62 34 c6 -2 9 4 5 8 c-3 3 -8 2 -8 -2 c0 -3 1 -5 3 -6z" fill="#F2678F"/></svg>`,
+    owl: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="32" fill="#9C86C9" stroke="#6E5CA3" stroke-width="3"/><path d="M24 34 l-4 -16 l14 10z M76 34 l4 -16 l-14 10z" fill="#9C86C9" stroke="#6E5CA3" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="18" ry="16" fill="#E9E1FF"/><path d="M40 66 q4 4 8 0 M52 72 q4 4 8 0 M42 78 q4 4 8 0" stroke="#C9B8FF" stroke-width="2" fill="none"/><circle cx="38" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="62" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><path d="M27 33 q4 -9 12 -11" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/>${F}<path d="M46 55 l4 6 l4 -6z" fill="#FFB25A"/><path d="M27 38 h22 M51 38 h22" stroke="#4A3552" stroke-width="2.4"/><circle cx="38" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><circle cx="62" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><path d="M50.5 46 h-0" stroke="#4A3552" stroke-width="2"/></svg>`
   };
   const nbArt = (id, mood) => NB_SVG[id] ? NB_SVG[id](nbFace(id, mood || 'idle')) : '';
   const NB_ART = Object.fromEntries(Object.keys(NB_SVG).map(k => [k, nbArt(k)]));
@@ -1709,7 +1763,17 @@
       const ids = Object.keys(ITEMS).filter(k => ITEMS[k].kind === 'acc' && ITEMS[k].slot === wdSlot);
       body.innerHTML = `<div class="slot-row">${SLOTS.map(([k, n]) => `<button class="slot ${wdSlot === k ? 'on' : ''}" data-slot="${k}">${n}${S.wear[k] ? ' ●' : ''}</button>`).join('')}</div>
         <div class="wd-grid"><button class="wd-item off" data-off="1"><span class="ia"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="#C9B8D9" stroke-width="3"/><path d="M10 30 L30 10" stroke="#C9B8D9" stroke-width="3"/></svg></span><b>안 입기</b></button>
-        ${ids.map(k => { const I = ITEMS[k], o = own(k), on = S.wear[wdSlot] === k; return `<button class="wd-item ${o ? '' : 'lock'} ${on ? 'on' : ''}" data-wear="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${I.name}</b><small>${o ? (on ? '입는 중 · 누르면 벗기' : '') : I.sew ? '재봉 공방에서 만들어요' : I.gift ? '생일 선물' : `주문 · 별사탕 ${I.price}`}</small></button>`; }).join('')}</div>`;
+        ${ids.map(k => { const I = ITEMS[k], o = own(k), on = S.wear[wdSlot] === k; return `<button class="wd-item ${o ? '' : 'lock'} ${on ? 'on' : ''}" data-wear="${k}"><span class="ia">${Art.wearIcon(k, S.kind, S.wcol)}</span><b>${I.name}</b><small>${o ? (on ? '입는 중 · 누르면 벗기' : '') : I.sew ? '재봉 공방에서 만들어요' : I.gift ? '생일 선물' : `주문 · 별사탕 ${I.price}`}</small></button>`; }).join('')}</div>`;
+      const curW = S.wear[wdSlot];
+      if (curW && Art.WEAR[curW] && Art.WEAR[curW].cm) {
+        const cc = (S.wcol || {})[curW] || 'base';
+        body.insertAdjacentHTML('beforeend', `<div class="col-row"><b>${ITEMS[curW].name} 색</b>${['base', ...Object.keys(Art.PAL)].map(c => `<button class="col-sw ${cc === c ? 'on' : ''}" data-col="${c}" aria-label="${c === 'base' ? '원래 색' : Art.PAL[c][0]}" style="background:${c === 'base' ? 'conic-gradient(#FFC7D9,#C9B8FF,#A8E6CF,#FFE08A,#FFC7D9)' : Art.PAL[c][1]};border-color:${c === 'base' ? '#C9B8D9' : Art.PAL[c][2]}">${c === 'base' ? '<i>원래</i>' : ''}</button>`).join('')}</div>`);
+        body.querySelectorAll('[data-col]').forEach(b => b.onclick = () => {
+          S.wcol = S.wcol || {}; const c = b.dataset.col; if (c === 'base') delete S.wcol[curW]; else S.wcol[curW] = c;
+          Snd.pop(); save(); wdPet('happy'); sparks($('wd-mirror'), 8);
+          wdSay(level() === 'talk' ? pick(['우와, 이 색 예쁘다!', '이 색 나한테 어울려?', '새 옷 같아!', '이 색 마음에 쏙 들어!']) : L3('care')); renderWd();
+        });
+      }
       body.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { Snd.tap(); wdSlot = b.dataset.slot; renderWd(); });
       body.querySelector('[data-off]').onclick = () => { Snd.tap(); delete S.wear[wdSlot]; save(); wdPet(); renderWd(); };
       body.querySelectorAll('[data-wear]').forEach(b => b.onclick = () => {
@@ -1723,6 +1787,16 @@
         wdSay(level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].acc[ts], 'ta'), '{x}', ITEMS[k].name) : ts === 'hate' ? L3('yuck') : L3('care'));
         S.log.push({ e: 'wear', id: k }); save(); renderWd();
       });
+    } else if (wdTab === 'album') {
+      const al = S.album || [];
+      body.innerHTML = `<div class="al-top"><button class="btn primary" id="al-snap">${CAMERA} 지금 모습 찍기</button><small>사진은 12장까지 모여요</small></div>
+        <div class="al-grid">${al.length ? al.map((ph, i) => `<div class="al-ph"><span class="al-pic">${Art.draw(ph.k, ph.st, ph.m || 'happy', { wear: ph.wear, tint: ph.tint, col: ph.col })}</span><small>${ph.d}</small><button class="al-use" data-use="${i}">이 옷 입기</button></div>`).join('') : '<p class="sub">아직 사진이 없어요. 예쁘게 입히고 찍어 봐요!</p>'}</div>`;
+      $('al-snap').onclick = snapPhoto;
+      body.querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
+        const ph = al[+b.dataset.use]; if (ph.k !== S.kind) return; Snd.pop();
+        S.wear = Object.fromEntries(Object.entries(ph.wear || {}).filter(([, id]) => S.items.includes(id))); S.wcol = Object.assign({}, ph.col || {}); if (S.tints.includes(ph.tint)) S.tint = ph.tint;
+        save(); wdPet('happy'); wdSay(level() === 'talk' ? '그때 그 옷이다! 기억나?' : L3('care')); renderWd();
+      });
     } else if (wdTab === 'tint') {
       if (paintQ) return renderPaint();
       const tints = Object.keys(Art.TINT_DEF[S.kind]);
@@ -1735,7 +1809,7 @@
         else { paintQ = { tint: t, got: 0 }; renderPaint(); }
       });
     } else if (wdTab === 'sew') {
-      body.innerHTML = `<p class="sub">단계마다 문제를 풀면 옷이 완성돼요 (문제 4개)</p><div class="wd-grid">${SEWABLE.map(k => `<button class="wd-item ${own(k) ? 'on' : ''}" data-sew="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${ITEMS[k].name}</b><small>${own(k) ? '만들었어요 · 다시 만들기' : '만들기'}</small></button>`).join('')}</div>`;
+      body.innerHTML = `<p class="sub">단계마다 문제를 풀면 옷이 완성돼요 (문제 4개)</p><div class="wd-grid">${SEWABLE.map(k => `<button class="wd-item ${own(k) ? 'on' : ''}" data-sew="${k}"><span class="ia">${Art.wearIcon(k, S.kind, S.wcol)}</span><b>${ITEMS[k].name}</b><small>${own(k) ? '만들었어요 · 다시 만들기' : '만들기'}</small></button>`).join('')}</div>`;
       body.querySelectorAll('[data-sew]').forEach(b => b.onclick = () => { Snd.tap(); overlay('ov-wd', false); startSew(b.dataset.sew); });
     } else {
       const rank = (k) => (ITEMS[k].kind === 'acc' ? 0 : ITEMS[k].toy ? 1 : 2) * (wdFromEdit ? -1 : 1);
@@ -1750,6 +1824,19 @@
       });
     }
   }
+  const CAMERA = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+  // 사진 찍기: 거울이 번쩍 하고, 지금 모습이 앨범에 모인다
+  function snapPhoto() {
+    if (S.stage < 3) { toast('알에서 나오면 사진을 찍을 수 있어요'); return; }
+    const m = $('wd-mirror'), f = document.createElement('div'); f.className = 'snapflash'; m.appendChild(f); setTimeout(() => f.remove(), 600);
+    Snd.pop(); setTimeout(() => Snd.chime && Snd.chime(), 120);
+    const d = new Date(), pose = pick(['happy', 'smug', 'wide']);
+    S.album = S.album || []; S.album.unshift({ k: S.kind, st: S.stage, m: pose, wear: Object.assign({}, S.wear), tint: S.tint, col: Object.assign({}, S.wcol || {}), d: `${d.getMonth() + 1}월 ${d.getDate()}일` });
+    if (S.album.length > 12) S.album.length = 12;
+    S.log.push({ e: 'photo' }); save(); wdPet(pose);
+    wdSay(level() === 'talk' ? pick(['찰칵! 예쁘게 나왔어?', '브이~ 한 장 더 찍자!', '우와, 사진 속 나 진짜 귀엽다!']) : L3('care'));
+    if (wdTab === 'album') setTimeout(renderWd, 350);
+  }
   function renderPresets() {
     $('wd-presets').innerHTML = S.outfits.map((o, i) => `<div class="preset"><button class="pre-load" data-load="${i}" ${o ? '' : 'disabled'}>${o ? Art.draw(S.kind, Math.max(3, S.stage), 'idle', { wear: o.wear, tint: o.tint }) : `<span>코디 ${i + 1}</span>`}</button><button class="pre-save" data-save="${i}">저장</button></div>`).join('');
     $('wd-presets').querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
@@ -1757,7 +1844,7 @@
       S.wear = Object.assign({}, Object.fromEntries(Object.entries(o.wear).filter(([, id]) => S.items.includes(id)))); if (S.tints.includes(o.tint)) S.tint = o.tint;
       save(); wdPet('happy'); wdSay(level() === 'talk' ? '이 코디 좋아!' : L3('care')); renderWd();
     });
-    $('wd-presets').querySelectorAll('[data-save]').forEach(b => b.onclick = () => { Snd.combo(); S.outfits[+b.dataset.save] = { wear: Object.assign({}, S.wear), tint: S.tint }; save(); toast(`지금 모습을 <b>코디 ${+b.dataset.save + 1}</b>에 저장했어요`); renderPresets(); });
+    $('wd-presets').querySelectorAll('[data-save]').forEach(b => b.onclick = () => { Snd.combo(); S.outfits[+b.dataset.save] = { wear: Object.assign({}, S.wear), tint: S.tint, col: Object.assign({}, S.wcol || {}) }; save(); toast(`지금 모습을 <b>코디 ${+b.dataset.save + 1}</b>에 저장했어요`); renderPresets(); });
   }
   // 물감 공방: 분수 문제 2개를 맞히면 새 색 물감이 완성
   function renderPaint() {

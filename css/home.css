@@ -837,3 +837,79 @@ body.lowfx [class*="act-"] svg{animation-iteration-count:1}
 .pf-note{color:#9C86F0}.pf-star{color:#FFC24E}.pf-q{color:#9C86F0;font-size:clamp(20px,2.6vw,32px)}
 .pf-sweat{width:9px;height:13px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:#9CC8FF;box-shadow:inset -2px -2px 0 #6EA6F0;animation-name:petsweat}
 @keyframes petsweat{0%{opacity:0;transform:translate(-50%,-4px)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,18px)}}
+
+/* ---------- 몸의 부분이 감정에 따라 따로 움직인다 ---------- */
+.pet-svg .ear,.pet-svg .tail,.pet-svg .arm-r,.pet-svg .face,.pet-svg .look{transform-box:fill-box}
+.pet-svg .ear{transform-origin:50% 96%;transition:transform .5s ease}
+.pet-svg .tail{transform-origin:0% 60%}
+.pet-svg .arm-r{transform-origin:20% 90%}
+.pet-svg .face{transform-origin:50% 40%}
+.pet-svg .look{transform:translate(calc(var(--lx,0) * 1px),calc(var(--ly,0) * 1px));transition:transform .25s ease-out}
+/* 기본: 가끔 한쪽 귀를 쫑긋, 꼬리는 천천히 살랑 */
+.m-idle .er{animation:eartw 5.5s ease-in-out infinite}
+.m-idle .el{animation:eartw 7.3s ease-in-out 2.4s infinite}
+.m-idle .tail{animation:tailw 3.2s ease-in-out infinite}
+@keyframes eartw{0%,88%,100%{transform:rotate(0)}91%{transform:rotate(-9deg)}94%{transform:rotate(5deg)}97%{transform:rotate(-3deg)}}
+@keyframes tailw{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-14deg)}90%{transform:rotate(10deg)}95%{transform:rotate(-6deg)}}
+/* 기쁨: 귀 쫑긋쫑긋, 꼬리 살랑살랑, 손 흔들기 */
+.m-happy .el,.m-excited .el{animation:earjoyl .42s ease-in-out infinite alternate}
+.m-happy .er,.m-excited .er{animation:earjoyr .42s ease-in-out .1s infinite alternate}
+.m-happy .tail,.m-chew .tail{animation:tailfast .3s ease-in-out infinite alternate}
+.m-happy .arm-r{animation:wave .38s ease-in-out infinite alternate}
+@keyframes earjoyl{from{transform:rotate(-5deg)}to{transform:rotate(4deg)}}
+@keyframes earjoyr{from{transform:rotate(5deg)}to{transform:rotate(-4deg)}}
+@keyframes tailfast{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+@keyframes wave{from{transform:rotate(-14deg)}to{transform:rotate(16deg)}}
+/* 슬픔·졸림: 귀가 천천히 접힌다 */
+.m-sleepy .el,.m-sleep .el{transform:rotate(-12deg)}
+.m-sleepy .er,.m-sleep .er{transform:rotate(12deg)}
+.m-sad .el,.m-cry .el{animation:sadl 2.4s ease-in-out infinite}
+.m-sad .er,.m-cry .er{animation:sadr 2.4s ease-in-out infinite}
+@keyframes sadl{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg)}}
+@keyframes sadr{0%,100%{transform:rotate(0)}50%{transform:rotate(5deg)}}
+.m-sleep .tail,.m-sad .tail{transform:rotate(18deg)}
+/* 놀람: 귀가 번쩍 */
+.m-wide .ear{animation:earup .3s ease-out}
+@keyframes earup{0%{transform:scaleY(1)}50%{transform:scaleY(1.12)}100%{transform:scaleY(1)}}
+/* 간지러움·삐침: 귀를 파르르 */
+.m-tickle .ear{animation:earflick .14s linear infinite alternate}
+.m-pout .el{transform:rotate(-10deg)}.m-pout .er{transform:rotate(10deg)}
+@keyframes earflick{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+/* 구름 날개: 기쁘면 파닥파닥, 슬프면 축 */
+.pet-svg .pw{transform-box:fill-box}
+.m-happy .pwl,.m-smug .pwl{animation:pwl .3s ease-in-out infinite alternate}
+.m-happy .pwr,.m-smug .pwr{animation:pwr .3s ease-in-out infinite alternate}
+.m-idle .pwl{animation:pwl 2.6s ease-in-out infinite alternate}
+.m-idle .pwr{animation:pwr 2.6s ease-in-out infinite alternate}
+.m-sad .pwl,.m-sleepy .pwl,.m-sleep .pwl,.m-cry .pwl{transform:rotate(-22deg)}
+.m-sad .pwr,.m-sleepy .pwr,.m-sleep .pwr,.m-cry .pwr{transform:rotate(22deg)}
+@keyframes pwl{from{transform:rotate(8deg)}to{transform:rotate(-14deg)}}
+@keyframes pwr{from{transform:rotate(-8deg)}to{transform:rotate(14deg)}}
+/* 표정이 바뀔 때: 눈을 살짝 감았다 뜨며 바뀐다 */
+.swap .face{animation:facein .22s ease-out}
+@keyframes facein{0%{transform:scaleY(.25)}100%{transform:scaleY(1)}}
+body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,body.lowfx .pet-svg .pw{animation:none!important}
+
+/* 옷 색 바꾸기 */
+.col-row{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:10px;padding:10px 12px;background:#fff;border-radius:18px;box-shadow:0 3px 0 #EADBEA}
+.col-row b{font-size:14px;color:var(--ink);margin-right:4px}
+.col-sw{width:44px;height:44px;border-radius:50%;border:3px solid;position:relative;cursor:pointer;display:grid;place-items:center}
+.col-sw i{font-style:normal;font-size:10.5px;font-weight:700;color:#7A6283;background:rgba(255,255,255,.85);border-radius:6px;padding:0 3px}
+.col-sw.on{box-shadow:0 0 0 3px #fff,0 0 0 6px #F28DB2}
+/* 앨범 */
+.al-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.al-top .btn{display:inline-flex;align-items:center;gap:6px;min-height:48px}
+.al-top small{color:#8E7BA0}
+.al-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.al-ph{background:#fff;border-radius:6px;padding:8px 8px 10px;box-shadow:0 4px 10px rgba(110,80,140,.15);display:flex;flex-direction:column;align-items:center;gap:4px;transform:rotate(-1.5deg)}
+.al-ph:nth-child(even){transform:rotate(1.5deg)}
+.al-pic{width:100%;aspect-ratio:1;background:linear-gradient(180deg,#F3EEFF,#FFF4F8);border-radius:4px;display:block}
+.al-pic svg{width:100%;height:100%}
+.al-ph small{font-family:var(--fh);color:#7A6283;font-size:13px}
+.al-use{min-height:40px;padding:0 12px;border-radius:999px;border:0;background:#F3E6F0;color:#7A6283;font-size:13px;font-weight:700}
+.snapflash{position:absolute;inset:0;background:#fff;border-radius:inherit;animation:snapf .55s ease-out forwards;pointer-events:none;z-index:5}
+@keyframes snapf{0%{opacity:.95}100%{opacity:0}}
+/* 친구가 가져온 선물 */
+.petgift{position:absolute;z-index:6;width:clamp(48px,6vw,64px);height:clamp(48px,6vw,64px);border:0;background:none;padding:0;transform:translate(-50%,-50%);animation:giftbob 1s ease-in-out infinite;cursor:pointer}
+.petgift svg{width:100%;height:100%;filter:drop-shadow(0 4px 4px rgba(0,0,0,.15))}
+@keyframes giftbob{0%,100%{transform:translate(-50%,-50%) rotate(-4deg)}50%{transform:translate(-50%,-62%) rotate(4deg)}}
