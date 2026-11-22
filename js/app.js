@@ -602,6 +602,7 @@
   if (/[?&]dev/.test(location.search)) window.__makeUp = () => { sulking = true; makeUp(); };
   if (/[?&]dev/.test(location.search)) window.__petNo = (k) => petNo(k);
   if (/[?&]dev/.test(location.search)) window.__emoOf = (t) => emoOf(t);
+  if (/[?&]dev/.test(location.search)) window.__nbArt = (id, m) => nbArt(id, m);
   function objReact(id, o, b) {
     if (toyOn) return; // 놀잇감으로 노는 중이면 물건 놀이는 그만
     if (sulking || sleeping || document.querySelector('.overlay.on')) { objBusy = 0; return; }
@@ -1308,17 +1309,55 @@
     berry: { id: 'hedgehog', name: '고슴도치 도치', gift: ['berry', 2], hi: '반가워! 나는 딸기밭 주인 고슴도치 도치야. 계산 좀 도와줄래?', thx: '고마워! 내 딸기 두 개 가져가!', miss: '괜찮아! 도와주러 와 준 것만으로도 기뻐.' },
     hill: { id: 'owl', name: '부엉이 박사', gift: ['candy', 5], hi: '부엉~ 별빛 언덕에 온 걸 환영하네. 내 수수께끼를 풀어 보겠나?', thx: '훌륭하군! 별사탕을 선물로 주겠네.', miss: '부엉, 괜찮네. 틀리면서 배우는 법이지.' }
   };
-  const NB_ART = {
-    squirrel: `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/><circle cx="35" cy="44" r="3.4" fill="#4A3552"/><circle cx="50" cy="44" r="3.4" fill="#4A3552"/><circle cx="36" cy="43" r="1.1" fill="#fff"/><circle cx="51" cy="43" r="1.1" fill="#fff"/><ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="56" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
-    penguin: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="28" ry="34" fill="#4E5A8C" stroke="#323C66" stroke-width="3"/><ellipse cx="50" cy="64" rx="19" ry="25" fill="#fff"/><path d="M22 58 q-10 10 -2 20 M78 58 q10 10 2 20" stroke="#323C66" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="41" cy="44" r="3.6" fill="#2C2C2A"/><circle cx="59" cy="44" r="3.6" fill="#2C2C2A"/><circle cx="42" cy="43" r="1.2" fill="#fff"/><circle cx="60" cy="43" r="1.2" fill="#fff"/><path d="M44 51 l6 6 l6 -6z" fill="#FFB25A" stroke="#E08A2E" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="34" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="66" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="40" cy="93" rx="8" ry="4" fill="#FFB25A"/><ellipse cx="60" cy="93" rx="8" ry="4" fill="#FFB25A"/><path d="M36 22 q14 -8 28 0" stroke="#F7A0C1" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    hedgehog: `<svg viewBox="0 0 100 100"><path d="M14 72 C10 40 30 22 54 24 C76 26 90 46 86 72 Z" fill="#9C7254" stroke="#6E4C36" stroke-width="3" stroke-linejoin="round"/>${[[22, 40], [34, 28], [48, 22], [62, 24], [76, 32], [84, 46], [18, 56]].map(([x, y]) => `<path d="M${x} ${y} l-6 -8 l10 2z" fill="#9C7254" stroke="#6E4C36" stroke-width="2" stroke-linejoin="round"/>`).join('')}<ellipse cx="38" cy="66" rx="24" ry="20" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6"/><circle cx="30" cy="62" r="3.4" fill="#4A3552"/><circle cx="46" cy="62" r="3.4" fill="#4A3552"/><circle cx="31" cy="61" r="1.1" fill="#fff"/><circle cx="47" cy="61" r="1.1" fill="#fff"/><circle cx="38" cy="71" r="3.4" fill="#E5679A"/><ellipse cx="24" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="52" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><path d="M62 34 c6 -2 9 4 5 8 c-3 3 -8 2 -8 -2 c0 -3 1 -5 3 -6z" fill="#F2678F"/></svg>`,
-    owl: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="32" fill="#9C86C9" stroke="#6E5CA3" stroke-width="3"/><path d="M24 34 l-4 -16 l14 10z M76 34 l4 -16 l-14 10z" fill="#9C86C9" stroke="#6E5CA3" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="18" ry="16" fill="#E9E1FF"/><path d="M40 66 q4 4 8 0 M52 72 q4 4 8 0 M42 78 q4 4 8 0" stroke="#C9B8FF" stroke-width="2" fill="none"/><circle cx="38" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="62" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="38" cy="47" r="4.6" fill="#4A3552"/><circle cx="62" cy="47" r="4.6" fill="#4A3552"/><circle cx="39.5" cy="45.5" r="1.5" fill="#fff"/><circle cx="63.5" cy="45.5" r="1.5" fill="#fff"/><path d="M46 55 l4 6 l4 -6z" fill="#FFB25A"/><path d="M27 38 h22 M51 38 h22" stroke="#4A3552" stroke-width="2.4"/><circle cx="38" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><circle cx="62" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><path d="M50.5 46 h-0" stroke="#4A3552" stroke-width="2"/></svg>`
+  // 이웃 표정: 눈(과 부리가 없는 이웃은 입)을 감정에 맞게 그린다
+  const NB_FACE = {
+    squirrel: { e: [[35, 44], [50, 44]], r: 3.4, ink: '#4A3552', m: [42.5, 55.5] },
+    penguin: { e: [[41, 44], [59, 44]], r: 3.6, ink: '#2C2C2A', m: null },
+    hedgehog: { e: [[30, 62], [46, 62]], r: 3.4, ink: '#4A3552', m: [38, 76.5] },
+    owl: { e: [[38, 47], [62, 47]], r: 4.6, ink: '#4A3552', m: null }
   };
+  function nbFace(id, mood) {
+    const F = NB_FACE[id], r = F.r, k = F.ink, sw = `stroke="${k}" stroke-width="${(r * .62).toFixed(1)}" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+    const dot = (x, y, sc = 1) => `<circle cx="${x}" cy="${y}" r="${r * sc}" fill="${k}"/><circle cx="${x + r * .3 * sc}" cy="${y - r * .32 * sc}" r="${r * .32 * sc}" fill="#fff"/>`;
+    const up = (x, y) => `<path d="M${x - r} ${y + r * .45} Q${x} ${y - r * 1.15} ${x + r} ${y + r * .45}" ${sw}/>`;      // ^ 웃는 눈
+    const cup = (x, y) => `<path d="M${x - r} ${y - r * .3} Q${x} ${y + r * 1.1} ${x + r} ${y - r * .3}" ${sw}/>`;     // ∪ 새침·만족
+    const line = (x, y) => `<path d="M${x - r} ${y} h${r * 2}" ${sw}/>`;
+    const each = (fn) => F.e.map(([x, y], i) => fn(x, y, i)).join('');
+    let eyes, mouth = '';
+    switch (mood) {
+      case 'happy': case 'chew': eyes = each(up); break;
+      case 'smug': case 'full': eyes = each(cup); break;
+      case 'wide': eyes = each((x, y) => dot(x, y, 1.35)); break;
+      case 'sleepy': case 'sleep': eyes = each(line); break;
+      case 'sad': eyes = each((x, y, i) => dot(x, y + r * .2, .85) + `<path d="M${x - r * (i ? .4 : 1.2)} ${y - r * (i ? 2.2 : 1.5)} L${x + r * (i ? 1.2 : .4)} ${y - r * (i ? 1.5 : 2.2)}" ${sw}/>`); break;
+      case 'tickle': eyes = each((x, y, i) => `<path d="M${x + (i ? 1 : -1) * r} ${y - r} L${x - (i ? 1 : -1) * r * .6} ${y} L${x + (i ? 1 : -1) * r} ${y + r}" ${sw}/>`); break;
+      case 'pout': eyes = each((x, y) => line(x, y - r * .4) + `<circle cx="${x + r * .4}" cy="${y + r * .4}" r="${r * .6}" fill="${k}"/>`); break;
+      case 'dizzy': eyes = each((x, y) => `<path d="M${x - r} ${y - r} L${x + r} ${y + r} M${x + r} ${y - r} L${x - r} ${y + r}" ${sw}/>`); break;
+      default: eyes = each((x, y) => dot(x, y));
+    }
+    if (F.m) {
+      const [x, y] = F.m, w = r * .95;
+      if (mood === 'happy' || mood === 'smug') mouth = `<path d="M${x - w} ${y} Q${x} ${y + w * 1.3} ${x + w} ${y}" ${sw}/>`;
+      else if (mood === 'sad' || mood === 'pout') mouth = `<path d="M${x - w} ${y + w * .7} Q${x} ${y - w * .5} ${x + w} ${y + w * .7}" ${sw}/>`;
+      else if (mood === 'wide' || mood === 'sleepy') mouth = `<ellipse cx="${x}" cy="${y + w * .3}" rx="${w * .55}" ry="${w * .7}" fill="${k}"/>`;
+      else if (mood === 'chew' || mood === 'full') mouth = `<path d="M${x - w} ${y} q${w * .5} ${w * .7} ${w} 0 q${w * .5} ${w * .7} ${w} 0" ${sw}/>`;
+      else if (mood === 'tickle') mouth = `<path d="M${x - w} ${y - w * .2} Q${x} ${y + w * 1.4} ${x + w} ${y - w * .2} Z" fill="#E26A97"/>`;
+    }
+    return eyes + mouth;
+  }
+  const NB_SVG = {
+    squirrel: (F) => `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/>${F}<ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="56" cy="52" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
+    penguin: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="28" ry="34" fill="#4E5A8C" stroke="#323C66" stroke-width="3"/><ellipse cx="50" cy="64" rx="19" ry="25" fill="#fff"/><path d="M22 58 q-10 10 -2 20 M78 58 q10 10 2 20" stroke="#323C66" stroke-width="7" fill="none" stroke-linecap="round"/>${F}<path d="M44 51 l6 6 l6 -6z" fill="#FFB25A" stroke="#E08A2E" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="34" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="66" cy="53" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="40" cy="93" rx="8" ry="4" fill="#FFB25A"/><ellipse cx="60" cy="93" rx="8" ry="4" fill="#FFB25A"/><path d="M36 22 q14 -8 28 0" stroke="#F7A0C1" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
+    hedgehog: (F) => `<svg viewBox="0 0 100 100"><path d="M14 72 C10 40 30 22 54 24 C76 26 90 46 86 72 Z" fill="#9C7254" stroke="#6E4C36" stroke-width="3" stroke-linejoin="round"/>${[[22, 40], [34, 28], [48, 22], [62, 24], [76, 32], [84, 46], [18, 56]].map(([x, y]) => `<path d="M${x} ${y} l-6 -8 l10 2z" fill="#9C7254" stroke="#6E4C36" stroke-width="2" stroke-linejoin="round"/>`).join('')}<ellipse cx="38" cy="66" rx="24" ry="20" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6"/>${F}<circle cx="38" cy="71" r="3.4" fill="#E5679A"/><ellipse cx="24" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><ellipse cx="52" cy="70" rx="4" ry="2.6" fill="#F7A0C1" opacity=".7"/><path d="M62 34 c6 -2 9 4 5 8 c-3 3 -8 2 -8 -2 c0 -3 1 -5 3 -6z" fill="#F2678F"/></svg>`,
+    owl: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="32" fill="#9C86C9" stroke="#6E5CA3" stroke-width="3"/><path d="M24 34 l-4 -16 l14 10z M76 34 l4 -16 l-14 10z" fill="#9C86C9" stroke="#6E5CA3" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="18" ry="16" fill="#E9E1FF"/><path d="M40 66 q4 4 8 0 M52 72 q4 4 8 0 M42 78 q4 4 8 0" stroke="#C9B8FF" stroke-width="2" fill="none"/><circle cx="38" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="62" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/>${F}<path d="M46 55 l4 6 l4 -6z" fill="#FFB25A"/><path d="M27 38 h22 M51 38 h22" stroke="#4A3552" stroke-width="2.4"/><circle cx="38" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><circle cx="62" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><path d="M50.5 46 h-0" stroke="#4A3552" stroke-width="2"/></svg>`
+  };
+  const nbArt = (id, mood) => NB_SVG[id] ? NB_SVG[id](nbFace(id, mood || 'idle')) : '';
+  const NB_ART = Object.fromEntries(Object.keys(NB_SVG).map(k => [k, nbArt(k)]));
   let nq = null, nPlace = null;
   function openNeighbor(place) {
     const N = NEIGH[place]; if (!N) return; nPlace = place;
     if (!S.nb) S.nb = {};
-    $('nb-art').innerHTML = NB_ART[N.id]; $('nb-name').textContent = N.name;
+    $('nb-art').innerHTML = NB_ART[N.id]; $('nb-art').dataset.id = N.id; $('nb-name').textContent = N.name;
     const met = S.nb[N.id] || 0;
     nq = Prob.story(N.id);
     nsay(met ? `또 왔구나! ${pick(['이번에도 도와줄래?', '오늘도 부탁 하나 있어!', '기다리고 있었어!'])}` : N.hi);
@@ -1593,7 +1632,7 @@
     if (!S.nb) S.nb = {};
     const met = (S.nb[N.id] || 0) > 0;
     const lines = (met ? NB_CHAT[N.id].again : NB_CHAT[N.id].first).concat([['N', ASK[N.id]]]);
-    const el = $('nbw'); el.innerHTML = NB_ART[N.id]; el.className = 'nbw in'; el.style.display = '';
+    const el = $('nbw'); el.innerHTML = NB_ART[N.id]; el.dataset.id = N.id; el.className = 'nbw in'; el.style.display = '';
     // 대화 중에는 문제 칸에 이웃 이름표
     $('qtag').textContent = `${N.name}${met ? '' : ' · 처음 만났어요'}`; $('qtag').classList.remove('s1');
     $('qfig').innerHTML = `<div class="nb-portrait">${NB_ART[N.id]}</div>`; $('qtext').innerHTML = '<span class="nb-wait">이야기하는 중… 화면을 누르면 다음 말로 넘어가요</span>'; $('qtext').classList.remove('long'); $('choices').innerHTML = '';
@@ -1812,16 +1851,17 @@
   const ACT_CLS = [...new Set(Object.values(EMO).map(x => x.cls))];
   // 화면마다 친구 그림이 다르다: 방, 나들이(요리·산책·바느질), 돌보기, 책 읽기, 옷장, 수수께끼
   const emoLock = {};
+  const nbDraw = (id) => (m) => { const e = $(id); if (e && e.dataset.id) e.innerHTML = nbArt(e.dataset.id, m); };
   const EMO_CTX = {
     home: () => ({ el: $('pet'), draw: (m) => drawPet(m), ok: () => S.stage >= 3 && !sleeping && !sulking && !toyOn }),
     out: () => ({ el: $('opet'), draw: (m) => drawOutPet(m || 'idle'), ok: () => S.stage >= 3 }),
     act: () => ({ el: $('act-pet'), draw: (m) => actPet(m || 'idle'), ok: () => S.stage >= 3 }),
     read: () => ({ el: $('read-pet'), draw: (m) => { $('read-pet').innerHTML = Art.draw(S.kind, S.stage, m || 'happy', showAcc()); }, ok: () => S.stage >= 3 }),
     wd: () => ({ el: $('wd-pet'), draw: (m) => wdPet(m || 'idle'), ok: () => S.stage >= 3 }),
-    // 이웃: 그림은 그대로, 몸짓과 효과만
-    nbw: () => ({ el: $('nbw'), draw: () => {}, ok: () => $('nbw').style.display !== 'none' }),
-    nbart: () => ({ el: $('nb-art'), draw: () => {}, ok: () => true }),
-    visitor: () => ({ el: $('visitor'), draw: () => {}, ok: () => $('visitor').style.display !== 'none' }),
+    // 이웃: 표정·몸짓·효과 (그림 위 data-id 로 누구인지 안다)
+    nbw: () => ({ el: $('nbw'), draw: nbDraw('nbw'), ok: () => $('nbw').style.display !== 'none' }),
+    nbart: () => ({ el: $('nb-art'), draw: nbDraw('nb-art'), ok: () => true }),
+    visitor: () => ({ el: $('visitor'), draw: nbDraw('visitor'), ok: () => $('visitor').style.display !== 'none' }),
     riddle: () => ({ el: $('riddle-pet'), draw: (m) => { $('riddle-pet').innerHTML = Art.draw(S.kind, S.stage, m || 'happy', showAcc()); }, ok: () => S.stage >= 3 })
   };
   // F: EMO 항목. soft=true면 다른 동작이 방금 정한 표정·몸짓은 두고 둘레 효과만 낸다
