@@ -84,14 +84,14 @@
   function speak(where, html, opt = {}) {
     const b = $(where === 'out' ? 'obubble' : 'bubble'), tx = $(where === 'out' ? 'obubble-txt' : 'bubble-txt');
     tx.innerHTML = html; b.classList.remove('hide');
-    b._who = opt.who === 'N' ? $('nbw') : where === 'out' ? $('opet') : $('walker');
+    b._who = opt.who === 'N' ? $('nbw') : opt.emo === 'visitor' ? $('visitor') : where === 'out' ? $('opet') : $('walker');
     $('walker').classList.toggle('talking', where === 'home'); followBubbles();
     b.classList.toggle('act', html.startsWith('('));
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
     const lv = level();
     if (!opt.silent) { if (lv === 'babble' || lv === 'word') Snd.babble(lv === 'babble' ? 2 : 3, S.kind); else if (lv === 'talk') Snd.babble(1, S.kind); }
     if (where === 'home') { clearTimeout(speak.t); speak.t = setTimeout(() => { b.classList.add('hide'); $('walker').classList.remove('talking'); }, 6500); }
-    if (opt.who !== 'N' && !opt.noEmo) emoteText(where === 'out' ? 'out' : 'home', html);
+    if (!opt.noEmo) emoteText(opt.emo || (opt.who === 'N' ? 'nbw' : where === 'out' ? 'out' : 'home'), html);
   }
   // 말풍선 위치: 말하는 캐릭터 머리 바로 위. 화면 밖으로 나가지 않게 막고, 꼬리는 머리를 가리킨다
   function placeBubble(b) {
@@ -1329,7 +1329,7 @@
     $('nb-ok').style.display = 'none'; nq.lock = false;
     overlay('ov-neighbor', true); Snd.babble(2, 'bunny');
   }
-  function nsay(t) { const b = $('nb-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  function nsay(t) { const b = $('nb-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); emoteText('nbart', t); }
   function nbAnswer(btn, c) {
     if (nq.lock) return; nq.lock = true; const N = NEIGH[nPlace], ok = c === nq.ans; S.total++; rec(nq.unit, ok);
     const st = S.stats[nq.unit] || (S.stats[nq.unit] = { c: 0, w: 0 });
@@ -1358,8 +1358,7 @@
     const N = pick(friends); v.innerHTML = NB_ART[N.id]; v.style.display = ''; v.dataset.id = N.id;
     v.onclick = () => {
       Snd.babble(2, 'bunny'); poked();
-      speak('home', `<b>${N.name}</b>: ${pick(['놀러 왔어! 지난번에 도와줘서 고마워.', '너희 방 정말 예쁘다!', `${NM()}${Prob.jo(NM(), '와').slice(NM().length)} 너는 정말 사이좋구나.`, '다음에 우리 동네에도 또 놀러 와!'])}`, { silent: true });
-      v.classList.remove('hop'); void v.offsetWidth; v.classList.add('hop');
+      speak('home', `<b>${N.name}</b>: ${pick(['놀러 왔어! 지난번에 도와줘서 고마워.', '너희 방 정말 예쁘다!', `${NM()}${Prob.jo(NM(), '와').slice(NM().length)} 너는 정말 사이좋구나.`, '다음에 우리 동네에도 또 놀러 와!'])}`, { silent: true, emo: 'visitor' });
     };
   }
 
@@ -1607,7 +1606,7 @@
     nbs.i++;
     if (nbs.i >= nbs.lines.length) { nbs.phase = 'ask'; nbAsk(); return; }
     const [who, t] = nbs.lines[nbs.i];
-    if (who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${t}`, { silent: true, who: 'N' }); Snd.babble(2, 'bunny'); bounce($('nbw')); }
+    if (who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${t}`, { silent: true, who: 'N' }); Snd.babble(2, 'bunny'); }
     else { speak('out', level() === 'talk' ? t : line('poke')); bounce($('opet')); }
     clearTimeout(nbs.t); nbs.t = setTimeout(nextNbLine, 2600);
   }
@@ -1638,7 +1637,7 @@
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === nq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
       Snd.no(); msg = `${N.miss}<br><small style="font-size:.8em;color:#7A6283">정답은 ${nq.ans}</small>`;
     }
-    speak('out', `<b class="spk">${N.name}</b> ${msg}`, { silent: true, who: 'N' }); bounce($('nbw')); save(); hud();
+    speak('out', `<b class="spk">${N.name}</b> ${msg}`, { silent: true, who: 'N' }); save(); hud();
     // 인사하고 왼쪽으로 걸어 나간다
     setTimeout(() => { speak('out', `<b class="spk">${N.name}</b> ${pick(['또 놀러 와! 안녕~', '고마웠어! 다음에 또 만나!', '잘 가! 조심히 가!'])}`, { silent: true, who: 'N' }); $('nbw').classList.add('bye'); }, 3200);
     setTimeout(() => { $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; const d = nbs.done; nbs = null; d(); }, 5000);
@@ -1819,6 +1818,10 @@
     act: () => ({ el: $('act-pet'), draw: (m) => actPet(m || 'idle'), ok: () => S.stage >= 3 }),
     read: () => ({ el: $('read-pet'), draw: (m) => { $('read-pet').innerHTML = Art.draw(S.kind, S.stage, m || 'happy', showAcc()); }, ok: () => S.stage >= 3 }),
     wd: () => ({ el: $('wd-pet'), draw: (m) => wdPet(m || 'idle'), ok: () => S.stage >= 3 }),
+    // 이웃: 그림은 그대로, 몸짓과 효과만
+    nbw: () => ({ el: $('nbw'), draw: () => {}, ok: () => $('nbw').style.display !== 'none' }),
+    nbart: () => ({ el: $('nb-art'), draw: () => {}, ok: () => true }),
+    visitor: () => ({ el: $('visitor'), draw: () => {}, ok: () => $('visitor').style.display !== 'none' }),
     riddle: () => ({ el: $('riddle-pet'), draw: (m) => { $('riddle-pet').innerHTML = Art.draw(S.kind, S.stage, m || 'happy', showAcc()); }, ok: () => S.stage >= 3 })
   };
   // F: EMO 항목. soft=true면 다른 동작이 방금 정한 표정·몸짓은 두고 둘레 효과만 낸다
