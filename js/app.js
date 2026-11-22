@@ -129,13 +129,21 @@
   function heartAtPet() { const room = $('room'), p = $('pet').getBoundingClientRect(), r = room.getBoundingClientRect(); heartUp($('fx'), p.left - r.left + p.width / 2 - 15, p.top - r.top + p.height * .2); }
 
   // ---------- 하루 바뀜 · 상태 ----------
+  const EGG_WISH = () => [{ t: 'care', id: 'pet', done: false }];
+  // 알 단계에는 쓰다듬기 바람만, 알을 깨고 나오면 그날 바람을 새로 만든다
+  function fixWishes() {
+    if (!S.wishes) return;
+    const eggOnly = S.wishes.length === 1 && S.wishes[0].t === 'care' && S.wishes[0].id === 'pet';
+    if (S.stage <= 2 && !eggOnly) S.wishes = [{ t: 'care', id: 'pet', done: S.wishes.some(w => w.t === 'care' && w.id === 'pet' && w.done) }];
+    else if (S.stage >= 3 && eggOnly) S.wishes = [{ t: 'food', id: pick(Object.keys(FOODS)), done: false }, { t: 'place', id: pick(Object.keys(PLACES)), done: false }, { t: 'care', id: pick(Object.keys(CARE).filter(k => k !== 'pet')), done: false }];
+  }
   function newDay() {
     const t = todayStr();
     if (S.day === t) return;
     if (S.day && S.log.length) { S.diary.unshift({ day: S.day, text: diaryText(S.log, S.day) }); S.diary = S.diary.slice(0, 14); }
     S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
     const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(Object.keys(CARE));
-    S.wishes = [{ t: 'food', id: f, done: false }, { t: 'place', id: p, done: false }, { t: 'care', id: c, done: false }];
+    S.wishes = S.stage <= 2 ? EGG_WISH() : [{ t: 'food', id: f, done: false }, { t: 'place', id: p, done: false }, { t: 'care', id: c, done: false }];
     save();
   }
   function tickNeeds() {
@@ -143,6 +151,7 @@
     const N = S.needs;
     N.full = clamp(N.full - 6 * h, 15, 100); N.clean = clamp(N.clean - 4 * h, 15, 100);
     N.mood = clamp(N.mood - 3 * h, 20, 100); N.energy = clamp(N.energy + 10 * h, 0, 100);
+    if (S.stage <= 2) { N.full = N.clean = N.energy = 100; } // 알은 먹거나 씻거나 자지 않는다
     S.needT = now;
   }
   function addNeed(k, v) { S.needs[k] = clamp(S.needs[k] + v, 0, 100); }
@@ -218,7 +227,7 @@
   $('mi-garden').innerHTML = `<svg viewBox="0 0 32 32"><path d="M16 26 v-10" stroke="#4FAA6C" stroke-width="2.6"/><path d="M16 17 c-8 0 -10 -6 -10 -9 c6 0 10 3 10 9 c0 -6 4 -9 10 -9 c0 3 -2 9 -10 9" fill="#9FDDB4" stroke="#4FAA6C" stroke-width="1.8"/><path d="M5 27 h22" stroke="#B98A6A" stroke-width="4" stroke-linecap="round"/></svg>`;
   $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-shop').innerHTML = '<svg viewBox="0 0 32 32"><path d="M7 11 h18 l-1.6 15 a2 2 0 0 1 -2 1.8 H10.6 a2 2 0 0 1 -2 -1.8z" fill="#FFC7D9" stroke="#E5679A" stroke-width="2" stroke-linejoin="round"/><path d="M12 11 v-2 a4 4 0 0 1 8 0 v2" fill="none" stroke="#E5679A" stroke-width="2"/><path d="M16 14.5 l1.4 2.9 3.2 .4 -2.3 2.2 .6 3.1 -2.9 -1.5 -2.9 1.5 .6 -3.1 -2.3 -2.2 3.2 -.4z" fill="#FFD36E" stroke="#D9962E" stroke-width="1" stroke-linejoin="round"/></svg>'; $('mi-diary').innerHTML = ICON.diary;
   const wishIcon = (w) => w.t === 'food' ? Scene.food(w.id) : w.t === 'place' ? ICON.walk.replace(/#fff/g, '#55C3A3') : ICON[w.id];
-  const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
+  const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: S.stage <= 2 ? '따뜻하게 쓰다듬어 주길 바라요' : '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
   const napName = () => (isNight() ? '밤잠 재우기' : '낮잠 재우기');
   const careName = (id) => (id === 'nap' ? napName() : CARE[id].name);
   const wishSay = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : w.id === 'nap' && isNight() ? '하암… 밤이 깊었어. 이제 자고 싶어' : CARE[w.id].wish;
@@ -243,7 +252,7 @@
     const ps = pendingStory(); if (ps != null && ps >= 0) setTimeout(() => toast('친구 수첩에 <b>새 이야기</b>가 열렸어요!'), 1500);
   }
   function renderHome() {
-    initRooms();
+    initRooms(); fixWishes();
     $('room-bg').innerHTML = roomSVG();
     renderParty(); renderRoomNav();
     placeHotspots();
@@ -257,9 +266,10 @@
   }
   let moodT = null;
   function react(mood, anim) {
-    drawPet(mood); const p = $('pet'); p.classList.remove('hop', 'shake', 'squish');
+    drawPet(mood); const p = $('pet'); p.classList.remove('hop', 'shake', 'squish', 'wobble');
+    if (anim && S.stage <= 2) anim = 'wobble';
     if (anim) { void p.offsetWidth; p.classList.add(anim); }
-    clearTimeout(moodT); moodT = setTimeout(() => { drawPet(); p.classList.remove('hop', 'shake', 'squish'); }, 1700);
+    clearTimeout(moodT); moodT = setTimeout(() => { drawPet(); p.classList.remove('hop', 'shake', 'squish', 'wobble'); }, 1700);
   }
   function renderNeeds() {
     const L = { full: '배부름', mood: '기분', clean: '깨끗함', energy: '기운' };
@@ -268,14 +278,15 @@
   function renderWishes() {
     const done = S.wishes.filter(w => w.done).length;
     $('wish-count').textContent = `${done} / ${S.wishes.length}`;
-    $('wish-list').innerHTML = S.wishes.map((w, i) => `<div class="wish ${w.done ? 'done' : ''}" data-i="${i}"><span class="wi">${wishIcon(w)}</span><span class="wt">${NM()}는 ${wishText(w)}<small>${w.t === 'food' ? '간식 만들기 → 먹이기' : w.t === 'place' ? '산책 가기' : '돌보기'}</small></span><span class="wc">${w.done ? '✓' : ''}</span></div>`).join('');
+    $('wish-list').innerHTML = S.wishes.map((w, i) => `<div class="wish ${w.done ? 'done' : ''}" data-i="${i}"><span class="wi">${wishIcon(w)}</span><span class="wt">${NM()}는 ${wishText(w)}<small>${w.t === 'food' ? '간식 만들기 → 먹이기' : w.t === 'place' ? '산책 가기' : w.id === 'pet' ? (S.stage <= 2 ? '알을 손가락으로 살살 문질러요' : '친구를 손가락으로 쓰다듬어요') : '돌보기'}</small></span><span class="wc">${w.done ? '✓' : ''}</span></div>`).join('');
     const w = S.wishes.find(x => !x.done);
     $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
   }
   function renderCare() {
-    const items = [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']];
+    const items = S.stage <= 2 ? [['pet', '알 쓰다듬기']] : [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']];
     const want = { feed: S.needs.full < 40 || S.wishes.some(w => !w.done && w.t === 'food' && S.foods[w.id]), bath: S.needs.clean < 40, nap: S.needs.energy < 35, play: S.needs.mood < 45 };
-    S.wishes.forEach(w => { if (!w.done && w.t === 'care' && w.id !== 'pet') want[w.id] = true; });
+    S.wishes.forEach(w => { if (!w.done && w.t === 'care' && (w.id !== 'pet' || S.stage <= 2)) want[w.id] = true; });
+    $('care-row').classList.toggle('egg', S.stage <= 2);
     $('care-row').innerHTML = items.map(([k, n]) => `<button class="care ${want[k] ? 'want' : ''}" data-care="${k}"><span class="ci">${ICON[k]}</span>${n}</button>`).join('');
     $('care-row').querySelectorAll('.care').forEach(b => b.onclick = () => { Snd.tap(); poked(); doCare(b.dataset.care); });
   }
@@ -294,7 +305,7 @@
       else if (sleeping) { wk.style.left = '34%'; wk.style.bottom = ''; wk.classList.remove('flying'); }
       else if (Date.now() < objBusy) { wanderT = setTimeout(step, objBusy - Date.now() + 300); return; }
       else if (S.stage >= 3 && Math.random() < .4 && objPlay()) { /* 물건 가지고 노는 중 */ }
-      else if (S.stage >= 3 || Math.random() < .3) {
+      else if (S.stage >= 3) {
         const cur = parseFloat(wk.style.left) || 55; let nx = R(30, 80); if (Math.abs(nx - cur) < 8) nx = cur > 55 ? cur - 20 : cur + 20;
         wk.style.left = nx + '%';
         // 날개가 생긴 구름 요정은 가끔 날아올라 방을 한 바퀴 돌다 내려온다
@@ -380,7 +391,7 @@
     const up = () => {
       if (!down) return; down = false;
       if (moved < 15) { const r = $('room').getBoundingClientRect(), p = pet.getBoundingClientRect(); onTap((p.left + p.width / 2 - r.left) / r.width * 100); }
-      else if (!sulking && rub > 600 && Date.now() - madeAt > 2500) { rub = 0; nextHeart = 220; if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); } speak('home', line('poke')); save(); }
+      else if (!sulking && rub > 600 && Date.now() - madeAt > 2500) { rub = 0; nextHeart = 220; if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); } S.log.push({ e: 'care', id: 'pet' }); speak('home', line('poke')); if (fulfill('care', 'pet')) { renderWishes(); renderCare(); hud(); } save(); }
     };
     pet.addEventListener('pointerup', up); pet.addEventListener('pointercancel', up);
     pet.addEventListener('click', (e) => e.preventDefault());
@@ -422,6 +433,7 @@
   // 친구를 방의 어느 위치(가로 %)로 데려간다. 도착하면 cb
   function goTo(pct, cb, quick) {
     const wk = $('walker'); if (sulking) { speak('home', L3('sulk'), { silent: true }); return false; }
+    if (S.stage <= 2) { cb && cb(); return true; } // 알은 제자리에 가만히
     clearTimeout(wanderT); wk.classList.remove('flying'); wk.style.bottom = '';
     const cur = parseFloat(wk.style.left) || 55, dist = Math.abs(pct - cur);
     wk.classList.add('go'); wk.style.transitionDuration = Math.max(.35, dist / (quick ? 90 : 55)) + 's';
@@ -433,6 +445,7 @@
   function useObject(id, cx) {
     if (editing) return;
     if (sleeping && id !== 'bed') { speak('home', level() === 'egg' ? '(새근새근…)' : '음냐… 지금은 졸려…', { silent: true }); return; }
+    if (S.stage <= 2 && (id === 'bed' || id === 'cushion')) { speak('home', '(알은 둥지에서 꼼짝하지 않아요. 살살 쓰다듬어 줄까요?)', { silent: true }); return; }
     if (id === 'window') {
       const order = ['sun', 'rain', 'rainbow', 'snow'];
       S.weather = order[(order.indexOf(S.weather || 'sun') + 1) % order.length]; save();
@@ -1690,7 +1703,7 @@
     const fx = $('cook-fx'), W = bw * 1.7, H = bw * 1.9;
     Object.assign(fx.style, { left: (x - W / 2) + 'px', top: (y - H * .82) + 'px', width: W + 'px', height: H + 'px' });
   }
-  function drawOutPet(mood) { $('opet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
+  function drawOutPet(mood) { const p = $('opet'); p.innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); p.classList.toggle('egg', S.stage <= 2); }
   function placeOutPet(i, instant) {
     // 친구는 제자리에서 걷고, 풍경 세 겹이 서로 다른 속도로 뒤로 지나간다
     const p = Math.max(0, Math.min(1, i / (OUT.n - 1)));
@@ -1702,7 +1715,7 @@
     });
   }
   function outReact(mood, anim) {
-    drawOutPet(mood); const p = $('opet'); p.classList.remove('hop', 'shake', 'walking'); if (anim) { void p.offsetWidth; p.classList.add(anim); }
+    drawOutPet(mood); const p = $('opet'); p.classList.remove('hop', 'shake', 'walking', 'wobble'); if (anim && S.stage <= 2) anim = 'wobble'; if (anim) { void p.offsetWidth; p.classList.add(anim); }
     clearTimeout(outReact.t); outReact.t = setTimeout(() => drawOutPet('idle'), 1500);
   }
   function nextQ() {
@@ -1767,7 +1780,7 @@
         else nextQ();
       }, T);
     } else {
-      placeOutPet(Math.min(OUT.step, OUT.n - 1)); const p = $('opet'); p.classList.remove('walking'); void p.offsetWidth; p.classList.add('walking');
+      placeOutPet(Math.min(OUT.step, OUT.n - 1)); const p = $('opet'); p.classList.remove('walking'); void p.offsetWidth; if (S.stage >= 3) p.classList.add('walking');
       const P = PLACES[OUT.id];
       if (OUT.step === 3 || OUT.step === OUT.n) {
         const cand = P.finds.filter(k => !S.items.includes(k) && !OUT.finds.includes(k));
@@ -1802,7 +1815,8 @@
       $('res-title').innerHTML = `${FOODS[o.id].name} 완성! <span class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3 - stars)}</span></span>`;
       $('res-line').innerHTML = line('cookDone');
       gets = [`맞힌 문제 ${good} / ${o.n}`, `${FOODS[o.id].name} +1`];
-      $('res-btns').innerHTML = `<button class="btn big primary" id="rb-feed">지금 먹여 주기</button><button class="btn" id="rb-home">냉장고에 넣기</button>`;
+      $('res-btns').innerHTML = S.stage <= 2 ? `<button class="btn big primary" id="rb-home">냉장고에 넣기</button><span id="rb-feed" hidden></span>` : `<button class="btn big primary" id="rb-feed">지금 먹여 주기</button><button class="btn" id="rb-home">냉장고에 넣기</button>`;
+      if (S.stage <= 2) $('res-line').innerHTML = '간식은 냉장고에 넣어 두었어요. 알을 깨고 나오면 같이 먹어요!';
       $('res-gets').innerHTML = gets.map(g => `<span>${g}</span>`).join('');
       overlay('ov-result', true);
       $('rb-feed').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(() => runAct('feed', o.id)); };
@@ -1840,7 +1854,7 @@
   // ---------- 자랐어요 ----------
   let afterLevel = null;
   function levelUp(then) {
-    S.stage++; afterLevel = then || null; save(); Snd.level();
+    S.stage++; afterLevel = then || null; fixWishes(); save(); Snd.level();
     $('level-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
     const la = $('level-art'); la.classList.remove('grow-in'); void la.offsetWidth; la.classList.add('grow-in');
     $('level-title').textContent = `${S.stage}단계 ${STAGE_NAME[S.kind][S.stage]}`;

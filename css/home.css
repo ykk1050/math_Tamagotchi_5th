@@ -629,3 +629,11 @@ body.lowfx .wl{transition-duration:.4s}
 .walker.talking .think{opacity:0;pointer-events:none}
 .think{transition:opacity .25s}
 .menu{white-space:nowrap;font-size:13.5px;letter-spacing:-.3px;padding:0 2px;overflow:hidden}
+
+/* 알: 가만히, 살짝 흔들리기만 */
+.pet.wobble svg,.opet.wobble svg{animation:eggwob .5s ease-in-out 2;transform-origin:50% 90%}
+@keyframes eggwob{0%,100%{transform:rotate(0)}30%{transform:rotate(-6deg)}70%{transform:rotate(6deg)}}
+/* 나들이에서는 포근한 바구니에 담겨 함께 간다 */
+.opet.egg::after{content:"";position:absolute;left:14%;right:14%;bottom:-2%;height:26%;border-radius:0 0 46% 46%/0 0 90% 90%;background:repeating-linear-gradient(90deg,#E8B983 0 8px,#D9A56B 8px 10px);box-shadow:inset 0 5px 0 #F2CF9F,0 4px 0 rgba(0,0,0,.08);z-index:1}
+.opet.egg svg{position:relative;z-index:0}
+.care-row.egg{grid-template-columns:1fr}
