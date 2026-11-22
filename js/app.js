@@ -504,6 +504,7 @@
         renderNeeds(); save();
       });
     } else if (id === 'shelf') {
+      const rn = readNo(); if (rn) { refuse('read', rn); return; }
       goTo(Math.max(26, cx), () => { react('happy', 'squish'); speak('home', level() === 'talk' ? pick(['같이 책 읽자!', '오늘은 무슨 책 읽을까?']) : L3('care')); setTimeout(openShelf, 500); });
     } else if (id === 'bed') {
       goTo(cx, () => {
@@ -744,6 +745,7 @@
     if (sulking) { speak('home', L3('sulk'), { silent: true }); return 0; }
     if (sleeping) { speak('home', level() === 'talk' ? '음냐… 지금은 졸려…' : '(새근새근…)', { silent: true }); return 0; }
     if (toyOn || ballState.fetching || ballState.flying || editing) return 0;
+    if (S.needs.energy < 20) { refuse('toy', level() === 'talk' ? '너무 졸려서 못 놀겠어… 먼저 재워 줘.' : '(하암…)'); return 0; }
     toyOn = id; clearTimeout(wanderT); objBusy = Date.now() + 36e5;
     const wk = $('walker'); wk.classList.remove('flying'); wk.style.bottom = ''; poked();
     return ++toySeq;
@@ -1521,7 +1523,7 @@
     const all = [...$('rd-choices').children];
     if (ok) { btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy += 2; Snd.ok(); readSay(L4('riddleOk') + '<br><small style="font-size:.8em;color:#7A6283">별사탕 +2</small>'); }
     else { btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === rq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++; Snd.no(); readSay(L4('riddleNo', { a: rq.ans })); if (!S.review.some(r => r.unit === rq.unit && r.type === rq.type)) S.review.push({ unit: rq.unit, type: rq.type, due: S.total + R(3, 6) }); }
-    S.read = S.read || {}; S.read[rb.id] = (S.read[rb.id] || 0) + 1; if (dayCap('read', 3)) addFriend(3); S.log.push({ e: 'read', id: rb.id });
+    S.read = S.read || {}; S.read[rb.id] = (S.read[rb.id] || 0) + 1; S.readT = (S.readT || []).filter(t => Date.now() - t < 40 * 60000).concat(Date.now()); if (dayCap('read', 3)) addFriend(3); S.log.push({ e: 'read', id: rb.id });
     $('read-close').style.display = ''; hud(); save();
   }
   $('read-next').onclick = () => { Snd.tap(); rb.page++; showPage(); };
@@ -1724,6 +1726,29 @@
   }
 
   // ---------- 돌보기 (같이 하기) ----------
+  // 거절: 싫다고 했는데 90초 안에 같은 걸 또 권하면, 세 번째부터 속상해하고 우정이 조금 준다
+  function loseFriend(v) { S.fxp = Math.max(FRIEND_XP[S.flv] || 0, S.fxp - v); hud(); }
+  function refuse(key, text) {
+    const now = Date.now(), r = S.refuse && S.refuse.key === key && now - S.refuse.t < 90000 ? S.refuse : { key, n: 0 };
+    r.n++; r.t = now; S.refuse = r;
+    if (r.n >= 3) {
+      const talk = level() === 'talk';
+      speak('home', talk ? pick(['싫다고 했잖아… 자꾸 그러면 속상해.', '내 말 안 들어 주는 거야? 흥.', '아까 말했는데… 나 지금은 정말 싫어.']) : '(시무룩… 고개를 홱 돌려요)', { silent: !talk });
+      react('pout', 'shake'); addNeed('mood', -4);
+      if (dayCap('scold', 5)) { loseFriend(2); toast('싫다는 걸 자꾸 권해서 속상해해요. <b>우정이 조금 줄었어요</b>'); }
+    } else { speak('home', text, { silent: level() !== 'talk' }); react('idle', 'shake'); if (r.n === 2) setTimeout(() => toast('친구가 싫다고 해요. 자꾸 권하면 <b>속상해할 수 있어요</b>'), 900); }
+    renderNeeds(); save();
+  }
+  // 책 읽기: 졸리거나, 기분이 너무 안 좋거나, 방금 많이 읽었으면 싫어한다
+  function readNo() {
+    if (S.stage <= 2) return null;
+    const N = S.needs, talk = level() === 'talk', now = Date.now();
+    if (N.energy < 20) return talk ? '졸려서 글씨가 가물가물해… 먼저 재워 줘.' : '(하암… 눈이 감겨요)';
+    if (N.mood < 25) return talk ? '지금은 책 읽을 기분이 아니야…' : '(시무룩)';
+    const recent = (S.readT || []).filter(t => now - t < 40 * 60000);
+    if (recent.length >= 3) return talk ? '책을 너무 많이 읽었더니 눈이 뱅글뱅글~ 조금 이따 읽자.' : '(눈이 뱅글뱅글)';
+    return null;
+  }
   const wished = (t, id) => S.wishes.some(w => !w.done && w.t === t && w.id === id);
   // 지금 이 돌보기가 필요 없으면 친구가 하는 말 (필요하면 null)
   function careNo(id) {
@@ -1738,12 +1763,12 @@
     return null;
   }
   function doCare(id) {
-    if (id !== 'feed') { const no = careNo(id); if (no) { Snd.tap(); speak('home', no, { silent: level() !== 'talk' }); react('idle', 'shake'); return; } }
+    if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no); return; } }
     if (id === 'feed') {
       let own = Object.keys(S.foods).filter(k => S.foods[k] > 0);
       if (own.length && S.stage >= 3 && S.needs.full >= 85) {
         own = own.filter(k => wished('food', k));
-        if (!own.length) { speak('home', level() === 'talk' ? pick(['배불러… 이따 먹을래.', '배가 빵빵해! 조금 있다가 먹을게.']) : '(배를 통통)', { silent: level() !== 'talk' }); react('idle', 'shake'); return; }
+        if (!own.length) { refuse('feed', level() === 'talk' ? pick(['배불러… 이따 먹을래.', '배가 빵빵해! 조금 있다가 먹을게.']) : '(배를 통통)'); return; }
         toast('배부르지만 <b>먹고 싶다던 간식</b>은 먹을 수 있어요');
       }
       if (!own.length) { speak('home', level() === 'talk' ? line('noFood') : line('idle')); toast('냉장고가 비었어요. <b>간식 만들기</b>로 만들어요!'); return; }
@@ -2067,7 +2092,7 @@
     openPick('어디로 산책 갈까요?', '한 걸음마다 문제를 풀며 걸어가요', Object.keys(PLACES).map(k => ({ id: k, art: Scene.path(k, 6, false, 2.65), name: PLACES[k].name, small: (S.known.place[k] ? '가 본 곳' : '처음 가 봐요') + (NEIGH[k] && NEIGH[k].gift[0] === 'candy' ? ' ' + SC('+' + NEIGH[k].gift[1] + ' 선물') : ''), badge: wishBadge('place', k) || tasteBadge('place', k) })), startWalk, true);
   }
   $('btn-cook').onclick = () => { Snd.tap(); poked(); openCook(); };
-  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 25 && S.stage >= 3) { speak('home', level() === 'talk' ? line('sleepy') : line('idle')); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } openWalk(); };
+  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 25 && S.stage >= 3) { refuse('walk', level() === 'talk' ? '너무 졸려서 산책 못 가겠어… 먼저 재워 줘.' : '(하암…)'); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } openWalk(); };
 
   const ADDS = ['drop', 'pour', 'crack', 'top'];
   function startCook(id) {
