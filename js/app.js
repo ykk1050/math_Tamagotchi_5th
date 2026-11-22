@@ -166,6 +166,7 @@
     const t = todayStr();
     if (S.day === t) return;
     if (S.day && S.log.length) { S.diary.unshift({ day: S.day, text: diaryText(S.log, S.day) }); S.diary = S.diary.slice(0, 14); }
+    if (S.sick) { S.sick.lv--; if (S.sick.lv <= 0) S.sick = null; }
     S.ylog = S.day ? (S.log || []).slice(-30) : []; S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
     { const mo = new Date().getMonth() + 1, winter = mo === 12 || mo <= 2; S.weather = pick(winter ? ['sun', 'sun', 'snow', 'snow', 'rain'] : ['sun', 'sun', 'sun', 'rain', 'rain', 'rainbow']); }
     const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(Object.keys(CARE));
@@ -185,7 +186,7 @@
     const N = S.needs;
     N.full = clamp(N.full - 6 * h, 15, 100); N.clean = clamp(N.clean - 4 * h, 15, 100);
     N.mood = clamp(N.mood - 3 * h, 20, 100);
-    N.energy = S.asleep ? clamp(N.energy + (S.light === false ? 16 : 9) * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
+    N.energy = S.asleep ? clamp(N.energy + ((S.light === false ? 16 : 9) + (S.covered ? 5 : 0)) * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
     if (S.stage <= 2) { N.full = N.clean = N.energy = 100; // 알은 먹거나 씻거나 자지 않는다. 대신 따뜻함이 바뀐다
       if (S.temp == null) S.temp = 50;
       const tg = eggEnv(), rate = [8, 6, 4][S.nest || 0] * h, d = tg - S.temp;
@@ -221,6 +222,7 @@
       const us = Object.keys(Prob.UNITS).filter(u => !g.u[0] || Prob.UNITS[u].sem === g.u[0]), bad = us.filter(u => !unitGood(u, g.u[1]));
       out.push({ k: 'u', t: `${g.u[0] ? g.u[0] + '학기' : '모든'} 단원 골고루 잘하기`, ok: !bad.length, now: bad.length ? `더 풀어 볼 단원: ${bad.slice(0, 2).map(u => Prob.UNITS[u].name).join(', ')}${bad.length > 2 ? ` 외 ${bad.length - 2}개` : ''}` : '' });
     }
+    if (st >= 4 && S.sick) out.push({ k: 's', t: '감기 낫기', ok: false, now: '감기 돌보기를 해 주세요' });
     if (st >= 4) { const N = S.needs, low = [['full', '배부름'], ['clean', '깨끗함'], ['energy', '기운']].filter(([k]) => N[k] < 40); out.push({ k: 'h', t: '배부름·깨끗함·기운 넉넉히', ok: !low.length, now: low.length ? `부족: ${low.map(x => x[1]).join(', ')}` : '' }); }
     return out;
   }
@@ -313,6 +315,8 @@
   let wanderT = null, idleT = null, sleeping = false, objBusy = 0, lastTouch = 0, lastObj = null;
   const ICON_SHOP = '<svg viewBox="0 0 32 32"><path d="M7 11 h18 l-1.6 15 a2 2 0 0 1 -2 1.8 H10.6 a2 2 0 0 1 -2 -1.8z" fill="#FFC7D9" stroke="#E5679A" stroke-width="2" stroke-linejoin="round"/><path d="M12 11 v-2 a4 4 0 0 1 8 0 v2" fill="none" stroke="#E5679A" stroke-width="2"/><path d="M16 14.5 l1.4 2.9 3.2 .4 -2.3 2.2 .6 3.1 -2.9 -1.5 -2.9 1.5 .6 -3.1 -2.3 -2.2 3.2 -.4z" fill="#FFD36E" stroke="#D9962E" stroke-width="1" stroke-linejoin="round"/></svg>';
   const ICON = {
+    brush: `<svg viewBox="0 0 32 32"><rect x="3" y="15" width="18" height="5" rx="2.5" fill="#9CC8FF" stroke="#5D8FD0" stroke-width="1.6"/><rect x="20" y="12" width="9" height="9" rx="2" fill="#fff" stroke="#5D8FD0" stroke-width="1.6"/><path d="M22 12 v-4 M25 12 v-4 M28 12 v-4" stroke="#8FE0C9" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="9" r="3" fill="#fff" stroke="#CFE3FF"/><circle cx="14" cy="6" r="2" fill="#fff" stroke="#CFE3FF"/></svg>`,
+    sick: `<svg viewBox="0 0 32 32"><rect x="12" y="3" width="8" height="19" rx="4" fill="#fff" stroke="#E5679A" stroke-width="2"/><rect x="14.5" y="9" width="3" height="13" fill="#F2678F"/><circle cx="16" cy="24" r="5" fill="#F2678F" stroke="#E5679A" stroke-width="2"/></svg>`,
     warm: `<svg viewBox="0 0 32 32"><path d="M5 12 Q16 4 27 12 L28 26 Q16 30 4 26Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="2" stroke-linejoin="round"/><path d="M7 15 Q16 9 25 15" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="3 3"/><circle cx="12" cy="21" r="1.6" fill="#fff"/><circle cx="20" cy="21" r="1.6" fill="#fff"/></svg>`,
     cool: `<svg viewBox="0 0 32 32"><path d="M16 26 L5 8 Q16 2 27 8 Z" fill="#B9E3FF" stroke="#5D8FD0" stroke-width="2" stroke-linejoin="round"/><path d="M16 26 L11 6 M16 26 L21 6 M16 26 L16 4" stroke="#5D8FD0" stroke-width="1.4"/><path d="M16 26 v4" stroke="#C99A64" stroke-width="3" stroke-linecap="round"/></svg>`,
     sing: `<svg viewBox="0 0 32 32"><path d="M12 22 V7 l13 -3 v15" fill="none" stroke="#A996F0" stroke-width="2.4" stroke-linejoin="round"/><ellipse cx="9" cy="22" rx="4" ry="3.2" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="1.8"/><ellipse cx="22" cy="19" rx="4" ry="3.2" fill="#FFC7D9" stroke="#E5679A" stroke-width="1.8"/></svg>`,
@@ -369,7 +373,7 @@
     renderParty(); renderRoomNav(); drawLight();
     placeHotspots();
     syncSleep();
-    drawPet(); drawNest(); renderNeeds(); renderWishes(); renderCare(); hud(); growHint();
+    drawPet(); drawNest(); sleepSpot(); renderNeeds(); renderWishes(); renderCare(); hud(); growHint();
   }
   function drawPet(mood) {
     if (mood) emoLock.home = Date.now();
@@ -377,7 +381,7 @@
     const p = $('pet'); p.innerHTML = Art.draw(S.kind, S.stage, mood, showAcc());
     if (drawPet.m && drawPet.m !== mood && !S.lowfx) { p.classList.remove('swap'); void p.offsetWidth; p.classList.add('swap'); }
     drawPet.m = mood;
-    $('walker').classList.toggle('sleep', sleeping);
+    $('walker').classList.toggle('sleep', sleeping); $('walker').classList.toggle('sick', !!S.sick && S.stage >= 3);
   }
   // 눈이 손가락을 따라본다 (기본 눈일 때)
   function lookAt(petEl, x, y) {
@@ -418,8 +422,8 @@
     $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
   }
   function renderCare() {
-    const items = S.stage <= 2 ? [['warm', '담요 덮기'], ['cool', '부채질'], ['sing', '노래 불러 주기']] : [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']];
-    const want = { warm: S.temp != null && S.temp < 35, cool: S.temp != null && S.temp > 65, feed: S.needs.full < 40 || S.wishes.some(w => !w.done && w.t === 'food' && S.foods[w.id]), bath: S.needs.clean < 40, nap: S.needs.energy < 35, play: S.needs.mood < 45 };
+    const items = S.stage <= 2 ? [['warm', '담요 덮기'], ['cool', '부채질'], ['sing', '노래 불러 주기']] : [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']].concat(S.brushDue ? [['brush', '양치']] : [], S.sick ? [['sick', '감기 돌보기']] : []);
+    const want = { brush: !!S.brushDue, sick: !!S.sick, warm: S.temp != null && S.temp < 35, cool: S.temp != null && S.temp > 65, feed: S.needs.full < 40 || S.wishes.some(w => !w.done && w.t === 'food' && S.foods[w.id]), bath: S.needs.clean < 40, nap: S.needs.energy < 35, play: S.needs.mood < 45 };
     S.wishes.forEach(w => { if (!w.done && w.t === 'care' && (w.id !== 'pet' || S.stage <= 2)) want[w.id] = true; });
     $('care-row').classList.toggle('egg', S.stage <= 2);
     $('care-row').innerHTML = items.map(([k, n]) => `<button class="care ${want[k] ? 'want' : ''}" data-care="${k}">${k === 'play' ? SC('+6') : ''}<span class="ci">${ICON[k]}</span>${n}</button>`).join('');
@@ -437,7 +441,7 @@
       if (!$('scr-home').classList.contains('on')) return;
       const wk = $('walker');
       if (sulking) { /* 구석에서 삐쳐 있음 */ }
-      else if (sleeping) { wk.style.left = '34%'; wk.style.bottom = ''; wk.classList.remove('flying'); }
+      else if (sleeping) { sleepSpot(); wk.classList.remove('flying'); }
       else if (Date.now() < objBusy) { wanderT = setTimeout(step, objBusy - Date.now() + 300); return; }
       else if (S.stage >= 3 && Math.random() < .4 && objPlay()) { /* 물건 가지고 노는 중 */ }
       else if (S.stage >= 3) {
@@ -452,8 +456,107 @@
       }
       wanderT = setTimeout(step, R(4500, 8000));
     };
-    if (sleeping) $('walker').style.left = '34%';
+    if (sleeping) sleepSpot();
     wanderT = setTimeout(step, 2500);
+  }
+  // 잠은 침대에서: 큰 방이면 침대 위로 올라가고, 이불을 끌어다 덮어 주면 더 푹 잔다
+  // 산책 전에 날씨를 보고 우산·목도리를 챙겨 달라고 한다
+  // 감기: 콧물·재채기, 산책·놀이는 쉬고 싶어 한다. 이마 짚기 → 따뜻한 꿀차 → 이불 덮고 푹 자기로 낫는다
+  function checkWell() {
+    if (!S.sick || S.sick.lv > 0) { save(); renderCare(); return; }
+    S.sick = null; save(); renderHome();
+    setTimeout(() => { Snd.combo(); react('happy', 'hop'); heartAtPet(); speak('home', level() === 'talk' ? pick(['다 나았어! 돌봐 줘서 정말 고마워!', '콧물 뚝! 이제 하나도 안 아파!']) : '(반짝반짝 기운이 나요!)'); addFriend(5); toast('감기가 다 나았어요! <b>우정 +5</b>'); }, 600);
+  }
+  function sickCare() {
+    if (!S.sick) return;
+    const room = $('room'), talk = level() === 'talk';
+    if (!S.sick.felt) {
+      const h = eggHint('친구 이마에 손을 살짝 대 보세요'); const pet = $('pet');
+      const f = (e) => { pet.removeEventListener('pointerdown', f, true); h.remove(); e.stopPropagation(); S.sick.felt = true; save();
+        const t = document.createElement('div'); t.className = 'thermo-pop'; t.innerHTML = `<svg viewBox="0 0 24 40"><rect x="8" y="2" width="8" height="28" rx="4" fill="#fff" stroke="#E5679A" stroke-width="2"/><rect x="10" y="12" width="4" height="18" fill="#F2678F"/><circle cx="12" cy="32" r="6" fill="#F2678F" stroke="#E5679A" stroke-width="2"/></svg><b>${(37.6 + S.sick.lv * .3).toFixed(1)}도</b>`;
+        const r = room.getBoundingClientRect(), p = pet.getBoundingClientRect(); Object.assign(t.style, { left: (p.left - r.left + p.width * .8) + 'px', top: (p.top - r.top) + 'px' }); room.appendChild(t); setTimeout(() => t.remove(), 3200);
+        speak('home', talk ? '이마가 뜨끈뜨끈하지? 열이 나… 따뜻한 차 마시고 싶어.' : '(이마가 뜨끈뜨끈해요)'); renderCare(); };
+      pet.addEventListener('pointerdown', f, true); return;
+    }
+    // 따뜻한 꿀차: 끌어다 입에
+    const honey = (S.pantry || {}).honey > 0, cup = document.createElement('div'); cup.className = 'dragprop teacup';
+    cup.innerHTML = `<svg viewBox="0 0 60 60"><g class="steam" fill="none" stroke="#C9B6C2" stroke-width="2" stroke-linecap="round"><path class="s0" d="M24 14 q-4 -5 0 -10"/><path class="s1" d="M34 14 q-4 -5 0 -10"/></g><path d="M12 20 h34 v12 a17 17 0 0 1 -34 0z" fill="#fff" stroke="#E5679A" stroke-width="2.4"/><path d="M46 24 a7 7 0 0 1 0 13" fill="none" stroke="#E5679A" stroke-width="2.4"/><ellipse cx="29" cy="21" rx="15" ry="3.4" fill="${honey ? '#F2C27B' : '#E8C9A0'}"/><ellipse cx="29" cy="54" rx="22" ry="3" fill="#F3D3E2"/></svg>`;
+    const E = eggBox(), w = E.w * .5; Object.assign(cup.style, { width: w + 'px', height: w + 'px', left: (E.x + E.w * .6) + 'px', top: (E.y - w * .2) + 'px' }); room.appendChild(cup);
+    const hint = eggHint(honey ? '따뜻한 꿀차를 끌어다 입에 대 주세요' : '따뜻한 보리차를 끌어다 입에 대 주세요');
+    let drag = null;
+    cup.addEventListener('pointerdown', (e) => { const [x, y] = roomPt(e); drag = { dx: x - cup.offsetLeft, dy: y - cup.offsetTop }; cup.classList.add('held'); try { cup.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    cup.addEventListener('pointermove', (e) => { if (!drag) return; const [x, y] = roomPt(e); cup.style.left = (x - drag.dx) + 'px'; cup.style.top = (y - drag.dy) + 'px'; });
+    const up = () => { if (!drag) return; drag = null; cup.classList.remove('held'); const p = $('pet').getBoundingClientRect(), r = room.getBoundingClientRect(), cx = cup.offsetLeft + cup.offsetWidth / 2 + r.left, cy = cup.offsetTop + cup.offsetHeight / 2 + r.top;
+      if (Math.abs(cx - (p.left + p.width / 2)) < p.width * .4 && Math.abs(cy - (p.top + p.height * .55)) < p.height * .35) {
+        cup.remove(); hint.remove(); if (honey) S.pantry.honey--; S.sick.lv--; Snd.heart(); drawPet('sip'); setTimeout(() => drawPet(), 1600);
+        speak('home', talk ? (honey ? '후루룩… 달콤하고 따뜻해. 목이 덜 아파!' : '후루룩… 따뜻하다. 고마워!') : '(후루룩…)'); petFx('warm', $('pet'));
+        if (S.sick.lv > 0) setTimeout(() => toast(isNight() ? '이제 <b>불을 끄고 이불을 덮어</b> 푹 재워 주면 나아요' : '<b>낮잠을 재우고 이불을 덮어</b> 주면 빨리 나아요'), 1800);
+        checkWell();
+      } else { Snd.tap(); hint.textContent = '조금 더 입 가까이!'; } };
+    cup.addEventListener('pointerup', up); cup.addEventListener('pointercancel', up);
+    setTimeout(() => { if (cup.isConnected) { cup.remove(); hint.remove(); } }, 25000);
+  }
+  // ================= 4. 양치하기: 간식 먹은 뒤 칫솔로 쓱쓱 =================
+  function brushPlay() {
+    if (!S.brushDue) return; const room = $('room'), E = eggBox(), talk = level() === 'talk';
+    const br = document.createElement('div'); br.className = 'dragprop brush';
+    br.innerHTML = '<svg viewBox="0 0 80 30"><rect x="2" y="12" width="56" height="8" rx="4" fill="#9CC8FF" stroke="#5D8FD0" stroke-width="2"/><rect x="56" y="8" width="20" height="14" rx="3" fill="#fff" stroke="#5D8FD0" stroke-width="2"/><path d="M59 8 v-6 M63 8 v-6 M67 8 v-6 M71 8 v-6" stroke="#8FE0C9" stroke-width="2.4" stroke-linecap="round"/></svg>';
+    const w = E.w * .7; Object.assign(br.style, { width: w + 'px', height: w * .38 + 'px', left: (E.x + E.w * .3) + 'px', top: (E.y + E.h * .05) + 'px' }); room.appendChild(br);
+    const hint = eggHint('칫솔을 잡고 입 앞에서 쓱쓱 문질러 주세요');
+    const bar = document.createElement('div'); bar.className = 'eggmeter'; bar.innerHTML = '<i></i>'; room.appendChild(bar);
+    Object.assign(bar.style, { left: (E.x - E.w * .4) + 'px', top: (E.y + E.h * .55) + 'px', width: E.w * .8 + 'px' });
+    let drag = null, lx = 0, dist = 0, lastFoam = 0; const NEED = 1400; drawPet('happy');
+    br.addEventListener('pointerdown', (e) => { const [x, y] = roomPt(e); drag = { dx: x - br.offsetLeft, dy: y - br.offsetTop }; lx = x; br.classList.add('held'); try { br.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    br.addEventListener('pointermove', (e) => {
+      if (!drag) return; const [x, y] = roomPt(e); br.style.left = (x - drag.dx) + 'px'; br.style.top = (y - drag.dy) + 'px';
+      const p = $('pet').getBoundingClientRect(), r = room.getBoundingClientRect(), mx = p.left - r.left + p.width / 2, my = p.top - r.top + p.height * .5;
+      const tipX = br.offsetLeft + br.offsetWidth * .85, tipY = br.offsetTop + br.offsetHeight * .4;
+      if (Math.abs(tipX - mx) < p.width * .35 && Math.abs(tipY - my) < p.height * .25) {
+        dist += Math.abs(x - lx); bar.firstChild.style.width = Math.min(100, dist / NEED * 100) + '%';
+        const now = Date.now(); if (now - lastFoam > 220) { lastFoam = now; const f = document.createElement('i'); f.className = 'foam'; Object.assign(f.style, { left: (mx + (Math.random() - .5) * p.width * .3) + 'px', top: (my + (Math.random() - .5) * 14) + 'px' }); room.appendChild(f); setTimeout(() => f.remove(), 900); Snd.tap(); }
+        if (dist >= NEED) { br.remove(); hint.remove(); bar.remove(); S.brushDue = 0; addNeed('clean', 6); addNeed('mood', 4); save(); renderNeeds(); renderCare();
+          Snd.combo(); react('happy', 'hop'); petFx('shine', $('pet')); speak('home', talk ? pick(['이가 반짝반짝! 상쾌해~', '치카치카 끝! 이가 뽀득뽀득해!']) : '(이가 반짝반짝!)'); }
+      }
+      lx = x;
+    });
+    const up = () => { drag = null; br.classList.remove('held'); }; br.addEventListener('pointerup', up); br.addEventListener('pointercancel', up);
+    setTimeout(() => { if (br.isConnected) { br.remove(); hint.remove(); bar.remove(); } }, 30000);
+  }
+  function walkPrep() {
+    if (S.stage < 3) return false;
+    const mo = new Date().getMonth() + 1, cold = S.weather === 'snow' || mo === 12 || mo <= 2;
+    const need = S.weather === 'rain' && S.wear.hand !== 'umbrella' ? 'umbrella' : cold && S.wear.neck !== 'scarf' ? 'scarf' : null;
+    if (!need) { S.walkBare = null; return false; }
+    const I = ITEMS[need], own = S.items.includes(need), talk = level() === 'talk';
+    comeSay(() => speak('home', need === 'umbrella' ? (talk ? '밖에 비 와! 우산 챙겨 줄래?' : '(창밖 비를 가리켜요)') : (talk ? '밖이 추워! 목도리 해 줄래?' : '(오들오들…)')));
+    const c = document.createElement('div'); c.className = 'prepcard';
+    c.innerHTML = `<b>${need === 'umbrella' ? '비가 와요' : '밖이 추워요'}</b><span>${own ? `${I.name}${Prob.jo(I.name, '을').slice(I.name.length)} 챙겨 줄까요?` : `${I.name}${Prob.jo(I.name, '이').slice(I.name.length)} 없어요. 상점에서 살 수 있어요`}</span><div>${own ? `<button class="btn primary" data-p="wear">${need === 'umbrella' ? '우산 씌워 주기' : '목도리 해 주기'}</button>` : '<button class="btn primary" data-p="shop">상점 가기</button>'}<button class="btn" data-p="go">그냥 가기</button></div>`;
+    $('room').appendChild(c);
+    c.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {
+      Snd.tap(); c.remove(); const k = b.dataset.p;
+      if (k === 'wear') { initWear(); S.wear[I.slot] = need; S.walkBare = null; save(); react('happy', 'hop'); speak('home', talk ? (need === 'umbrella' ? '고마워! 이제 비 와도 괜찮아!' : '목도리 따뜻하다! 고마워!') : '(헤헤)'); setTimeout(openWalk, 1100); }
+      else if (k === 'shop') { wdFromEdit = false; openWardrobe('shop'); }
+      else { S.walkBare = need; save(); openWalk(); }
+    });
+    return true;
+  }
+  function sleepSpot() {
+    const wk = $('walker'); wk.querySelectorAll('.bedquilt').forEach(e => e.remove());
+    if (!sleeping || S.stage <= 2) { wk.classList.remove('inbed'); if (!sleeping) S.covered = false; return; }
+    if ((S.roomId || 'main') !== 'main') { wk.style.left = '34%'; wk.style.bottom = ''; return; }
+    const bb = roomBox(170, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
+    wk.classList.add('fast', 'inbed'); wk.style.left = bb.cx + '%'; wk.style.bottom = (rh - bb.top - bb.height * .5) + 'px'; setTimeout(() => wk.classList.remove('fast'), 700);
+    const q = document.createElement('div'); q.className = 'bedquilt' + (S.covered ? ' on' : ''); q.innerHTML = QUILT; wk.appendChild(q);
+    if (S.covered) return;
+    let drag = null;
+    q.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; q.classList.add('held'); try { q.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); e.stopPropagation(); });
+    q.addEventListener('pointermove', (e) => { if (drag) q.style.transform = `translate(${e.clientX - drag.x}px,${e.clientY - drag.y}px)`; });
+    const up = (e) => { if (!drag) return; const p = $('pet').getBoundingClientRect(), r = q.getBoundingClientRect(); drag = null; q.classList.remove('held'); q.style.transform = '';
+      if (Math.abs((r.left + r.width / 2) - (p.left + p.width / 2)) < p.width * .55 && Math.abs((r.top + r.height / 2) - (p.top + p.height * .6)) < p.height * .6) {
+        S.covered = true; save(); q.classList.add('on'); Snd.heart(); speak('home', '(이불을 덮어 주니 포근하게 잠들어요… 새근새근)', { silent: true }); petFx('warm', $('pet'));
+        if (S.sick) { S.sick.lv--; checkWell(); }
+      } };
+    q.addEventListener('pointerup', up); q.addEventListener('pointercancel', up);
   }
   function poked() { lastTouch = Date.now(); clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
   // 친구가 먼저 앞으로 다가와서 말을 건다
@@ -494,6 +597,8 @@
       else if (S.stage <= 2 && S.temp != null && S.temp < 30) speak('home', pick(['(알이 바들바들 떨어요… 추운가 봐요)', '(알이 오들오들… 담요가 필요해 보여요)']), { silent: true });
       else if (S.stage <= 2 && S.temp != null && S.temp > 70) speak('home', pick(['(알이 땀을 뻘뻘… 너무 더운가 봐요)', '(알이 뜨끈뜨끈해요. 시원한 바람이 필요해 보여요)']), { silent: true });
       else if (sulking) speak('home', L3('sulk'), { silent: true });
+      else if (S.sick && !sleeping && S.stage >= 3 && Math.random() < .6) { Snd.sneeze && Snd.sneeze(); speak('home', pick(['에취! 콜록콜록…', '훌쩍… 콧물이 나와.', '으슬으슬 추워… 콜록.'])); }
+      else if (S.brushDue && !sleeping && S.stage >= 3 && Date.now() - S.brushDue > 60000 && Math.random() < .5) comeSay(() => speak('home', level() === 'talk' ? pick(['이 닦아 줘! 입에 간식이 남았어.', '치카치카 할 시간이야!']) : '(입을 아~ 벌려요)'));
       else if (!sleeping && level() === 'talk' && isNight() && S.light !== false && S.needs.energy < 45 && Math.random() < .5) speak('home', pick(['하암… 졸린데 불 좀 꺼 줄래?', '눈이 부셔서 잠이 안 와… 불 꺼 줄래?']));
       else if (!sleeping && level() === 'talk' && !isNight() && S.light === false && Math.random() < .6) speak('home', pick(['아침이야! 불 켜 줄래?', '깜깜해서 아무것도 안 보여~ 불 켜 줘!']));
       else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
@@ -2268,6 +2373,7 @@
     if (id === 'bath' && N.clean >= 70) return ['clean', talk ? pick(['아직 뽀송뽀송해! 목욕은 나중에 할래.', '나 지금 깨끗한걸? 냄새 맡아 봐!']) : '(고개를 절레절레)'];
     if (id === 'nap' && S.napT && now - S.napT < 60 * 60000 && N.energy >= 30) return ['awake', talk ? '방금 일어났는걸? 하나도 안 졸려!' : '(눈이 말똥말똥)'];
     if (id === 'nap' && N.energy >= 60) return ['awake', talk ? pick(['하나도 안 졸려! 더 놀고 싶어.', '아직 기운이 펄펄해!']) : '(눈이 말똥말똥)'];
+    if (id === 'play' && S.sick) return ['blue', talk ? '콜록… 오늘은 놀기보다 쉬고 싶어.' : '(콜록콜록…)'];
     if (id === 'play' && N.energy < 25) return ['sleepy', talk ? '너무 졸려서 못 놀겠어… 먼저 재워 줘.' : '(하암…)'];
     if (id === 'pet' && S.petT && now - S.petT < 10 * 60000) return ['later', talk ? '아까 많이 쓰다듬어 줬잖아. 이따 또 해 줘!' : '(헤헤, 이따가!)'];
     return null;
@@ -2280,6 +2386,8 @@
   }
   function doCare(id) {
     if (id === 'pet') return rubHint();
+    if (id === 'brush') return brushPlay();
+    if (id === 'sick') return sickCare();
     if (S.stage <= 2) return eggCare(id);
     if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no[1], no[0]); return; } }
     if (id === 'feed') {
@@ -2309,7 +2417,7 @@
     const meter = $('act-meter'); meter.style.display = 'none'; meter.firstElementChild.style.width = '0';
     actPet('idle');
     $('act-title').textContent = id === 'feed' ? `${FOODS[foodId].name} 먹이기` : id === 'balloon' ? '풍선 달기' : id === 'pet' && S.stage <= 2 ? '알 데우기' : careName(id);
-    overlay('ov-act', true);
+    overlay('ov-act', true); requestAnimationFrame(() => actScene(id));
     let done = false;
     const finish = () => {
       if (done) return; done = true; actClean.forEach(f => f()); actClean = []; room.classList.remove('dark');
@@ -2321,12 +2429,12 @@
         ln = level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].food[ts], 'tf' + ts), '{x}', FOODS[foodId].name) : L3(ts === 'hate' ? 'yuck' : 'yum');
         if (level() !== 'talk' && ts === 'love') ln += '<br><small style="font-size:.8em;color:#7A6283">엄청 좋아하는 것 같아요!</small>';
         if (level() !== 'talk' && ts === 'hate') ln += '<br><small style="font-size:.8em;color:#7A6283">별로 안 좋아하는 것 같아요</small>';
-        S.foods[foodId]--; S.log.push({ e: 'feed', id: foodId, ts }); fulfill('food', foodId, 'act'); if (foodId === 'cake') partyProgress('fed');
+        S.foods[foodId]--; S.brushDue = Date.now(); S.log.push({ e: 'feed', id: foodId, ts }); fulfill('food', foodId, 'act'); if (foodId === 'cake') partyProgress('fed');
       } else if (id === 'balloon') {
         partyProgress('balloons'); addFriend(3);
         ln = level() === 'talk' ? (S.kind === 'bunny' ? '와아, 풍선이다! 진짜 파티 같아! 깡총!' : '풍선이 둥실둥실! 나랑 닮았다!') : L3('care');
       } else {
-        if (id === 'bath') addNeed('clean', 100); if (id === 'nap') addNeed('energy', 100);
+        if (id === 'bath') addNeed('clean', 100); if (id === 'nap') { addNeed('energy', 100); if (S.sick) { S.sick.lv--; setTimeout(checkWell, 2800); } }
         if (id === 'play') { addNeed('mood', 25); addNeed('energy', -10); } if (id === 'pet') addNeed('mood', 15);
         if (dayCap('care-' + id, 2)) addFriend(3); if (id === 'pet') S.petT = Date.now(); if (id === 'nap') S.napT = Date.now(); S.log.push({ e: 'care', id }); fulfill('care', id, 'act');
         ln = level() === 'talk' ? lineFrom(LINES[S.kind].talk.act[{ bath: 'bubble', play: 'bubble', nap: 'nap', pet: 'pet' }[id]], 'act' + id) : L3('care');
@@ -2340,6 +2448,25 @@
     };
     const tm = setTimeout(finish, id === 'play' ? 60000 : 40000); actClean.push(() => clearTimeout(tm));
     ({ feed: actFeed, pet: actRub, bath: actBath, play: actMathBubble, balloon: actBalloon, nap: actNap })[id](field, bottom, finish, id, foodId);
+  }
+  // 돌보기 창에도 그 일을 하는 자리를 그린다 (허공에 떠 있지 않게)
+  function actScene(id) {
+    const field = $('act-field'); field.querySelectorAll('.actprop').forEach(e => e.remove());
+    const fr = field.getBoundingClientRect(), pr = $('act-pet').getBoundingClientRect(); if (!pr.width) return;
+    const L = pr.left - fr.left, T = pr.top - fr.top, W = pr.width, H = pr.height;
+    const put = (cls, html, x, y, w, h, z) => { const d = document.createElement('div'); d.className = 'actprop ' + cls; d.innerHTML = html; Object.assign(d.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', zIndex: z }); field.appendChild(d); };
+    put('floor', '', 0, T + H * .9, fr.width, fr.height, 0);
+    if (id === 'bath') {
+      put('tubback', `<svg viewBox="0 0 200 60" preserveAspectRatio="none"><ellipse cx="100" cy="30" rx="98" ry="26" fill="#BFE0FF" stroke="#7FB0EA" stroke-width="4"/><ellipse cx="100" cy="30" rx="86" ry="18" fill="#DCEFFF"/></svg>`, L - W * .2, T + H * .55, W * 1.4, H * .18, 0);
+      put('tubfront', `<svg viewBox="0 0 200 90" preserveAspectRatio="none"><path d="M4 6 H196 Q194 72 150 82 H50 Q6 72 4 6Z" fill="#fff" stroke="#7FB0EA" stroke-width="4"/><path d="M14 22 H186" stroke="#DCEFFF" stroke-width="6"/>${[30, 60, 95, 130, 165].map((x, i) => `<circle cx="${x}" cy="${4 - (i % 2) * 4}" r="${10 + (i % 3) * 3}" fill="#fff" stroke="#CFE3FF" stroke-width="2"/>`).join('')}<path d="M44 86 l-6 8 M156 86 l6 8" stroke="#C99A64" stroke-width="5" stroke-linecap="round"/></svg>`, L - W * .2, T + H * .62, W * 1.4, H * .36, 3);
+    } else if (id === 'nap') {
+      put('bedback', `<svg viewBox="0 0 200 120" preserveAspectRatio="none"><path d="M10 120 V30 Q10 6 34 6 H166 Q190 6 190 30 V120Z" fill="#F7E3C8" stroke="#C99A64" stroke-width="4"/><path d="M100 30 c-8 -8 -16 -2 -9 6 l9 9 9 -9 c7 -8 -1 -14 -9 -6z" fill="#F28DB2"/><ellipse cx="100" cy="92" rx="70" ry="16" fill="#fff" stroke="#E8D9EC" stroke-width="3"/></svg>`, L - W * .15, T + H * .05, W * 1.3, H * .8, 0);
+      put('bedfront', `<svg viewBox="0 0 200 60" preserveAspectRatio="none"><rect x="4" y="4" width="192" height="40" rx="12" fill="#FFF6FA" stroke="#E8D9EC" stroke-width="3"/><rect x="2" y="40" width="196" height="16" rx="6" fill="#F7E3C8" stroke="#C99A64" stroke-width="3"/></svg>`, L - W * .2, T + H * .8, W * 1.4, H * .22, 3);
+    } else if (id === 'feed') {
+      put('cushion', `<svg viewBox="0 0 200 50" preserveAspectRatio="none"><ellipse cx="100" cy="28" rx="96" ry="20" fill="#FFC7D9" stroke="#E5679A" stroke-width="3"/><ellipse cx="100" cy="22" rx="80" ry="12" fill="#FFE1EC"/></svg>`, L + W * .05, T + H * .84, W * .9, H * .16, 0);
+    } else if (id === 'play') {
+      put('rug', `<svg viewBox="0 0 200 40" preserveAspectRatio="none"><ellipse cx="100" cy="20" rx="98" ry="18" fill="#E3D8FF" stroke="#B9A7F5" stroke-width="3"/><ellipse cx="100" cy="20" rx="70" ry="10" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 8"/></svg>`, L - W * .2, T + H * .86, W * 1.4, H * .14, 0);
+    }
   }
   function actFeed(field, bottom, finish, id, foodId) {
     $('act-hint').textContent = '간식을 끌어서 입에 쏙 넣어 줘요';
@@ -2610,7 +2737,7 @@
     openPick('어디로 산책 갈까요?', '한 걸음마다 문제를 풀며 걸어가요', Object.keys(PLACES).map(k => ({ id: k, art: Scene.path(k, 6, false, 2.65), name: PLACES[k].name, small: (S.known.place[k] ? '가 본 곳' : '처음 가 봐요') + (NEIGH[k] && NEIGH[k].gift[0] === 'candy' ? ' ' + SC('+' + NEIGH[k].gift[1] + ' 선물') : ''), badge: wishBadge('place', k) || tasteBadge('place', k) })), startWalk, true);
   }
   $('btn-cook').onclick = () => { Snd.tap(); poked(); openCook(); };
-  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 25 && S.stage >= 3) { refuse('walk', level() === 'talk' ? '너무 졸려서 산책 못 가겠어… 먼저 재워 줘.' : '(하암…)', 'sleepy'); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } openWalk(); };
+  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.sick && S.stage >= 3) { refuse('walk', level() === 'talk' ? '콜록콜록… 감기 때문에 오늘은 집에서 쉬고 싶어.' : '(콜록콜록…)', 'blue'); return; } if (S.needs.energy < 25 && S.stage >= 3) { refuse('walk', level() === 'talk' ? '너무 졸려서 산책 못 가겠어… 먼저 재워 줘.' : '(하암…)', 'sleepy'); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } if (walkPrep()) return; openWalk(); };
 
   const ADDS = ['drop', 'pour', 'crack', 'top'];
   function startCook(id) {
@@ -2656,11 +2783,11 @@
       setFill();
       // 애니메이션이 도는 동안에는 지금 단계 이름을 그대로 둔다
       if (!OUT.anim) $('step-label').textContent = OUT.step < OUT.n ? `${OUT.step + 1}. ${F.steps[OUT.step][0]}` : '완성!';
-    } else if ($('stage-bg').dataset.place !== OUT.id) {
+    } else if ($('stage-bg').dataset.place !== OUT.id + (isNight() ? '-n' : '')) {
       // 걸어가는 동안 풍경이 지나가는 산책길 (먼 하늘 · 중간 · 길가 세 겹)
-      const r = $('stage').getBoundingClientRect(), W = Scene.walkScene(OUT.id, r.width / Math.max(1, r.height));
+      const r = $('stage').getBoundingClientRect(), W = Scene.walkScene(OUT.id, r.width / Math.max(1, r.height), isNight());
       $('stage-bg').innerHTML = `<div class="wl far">${W.far}</div><div class="wl mid">${W.mid}</div><div class="wl near">${W.near}</div>`;
-      $('stage-bg').style.background = W.sky; $('stage-bg').dataset.place = OUT.id;
+      $('stage-bg').style.background = W.sky; $('stage-bg').dataset.place = OUT.id + (isNight() ? '-n' : '');
     }
     $('steps').innerHTML = Array.from({ length: OUT.n }, (_, i) => `<i class="${OUT.res[i] === true ? 'ok' : OUT.res[i] === false ? 'no' : i === OUT.step ? 'cur' : ''}"></i>`).join('');
     $('hud-combo').textContent = S.combo || 0;
@@ -2803,6 +2930,8 @@
       $('rb-home').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(); };
     } else {
       const P = PLACES[o.id]; const first = !S.known.place[o.id]; const ts = TASTE[S.kind].place[o.id]; S.known.place[o.id] = ts;
+      if (S.walkBare && !S.sick && Math.random() < .6) { S.sick = { lv: 3, felt: false }; setTimeout(() => toast(S.walkBare === 'umbrella' ? '비를 맞아서 <b>감기</b>에 걸린 것 같아요… 돌봐 주세요' : '추운 데 오래 있어서 <b>감기</b>에 걸린 것 같아요… 돌봐 주세요'), 1500); }
+      S.walkBare = null;
       S.asleep = false; addNeed('energy', -20); addNeed('clean', -15); addNeed('full', -12); addNeed('mood', ts === 'love' ? 25 : 12); if (dayCap('walk', 2)) addFriend(ts === 'love' ? 8 : 5);
       S.log.push({ e: 'walk', id: o.id, good, finds: o.finds.slice() });
       $('res-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());

@@ -635,7 +635,7 @@ body.lowfx .wl{transition-duration:.4s}
 .pet.wobble svg,.opet.wobble svg{animation:eggwob .5s ease-in-out 2;transform-origin:50% 90%}
 @keyframes eggwob{0%,100%{transform:rotate(0)}30%{transform:rotate(-6deg)}70%{transform:rotate(6deg)}}
 /* 나들이에서는 포근한 바구니에 담겨 함께 간다 */
-.opet.egg::after{content:"";position:absolute;left:14%;right:14%;bottom:-2%;height:26%;border-radius:0 0 46% 46%/0 0 90% 90%;background:repeating-linear-gradient(90deg,#E8B983 0 8px,#D9A56B 8px 10px);box-shadow:inset 0 5px 0 #F2CF9F,0 4px 0 rgba(0,0,0,.08);z-index:1}
+.opet.egg::after{content:"";position:absolute;left:16%;right:16%;bottom:3%;height:34%;border-radius:0 0 46% 46%/0 0 90% 90%;background:repeating-linear-gradient(90deg,#E8B983 0 8px,#D9A56B 8px 10px);box-shadow:inset 0 5px 0 #F2CF9F,0 4px 0 rgba(0,0,0,.08);z-index:1}
 .opet.egg svg{position:relative;z-index:0}
 .care-row.egg{grid-template-columns:repeat(3,1fr)}
 
@@ -962,7 +962,7 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .opet.pram::after{display:none}
 .opet.pram .pram-b,.opet.pram .pram-f{position:absolute;inset:0;pointer-events:none}
 .opet.pram .pram-b{z-index:0}.opet.pram .pram-f{z-index:2}
-.opet.pram .pram-egg{position:absolute;left:12%;top:-14%;width:62%;height:76%;z-index:1}
+.opet.pram .pram-egg{position:absolute;left:19%;top:5%;width:62%;height:76%;z-index:1}
 .opet.pram .pram-egg svg{width:100%;height:100%}
 .opet.pram.walking svg{animation:none}
 .opet.pram.walking .pram-egg svg{animation:walkbob .3s ease-in-out 4}
@@ -1006,3 +1006,30 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .room.lights-off .darkness{opacity:1}
 .room.lights-off .walker .pet svg{filter:brightness(.82) saturate(.9)}
 .room.editing .lightsw{display:none}
+
+/* 돌보기 창 속 자리 */
+.actprop{position:absolute;pointer-events:none}.actprop svg{width:100%;height:100%;display:block}
+.actprop.floor{background:linear-gradient(180deg,rgba(233,214,196,.55),rgba(245,230,214,.25));border-top:3px solid rgba(255,255,255,.6)}
+.act-room.dark .actprop.floor{background:linear-gradient(180deg,rgba(80,64,130,.5),rgba(120,96,160,.2))}
+#act-pet{z-index:1}
+/* 침대에서 자기 */
+.walker.inbed .pet svg{transform:rotate(-6deg) scale(.95)}
+.walker .bedquilt{position:absolute;z-index:3;left:78%;bottom:6%;width:46%;transform-origin:50% 50%;touch-action:none;cursor:grab;filter:drop-shadow(0 4px 4px rgba(0,0,0,.15));animation:propwig 1.4s ease-in-out infinite}
+.walker .bedquilt svg{width:100%;height:auto;display:block;pointer-events:none}
+.walker .bedquilt.held{animation:none;cursor:grabbing}
+.walker .bedquilt.on{left:-6%;width:112%;bottom:-4%;animation:none;pointer-events:none}
+/* 감기: 볼이 빨갛고 콧물 */
+.walker.sick .pet svg{filter:saturate(.9)}
+.walker.sick::after{content:"";position:absolute;left:52%;top:52%;width:7px;height:11px;border-radius:50% 50% 50% 50%/40% 40% 60% 60%;background:#BFE3FF;border:1.5px solid #7FB0EA;animation:drip 2.6s ease-in infinite;z-index:4;pointer-events:none}
+@keyframes drip{0%,60%{transform:scaleY(.4);opacity:.6}85%{transform:scaleY(1.1) translateY(4px);opacity:1}100%{transform:translateY(10px);opacity:0}}
+.thermo-pop{position:absolute;z-index:8;display:flex;align-items:center;gap:4px;background:#fff;border-radius:14px;padding:6px 10px;box-shadow:var(--shadow-s);animation:propwig 1.2s ease-in-out 2;pointer-events:none}
+.thermo-pop svg{width:18px;height:30px}.thermo-pop b{font-family:var(--fh);font-weight:400;font-size:18px;color:#E5679A}
+.dragprop.teacup .steam path{animation:cupsteam 1.4s ease-in-out infinite;opacity:0}.dragprop.teacup .steam .s1{animation-delay:.6s}
+/* 양치 거품 */
+.foam{position:absolute;z-index:8;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:inset -2px -2px 0 #DCEBFF,0 0 0 1px #CFE3FF;transform:translate(-50%,-50%);animation:foam .9s ease-out forwards;pointer-events:none}
+@keyframes foam{0%{transform:translate(-50%,-50%) scale(.4)}40%{transform:translate(-50%,-70%) scale(1.1)}100%{transform:translate(-50%,-110%) scale(.8);opacity:0}}
+/* 산책 준비 카드 */
+.prepcard{position:absolute;left:50%;top:16%;transform:translateX(-50%);z-index:9;background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 10px 30px rgba(74,53,82,.25);display:flex;flex-direction:column;align-items:center;gap:8px;min-width:min(320px,90%);text-align:center}
+.prepcard b{font-family:var(--fh);font-weight:400;font-size:20px;color:var(--ink)}.prepcard span{font-size:15px;color:var(--ink-2)}
+.prepcard div{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.prepcard .btn{min-height:48px}
+.care-row{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}

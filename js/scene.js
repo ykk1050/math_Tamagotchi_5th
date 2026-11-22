@@ -266,8 +266,8 @@ const Scene = (() => {
   // ---------- 산책 풍경: 세 겹(먼 하늘 · 중간 언덕·바다 · 가까운 길가)이 서로 다른 속도로 지나간다 ----------
   const WALK_F = { far: 1.25, mid: 1.9, near: 2.8 };
   function seeded(seed) { let s = 0; for (const c of seed) s = (s * 31 + c.charCodeAt(0)) >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
-  function walkScene(placeId, aspect) {
-    const P = DATA.PLACES[placeId], night = placeId === 'hill';
+  function walkScene(placeId, aspect, nightNow) {
+    const P = DATA.PLACES[placeId], night = placeId === 'hill' || !!nightNow, SKY = night && placeId !== 'hill' ? ['#4E4A8C', '#8E7DC2'] : P.sky;
     const H = 420, V = Math.max(220, Math.round(H * aspect)); // 화면에 보이는 너비
     const layer = (f, inner) => svg(`0 0 ${Math.round(V * f)} ${H}`, inner, 'none');
     const rnd = seeded(placeId);
@@ -277,8 +277,8 @@ const Scene = (() => {
     let far = '';
     if (night) {
       far += Array.from({ length: Math.round(Wf / 22) }, () => `<circle cx="${R2(0, Wf).toFixed(0)}" cy="${R2(10, 200).toFixed(0)}" r="${R2(1.2, 3).toFixed(1)}" fill="#FFF3B0" class="twk" style="animation-delay:${R2(0, 3).toFixed(1)}s"/>`).join('');
-      far += `<circle cx="${(V * .8).toFixed(0)}" cy="70" r="30" fill="#FFF3B0"/><circle cx="${(V * .8 - 12).toFixed(0)}" cy="62" r="28" fill="${P.sky[0]}"/>`;
-      far += `<path d="M0 260 ${Array.from({ length: 9 }, (_, i) => `Q${(Wf * (i + .5) / 9).toFixed(0)} ${R2(150, 210).toFixed(0)} ${(Wf * (i + 1) / 9).toFixed(0)} 250`).join(' ')} V${H} H0Z" fill="#6C64B0" opacity=".8"/>`;
+      far += `<circle cx="${(V * .8).toFixed(0)}" cy="70" r="30" fill="#FFF3B0"/><circle cx="${(V * .8 - 12).toFixed(0)}" cy="62" r="28" fill="${SKY[0]}"/>`;
+      if (placeId !== 'beach') far += `<path d="M0 260 ${Array.from({ length: 9 }, (_, i) => `Q${(Wf * (i + .5) / 9).toFixed(0)} ${R2(150, 210).toFixed(0)} ${(Wf * (i + 1) / 9).toFixed(0)} 250`).join(' ')} V${H} H0Z" fill="#6C64B0" opacity=".8"/>`;
     } else {
       far += `<circle cx="${(V * .78).toFixed(0)}" cy="70" r="28" fill="#FFE59A"/><circle cx="${(V * .78).toFixed(0)}" cy="70" r="40" fill="#FFE59A" opacity=".25"/>`;
       far += Array.from({ length: Math.round(Wf / 160) + 2 }, () => { const x = R2(0, Wf), y = R2(30, 140), s = R2(.6, 1.2); return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${s.toFixed(2)})" fill="#fff" opacity=".92"><circle cx="0" cy="0" r="18"/><circle cx="20" cy="-8" r="22"/><circle cx="42" cy="2" r="16"/><rect x="-4" y="0" width="50" height="16" rx="8"/></g>`; }).join('');
@@ -323,7 +323,7 @@ const Scene = (() => {
     // 도착 깃발: 끝까지 걸었을 때 화면 가운데쯤
     const fx = Wn - V * .45;
     near += `<g transform="translate(${fx.toFixed(0)} 372)"><path d="M0 0 V-60" stroke="#C98A3D" stroke-width="5"/><path d="M0 -60 l40 12 l-40 12z" fill="#F28DB2"/><ellipse cx="0" cy="2" rx="14" ry="4" fill="rgba(0,0,0,.12)"/></g>`;
-    return { sky: `linear-gradient(180deg,${P.sky[0]},${P.sky[1]})`, far: layer(WALK_F.far, far), mid: layer(WALK_F.mid, mid), near: layer(WALK_F.near, near) };
+    return { sky: `linear-gradient(180deg,${SKY[0]},${SKY[1]})`, far: layer(WALK_F.far, far), mid: layer(WALK_F.mid, mid), near: layer(WALK_F.near, near) };
   }
   const pick2 = (rnd, a) => a[Math.floor(rnd() * a.length)];
 
