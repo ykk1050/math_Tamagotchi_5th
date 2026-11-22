@@ -185,7 +185,7 @@
     const N = S.needs;
     N.full = clamp(N.full - 6 * h, 15, 100); N.clean = clamp(N.clean - 4 * h, 15, 100);
     N.mood = clamp(N.mood - 3 * h, 20, 100);
-    N.energy = S.asleep ? clamp(N.energy + 12 * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
+    N.energy = S.asleep ? clamp(N.energy + (S.light === false ? 16 : 9) * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
     if (S.stage <= 2) { N.full = N.clean = N.energy = 100; // 알은 먹거나 씻거나 자지 않는다. 대신 따뜻함이 바뀐다
       if (S.temp == null) S.temp = 50;
       const tg = eggEnv(), rate = [8, 6, 4][S.nest || 0] * h, d = tg - S.temp;
@@ -366,7 +366,7 @@
     if (toyAbort) { const f = toyAbort; toyAbort = null; f(); }
     initRooms(); fixWishes();
     $('room-bg').innerHTML = roomSVG();
-    renderParty(); renderRoomNav();
+    renderParty(); renderRoomNav(); drawLight();
     placeHotspots();
     syncSleep();
     drawPet(); drawNest(); renderNeeds(); renderWishes(); renderCare(); hud(); growHint();
@@ -494,6 +494,8 @@
       else if (S.stage <= 2 && S.temp != null && S.temp < 30) speak('home', pick(['(알이 바들바들 떨어요… 추운가 봐요)', '(알이 오들오들… 담요가 필요해 보여요)']), { silent: true });
       else if (S.stage <= 2 && S.temp != null && S.temp > 70) speak('home', pick(['(알이 땀을 뻘뻘… 너무 더운가 봐요)', '(알이 뜨끈뜨끈해요. 시원한 바람이 필요해 보여요)']), { silent: true });
       else if (sulking) speak('home', L3('sulk'), { silent: true });
+      else if (!sleeping && level() === 'talk' && isNight() && S.light !== false && S.needs.energy < 45 && Math.random() < .5) speak('home', pick(['하암… 졸린데 불 좀 꺼 줄래?', '눈이 부셔서 잠이 안 와… 불 꺼 줄래?']));
+      else if (!sleeping && level() === 'talk' && !isNight() && S.light === false && Math.random() < .6) speak('home', pick(['아침이야! 불 켜 줄래?', '깜깜해서 아무것도 안 보여~ 불 켜 줘!']));
       else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
       else if (ln && level() === 'talk') comeSay(() => { react('sad'); speak('home', line(ln)); });
       else if (level() === 'talk' && S.flv >= 3 && S.giftDay !== S.day && Math.random() < .25) petGift();
@@ -605,6 +607,36 @@
     { id: 'bed', box: [170, 380, 390, 505], name: '침대' },
     { id: 'cushion', box: [615, 470, 720, 566], name: '쿠션', need: 'cushion' }
   ];
+  // ---------- 방 불 켜고 끄기 ----------
+  // 벽 스위치를 누르면 방이 어두워진다. 밤에 끄면 친구가 스르르 잠들고 더 푹 잔다. 낮에 끄면 깜짝 놀란다.
+  const SWITCH = (on) => `<svg viewBox="0 0 40 56" aria-hidden="true"><rect x="3" y="3" width="34" height="50" rx="9" fill="#FFF9FC" stroke="#E2CFE3" stroke-width="2.4"/><rect x="12" y="12" width="16" height="32" rx="6" fill="#F3E6F0"/><rect x="13.5" y="${on ? 13.5 : 27.5}" width="13" height="15" rx="5" fill="${on ? '#FFD36E' : '#B9A7C4'}" stroke="${on ? '#E8A93C' : '#9C86B0'}" stroke-width="1.6"/>${on ? '<circle cx="20" cy="8" r="2" fill="#FFD36E"/>' : ''}</svg>`;
+  function drawLight() {
+    const room = $('room'), main = (S.roomId || 'main') === 'main';
+    let sw = $('lightsw'); if (!sw) { sw = document.createElement('button'); sw.id = 'lightsw'; sw.className = 'lightsw'; room.appendChild(sw); sw.onclick = (e) => { e.stopPropagation(); toggleLight(); }; }
+    let dk = $('darkness'); if (!dk) { dk = document.createElement('div'); dk.id = 'darkness'; dk.className = 'darkness'; room.insertBefore(dk, $('walker')); }
+    const on = S.light !== false; sw.innerHTML = SWITCH(on); sw.setAttribute('aria-label', on ? '불 끄기' : '불 켜기'); sw.style.display = main ? '' : 'none';
+    const b = roomBox(482, 236, 516, 290); Object.assign(sw.style, { left: (b.left + b.width / 2) + 'px', top: (b.top + b.height / 2) + 'px' });
+    room.classList.toggle('lights-off', !on && main);
+    if (!on && main) {
+      // 어둠 속 빛: 창문(밤엔 달빛, 낮엔 햇빛)과 별 조명이 있으면 그 둘레만 은은하게
+      const w = roomBox(550, 64, 800, 286), r = room.getBoundingClientRect(), lights = [`radial-gradient(ellipse ${w.width * .9}px ${w.height * 1.1}px at ${w.left + w.width / 2}px ${w.top + w.height / 2}px, rgba(255,250,230,${isNight() ? .22 : .5}), transparent 70%)`];
+      const lp = (S.place.main || {}).lamp; if (lp) { const L = roomBox(...Scene.itemBox('lamp', lp[0], lp[1])); lights.push(`radial-gradient(circle ${L.width * 1.6}px at ${L.left + L.width / 2}px ${L.top + L.height / 2}px, rgba(255,226,150,.55), transparent 70%)`); }
+      dk.style.background = lights.join(',') + `, rgba(${isNight() ? '22,18,60,.62' : '40,30,80,.32'})`;
+    }
+  }
+  function toggleLight() {
+    poked(); S.light = S.light === false; Snd.tap(); setTimeout(() => Snd.pop(), 60); drawLight(); save();
+    const talk = level() === 'talk', night = isNight();
+    if (!S.light) {
+      if (sleeping || S.asleep) { speak('home', S.stage <= 2 ? '(알이 어둠 속에서 새근새근)' : '(불을 꺼 주니 더 푹 자요… 새근새근)', { silent: true }); return; }
+      if (S.stage <= 2) { speak('home', night ? '(깜깜해지니 알이 새근새근 잠들어요)' : '(알이 깜짝! 낮인데 어두워졌어요)', { silent: true }); return; }
+      if (night && S.needs.energy < 70) { speak('home', talk ? pick(['불 끄니까 스르르 졸려… 잘 자!', '하암… 깜깜하니까 눈이 감겨. 잘 자!']) : '(하암… 스르르)'); setTimeout(() => { if (S.light === false) { S.asleep = true; save(); renderHome(); } }, 2200); return; }
+      speak('home', night ? (talk ? '아직 안 졸린데… 깜깜해서 아무것도 안 보여!' : '(두리번두리번)') : (talk ? (S.kind === 'cloud' ? '어? 낮인데 깜깜해! 깜짝 놀랐잖아.' : '깜짝이야! 낮인데 왜 불을 꺼?') : '(깜짝!)'));
+    } else {
+      if (sleeping || S.asleep) { speak('home', S.stage <= 2 ? '(알이 움찔… 눈부신가 봐요)' : talk ? '으음… 눈부셔… (뒤척뒤척)' : '(눈부셔서 뒤척여요)', { silent: true }); petNo('sleepy'); return; }
+      speak('home', S.stage <= 2 ? '(방이 환해졌어요)' : talk ? pick(['밝아졌다! 이제 잘 보여.', '불 켜니까 기분도 환해져!']) : '(반짝!)');
+    }
+  }
   function placeHotspots() {
     const h = $('hots'); h.innerHTML = ''; initRooms();
     const attic = S.roomId === 'attic';
