@@ -142,6 +142,7 @@
     if (S.day === t) return;
     if (S.day && S.log.length) { S.diary.unshift({ day: S.day, text: diaryText(S.log, S.day) }); S.diary = S.diary.slice(0, 14); }
     S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
+    { const mo = new Date().getMonth() + 1, winter = mo === 12 || mo <= 2; S.weather = pick(winter ? ['sun', 'sun', 'snow', 'snow', 'rain'] : ['sun', 'sun', 'sun', 'rain', 'rain', 'rainbow']); }
     const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(Object.keys(CARE));
     S.wishes = S.stage <= 2 ? EGG_WISH() : [{ t: 'food', id: f, done: false }, { t: 'place', id: p, done: false }, { t: 'care', id: c, done: false }];
     save();
@@ -211,6 +212,7 @@
   // 친구의 방
   // =====================================================================
   let wanderT = null, idleT = null, sleeping = false, objBusy = 0, lastTouch = 0, lastObj = null;
+  const ICON_SHOP = '<svg viewBox="0 0 32 32"><path d="M7 11 h18 l-1.6 15 a2 2 0 0 1 -2 1.8 H10.6 a2 2 0 0 1 -2 -1.8z" fill="#FFC7D9" stroke="#E5679A" stroke-width="2" stroke-linejoin="round"/><path d="M12 11 v-2 a4 4 0 0 1 8 0 v2" fill="none" stroke="#E5679A" stroke-width="2"/><path d="M16 14.5 l1.4 2.9 3.2 .4 -2.3 2.2 .6 3.1 -2.9 -1.5 -2.9 1.5 .6 -3.1 -2.3 -2.2 3.2 -.4z" fill="#FFD36E" stroke="#D9962E" stroke-width="1" stroke-linejoin="round"/></svg>';
   const ICON = {
     cook: `<svg viewBox="0 0 64 64"><path d="M14 30 h36 v6 a18 16 0 0 1 -36 0z" fill="#fff"/><path d="M18 30 q2 -10 8 -6 q2 -10 10 -4 q6 -6 10 4 q6 -2 4 6z" fill="#fff" opacity=".8"/><path d="M10 30 h44" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>`,
     walk: `<svg viewBox="0 0 64 64"><path d="M14 46 q18 -26 36 -10" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="2 8"/><path d="M46 14 v24" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M46 14 l14 5 -14 5z" fill="#fff"/></svg>`,
@@ -225,7 +227,7 @@
   };
   $('gi-cook').innerHTML = ICON.cook; $('gi-walk').innerHTML = ICON.walk;
   $('mi-garden').innerHTML = `<svg viewBox="0 0 32 32"><path d="M16 26 v-10" stroke="#4FAA6C" stroke-width="2.6"/><path d="M16 17 c-8 0 -10 -6 -10 -9 c6 0 10 3 10 9 c0 -6 4 -9 10 -9 c0 3 -2 9 -10 9" fill="#9FDDB4" stroke="#4FAA6C" stroke-width="1.8"/><path d="M5 27 h22" stroke="#B98A6A" stroke-width="4" stroke-linecap="round"/></svg>`;
-  $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-shop').innerHTML = '<svg viewBox="0 0 32 32"><path d="M7 11 h18 l-1.6 15 a2 2 0 0 1 -2 1.8 H10.6 a2 2 0 0 1 -2 -1.8z" fill="#FFC7D9" stroke="#E5679A" stroke-width="2" stroke-linejoin="round"/><path d="M12 11 v-2 a4 4 0 0 1 8 0 v2" fill="none" stroke="#E5679A" stroke-width="2"/><path d="M16 14.5 l1.4 2.9 3.2 .4 -2.3 2.2 .6 3.1 -2.9 -1.5 -2.9 1.5 .6 -3.1 -2.3 -2.2 3.2 -.4z" fill="#FFD36E" stroke="#D9962E" stroke-width="1" stroke-linejoin="round"/></svg>'; $('mi-diary').innerHTML = ICON.diary;
+  $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-shop').innerHTML = ICON_SHOP; $('mi-diary').innerHTML = ICON.diary;
   const wishIcon = (w) => w.t === 'food' ? Scene.food(w.id) : w.t === 'place' ? ICON.walk.replace(/#fff/g, '#55C3A3') : ICON[w.id];
   const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: S.stage <= 2 ? '따뜻하게 쓰다듬어 주길 바라요' : '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
   const napName = () => (isNight() ? '밤잠 재우기' : '낮잠 재우기');
@@ -252,6 +254,7 @@
     const ps = pendingStory(); if (ps != null && ps >= 0) setTimeout(() => toast('친구 수첩에 <b>새 이야기</b>가 열렸어요!'), 1500);
   }
   function renderHome() {
+    if (toyAbort) { const f = toyAbort; toyAbort = null; f(); }
     initRooms(); fixWishes();
     $('room-bg').innerHTML = roomSVG();
     renderParty(); renderRoomNav();
@@ -425,6 +428,13 @@
       el.onclick = () => { Snd.tap(); poked(); useObject(o.id, b.cx); };
       h.appendChild(el);
     });
+    const PT = S.place[S.roomId || 'main'] || {};
+    let th = $('toyhots'); if (!th) { th = document.createElement('div'); th.id = 'toyhots'; th.className = 'toyhots'; $('room').appendChild(th); } th.innerHTML = '';
+    TOYS.filter(k => PT[k]).forEach(k => {
+      const b = roomBox(...Scene.itemBox(k, PT[k][0], PT[k][1])), el = document.createElement('button'); el.className = 'hot toy'; el.dataset.toy = k; el.setAttribute('aria-label', ITEMS[k].name);
+      Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px' });
+      el.addEventListener('pointerdown', (e) => toyDown(k, e, el, b)); th.appendChild(el);
+    });
     if (!ballState.flying) resetBall();
     $('ball').style.display = attic || S.stage < 3 ? 'none' : '';
   }
@@ -447,10 +457,9 @@
     if (sleeping && id !== 'bed') { speak('home', level() === 'egg' ? '(새근새근…)' : '음냐… 지금은 졸려…', { silent: true }); return; }
     if (S.stage <= 2 && (id === 'bed' || id === 'cushion')) { speak('home', '(알은 둥지에서 꼼짝하지 않아요. 살살 쓰다듬어 줄까요?)', { silent: true }); return; }
     if (id === 'window') {
-      const order = ['sun', 'rain', 'rainbow', 'snow'];
-      S.weather = order[(order.indexOf(S.weather || 'sun') + 1) % order.length]; save();
-      $('room-bg').innerHTML = roomSVG();
+      // 창밖 구경: 오늘 날씨를 이야기한다 (날씨는 하루에 한 번 정해진다)
       goTo(Math.min(78, cx), () => {
+        if (isNight()) { react('happy', 'hop'); speak('home', level() === 'talk' ? pick(['밤하늘에 별이 반짝반짝…', '달님, 안녕! 오늘도 고마웠어.', '깜깜한 밤이야. 별 세어 볼까? 하나, 둘…']) : L3('care')); return; }
         const sad = S.kind === 'bunny' && S.weather === 'rain';
         react(sad ? 'sad' : 'happy', sad ? 'shake' : 'hop'); speak('home', L4(S.weather));
         if (S.kind === 'cloud' && S.weather === 'rain') addNeed('mood', 4);
@@ -462,17 +471,15 @@
       goTo(cx, () => {
         // 침대 위로 올라가서 뒹군다
         const wk = $('walker'), bb = roomBox(170, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
-        clearTimeout(wanderT); wk.style.bottom = (rh - bb.top - bb.height * .55) + 'px'; setTimeout(() => { wk.style.bottom = ''; startWander(); }, 2400);
+        clearTimeout(wanderT); wk.style.bottom = (rh - bb.top - bb.height * .47) + 'px'; setTimeout(() => { wk.style.bottom = ''; startWander(); }, 2400);
         const p = $('pet'); p.classList.remove('roll'); void p.offsetWidth; p.classList.add('roll');
         drawPet('happy'); speak('home', L4('bed')); addNeed('mood', 3); renderNeeds();
         setTimeout(() => { p.classList.remove('roll'); drawPet(); }, 2200);
       });
     } else if (id === 'cushion') {
-      goTo(cx, () => {
-        const p = $('pet'); p.classList.remove('boing'); void p.offsetWidth; p.classList.add('boing');
-        drawPet('happy'); speak('home', L4('cushion')); Snd.pop(); setTimeout(() => Snd.pop(), 420); setTimeout(() => Snd.pop(), 840);
-        addNeed('mood', 3); renderNeeds(); setTimeout(() => { p.classList.remove('boing'); drawPet(); }, 1500);
-      });
+      const pc = S.place[S.roomId || 'main'].cushion; if (!pc) return;
+      const b = roomBox(...Scene.itemBox('cushion', pc[0], pc[1])); lastObj = 'cushion';
+      goTo(b.cx, () => objReact('cushion', OBJ_PLAY.cushion, b));
     }
   }
 
@@ -499,10 +506,10 @@
     mirror:  { pet: 'hop', it: 'glow', fx: 'star', snd: 'chime', at: 'under' },
     window:  { pet: 'hop', it: '', fx: '', snd: 'tap', at: 'under', box: [550, 64, 800, 286] },
     shelf:   { pet: 'squish', it: '', fx: 'star', snd: 'pop', at: 'under', box: [210, 136, 445, 222] },
-    bed:     { pet: 'roll', it: '', fx: 'zz', snd: 'pop', at: 'on', up: .55, box: [170, 380, 390, 505] }
+    bed:     { pet: 'roll', it: '', fx: 'zz', snd: 'pop', at: 'on', up: .47, box: [170, 380, 390, 505] }
   };
   function objPlay(force) {
-    if (sulking || sleeping || editing || S.stage < 3 || ballState.flying || ballState.fetching) return false;
+    if (toyOn || sulking || sleeping || editing || S.stage < 3 || ballState.flying || ballState.fetching) return false;
     if (document.querySelector('.overlay.on') || Date.now() - lastTouch < 6000) return false;
     const wk = $('walker'); if (wk.classList.contains('flying')) return false;
     const R0 = S.roomId || 'main', P = S.place[R0] || {};
@@ -520,6 +527,7 @@
   }
   if (/[?&]dev/.test(location.search)) window.__objPlay = (id) => { lastTouch = 0; lastObj = null; objBusy = 0; return objPlay(id); };
   function objReact(id, o, b) {
+    if (toyOn) return; // 놀잇감으로 노는 중이면 물건 놀이는 그만
     if (sulking || sleeping || document.querySelector('.overlay.on')) { objBusy = 0; return; }
     const wk = $('walker'), p = $('pet'), room = $('room'), rh = room.getBoundingClientRect().height, DUR = 2600;
     objBusy = Date.now() + DUR + 600; clearTimeout(wanderT);
@@ -666,6 +674,283 @@
     }, true);
   }
 
+  // =====================================================================
+  // 놀잇감: 상점에서 사서 방에 놓으면, 손가락으로 움직여 친구와 같이 논다
+  // =====================================================================
+  const TOYS = ['feather', 'bubbles', 'blocks', 'plane', 'yarn'];
+  let toyOn = null, toySeq = 0, toyAbort = null;
+  const TOY_LINE = {
+    feather: { go: ['깃털이다! 잡아 볼 거야!', '살랑살랑~ 기다려, 잡는다!'], end: ['헥헥, 재밌었다! 또 하자!', '깃털 잡기 최고야!'] },
+    bubbles: { go: ['비눗방울이다! 내가 다 터뜨릴 거야!', '방울방울~ 예쁘다!'], end: ['톡톡! 방울 터뜨리기 재밌어!', '무지개 방울이었어. 또 불어 줘!'] },
+    plane: { go: ['종이비행기 날리는 거야? 두근두근!', '멀리멀리 날려 줘!'], end: ['내가 물어 왔어! 또 날려 줘!', '비행기 찾았다! 잘했지?'] },
+    yarn: { go: ['털실 공이다! 데굴데굴~', '굴려 줘, 굴려 줘!'], end: ['털실 다 감았어! 영차영차.', '털실 공이랑 노는 거 재밌어!'] },
+    blocks: { go: ['블록 쌓기 하자! 높이높이!', '내가 옆에서 볼게. 차곡차곡 쌓아 줘!'], end: ['와르르! 하하, 또 쌓자!', '무너뜨리는 게 제일 재밌어!'] }
+  };
+  const TL = (id, k) => level() === 'talk' ? pick(TOY_LINE[id][k]) : L3('care');
+  const rr = () => $('room').getBoundingClientRect();
+  function petBox() { const r = rr(), p = $('pet').getBoundingClientRect(); return { x: p.left - r.left + p.width / 2, top: p.top - r.top, w: p.width, h: p.height }; }
+  // 친구가 손가락을 따라 빠르게 쫓아간다
+  function chase(px) {
+    const r = rr(), wk = $('walker'), pct = clamp(px / r.width * 100, 10, 88), cur = parseFloat(wk.style.left) || 55;
+    if (Math.abs(pct - cur) < 2.5) { $('pet').classList.remove('walking'); return; }
+    wk.style.transitionDuration = Math.max(.25, Math.abs(pct - cur) / 110) + 's'; wk.style.left = pct + '%';
+    const p = $('pet'); if (!p.classList.contains('walking')) { p.classList.add('walking'); setTimeout(() => p.classList.remove('walking'), 900); }
+  }
+  function petHop() { const p = $('pet'); p.classList.remove('hop'); void p.offsetWidth; p.classList.add('hop'); drawPet('happy'); }
+  function toyBegin(id) {
+    if (S.stage < 3) { speak('home', '(알에서 나오면 같이 놀 수 있어요)', { silent: true }); return 0; }
+    if (sulking) { speak('home', L3('sulk'), { silent: true }); return 0; }
+    if (sleeping) { speak('home', level() === 'talk' ? '음냐… 지금은 졸려…' : '(새근새근…)', { silent: true }); return 0; }
+    if (toyOn || ballState.fetching || ballState.flying || editing) return 0;
+    toyOn = id; clearTimeout(wanderT); objBusy = Date.now() + 36e5;
+    const wk = $('walker'); wk.classList.remove('flying'); wk.style.bottom = ''; poked();
+    return ++toySeq;
+  }
+  function toyEnd(tok, ln) {
+    if (tok !== toySeq || !toyOn) return;
+    toyOn = null; toyAbort = null; toySeq++;
+    const wk = $('walker'); wk.style.transitionDuration = ''; $('pet').classList.remove('walking');
+    $('room-bg').innerHTML = roomSVG();
+    objBusy = Date.now() + 2500; startWander(); lastTouch = Date.now();
+    if (ln) { react('happy', 'hop'); speak('home', ln); heartAtPet(); }
+    addNeed('mood', 5); addNeed('energy', -3); if (S.playToday < 10) { S.playToday++; addFriend(1); } renderNeeds(); save();
+  }
+  const homeOn = () => $('scr-home').classList.contains('on') && !document.querySelector('.overlay.on');
+  function toyDown(k, e, el, b) {
+    const tok = toyBegin(k); if (!tok) return;
+    e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (x) {}
+    Snd.tap();
+    ({ feather: featherPlay, bubbles: bubblePlay, blocks: blockPlay, plane: planePlay, yarn: yarnPlay })[k](tok, e, el, b);
+  }
+  function listen(el, move, up) {
+    const u = (ev) => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', u); el.removeEventListener('pointercancel', u); up(ev); };
+    el.addEventListener('pointermove', move); el.addEventListener('pointerup', u); el.addEventListener('pointercancel', u);
+  }
+  const mk = (cls, html) => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('room').appendChild(d); return d; };
+
+  // ---- 1. 깃털 낚싯대: 손가락으로 흔들면 친구가 쫓아와 폴짝 뛰어 잡는다 ----
+  function featherPlay(tok, e, el) {
+    $('room-bg').innerHTML = roomSVG('feather');
+    const f = mk('tfeather', `<svg viewBox="0 0 60 110" aria-hidden="true"><path d="M30 0 V56" stroke="#A8A3B8" stroke-width="1.6"/><g class="fsw"><path d="M30 56 c-13 4 -17 24 -10 42 c11 -5 17 -22 10 -42z" fill="#F7A0C1" stroke="#E5679A" stroke-width="2"/><path d="M30 58 l-8 36" stroke="#E5679A" stroke-width="1.4"/><path d="M30 56 c9 6 11 20 6 32 c-4 -6 -6 -18 -6 -32z" fill="#FFD3E4" stroke="#E5679A" stroke-width="1.4"/></g></svg>`);
+    let px = 0, py = 0, lastX = 0, vx = 0, held = true, catches = 0, hopT = 0, chaseT = 0;
+    const move = (ev) => { const r = rr(); px = ev.clientX - r.left; py = Math.min(ev.clientY - r.top, r.height * .8); };
+    move(e); lastX = px; speak('home', TL('feather', 'go'));
+    const stop = () => { held = false; f.classList.add('away'); setTimeout(() => f.remove(), 300); };
+    toyAbort = () => { stop(); toyEnd(tok); };
+    const tick = (t) => {
+      if (!held) return;
+      if (!homeOn()) { toyAbort && toyAbort(); return; }
+      vx = vx * .8 + (px - lastX) * .2; lastX = px;
+      const fh = f.offsetHeight, fw = f.offsetWidth;
+      f.style.transform = `translate(${px - fw / 2}px, ${py - 8}px) rotate(${clamp(-vx * 1.6, -38, 38)}deg)`;
+      const fx = px, fy = py + fh * .75;
+      if (t - chaseT > 150) { chaseT = t; chase(fx); }
+      const pb = petBox();
+      if (Math.abs(pb.x - fx) < pb.w * .45 && fy > pb.top - pb.h * .7 && fy < pb.top + pb.h * .9 && t - hopT > 850) {
+        hopT = t; petHop(); Snd.pop();
+        if (Math.random() < .65) { catches++; heartAtPet(); f.classList.remove('caught'); void f.offsetWidth; f.classList.add('caught'); if (catches % 3 === 1) speak('home', level() === 'talk' ? pick(['잡았다!', '폴짝! 잡았어!', '깃털 냠!']) : L3('care'), { silent: true }); }
+        else if (Math.random() < .3) speak('home', level() === 'talk' ? '앗, 놓쳤다! 다시!' : L3('care'), { silent: true });
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    listen(el, move, () => { stop(); setTimeout(() => toyEnd(tok, TL('feather', 'end') + (catches && level() === 'talk' ? ` 깃털을 ${catches}번이나 잡았어!` : '')), 350); });
+  }
+
+  // ---- 2. 비눗방울: 막대를 휘두르면 방울이 퍼지고, 친구가 쫓아가 터뜨린다 ----
+  function bubblePlay(tok, e, el) {
+    const wand = mk('twand', `<svg viewBox="0 0 40 80" aria-hidden="true"><circle cx="20" cy="14" r="11" fill="rgba(220,240,255,.4)" stroke="#F7A0C1" stroke-width="3.4"/><path d="M20 25 V78" stroke="#F7A0C1" stroke-width="4" stroke-linecap="round"/></svg>`);
+    const bubs = []; let px = 0, py = 0, lx = null, ly = null, held = true, pops = 0, last = performance.now(), lastSpawn = 0, chaseT = 0, hopT = 0, ended = false;
+    const move = (ev) => { const r = rr(); px = ev.clientX - r.left; py = ev.clientY - r.top; };
+    move(e); speak('home', TL('bubbles', 'go'));
+    const spawn = (x, y) => {
+      if (bubs.length > 22) return; const s = R(26, 50), d = document.createElement('i'); d.className = 'tbub';
+      d.style.width = d.style.height = s + 'px'; $('room').appendChild(d);
+      bubs.push({ el: d, x, y, s, vy: R(28, 56), ph: Math.random() * 6, age: 0 });
+    };
+    const finish = () => { if (ended) return; ended = true; bubs.forEach(B => B.el.remove()); bubs.length = 0; wand.remove(); toyEnd(tok, TL('bubbles', 'end') + (pops && level() === 'talk' ? ` 방울을 ${pops}개나 터뜨렸어!` : '')); };
+    toyAbort = () => { held = false; ended = true; bubs.forEach(B => B.el.remove()); bubs.length = 0; wand.remove(); toyEnd(tok); };
+    const tick = (t) => {
+      if (ended) return;
+      if (!homeOn()) { toyAbort && toyAbort(); return; }
+      const dt = Math.min(.05, (t - last) / 1000); last = t; const r = rr(), floor = r.height * .93;
+      if (held) {
+        wand.style.transform = `translate(${px - wand.offsetWidth / 2}px, ${py - wand.offsetHeight * .18}px)`;
+        const dist = lx == null ? 99 : Math.hypot(px - lx, py - ly);
+        if (dist > 30 && t - lastSpawn > 80) { lastSpawn = t; lx = px; ly = py; spawn(px + R(-8, 8), py - 6); }
+      }
+      const pb = petBox();
+      for (let i = bubs.length - 1; i >= 0; i--) {
+        const B = bubs[i]; B.age += dt; B.y += B.vy * dt; B.x += Math.sin(B.age * 2.2 + B.ph) * 22 * dt;
+        B.el.style.transform = `translate(${B.x - B.s / 2}px, ${B.y - B.s / 2}px)`;
+        const hit = Math.abs(B.x - pb.x) < pb.w * .38 && B.y > pb.top + pb.h * .05 && B.y < pb.top + pb.h;
+        if (hit || B.y > floor || B.age > 10) {
+          B.el.classList.add('pop'); const d = B.el; setTimeout(() => d.remove(), 220); bubs.splice(i, 1);
+          if (hit) { pops++; Snd.pop(); if (t - hopT > 450) { hopT = t; petHop(); } if (pops % 5 === 0) bubbleCandy(); }
+        }
+      }
+      if (bubs.length && t - chaseT > 200) { chaseT = t; const tgt = bubs.reduce((a, b2) => (b2.y > a.y ? b2 : a)); chase(tgt.x); }
+      if (held || bubs.length) requestAnimationFrame(tick); else finish();
+    };
+    requestAnimationFrame(tick);
+    listen(el, move, () => { held = false; wand.classList.add('away'); });
+  }
+  function bubbleCandy() {
+    if (S.bubDay !== S.day) { S.bubDay = S.day; S.bubN = 0; }
+    if (S.bubN < 5) { S.bubN++; S.candy++; hud(); toast('방울 5개를 터뜨렸어요! <b>별사탕 +1</b>'); }
+  }
+
+  // ---- 3. 종이비행기: 끌어서 날리면 친구가 쫓아가 물어 온다 ----
+  const PLANE = `<svg viewBox="0 0 100 60" aria-hidden="true"><path d="M98 30 L4 6 L30 30 Z" fill="#fff" stroke="#7FB0EA" stroke-width="2.6" stroke-linejoin="round"/><path d="M98 30 L30 30 L18 54 Z" fill="#E3EEFF" stroke="#7FB0EA" stroke-width="2.6" stroke-linejoin="round"/><path d="M60 22 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z" fill="#FFD36E"/></svg>`;
+  function planePlay(tok, e, el, b) {
+    $('room-bg').innerHTML = roomSVG('plane');
+    const pl = mk('tplane', PLANE), st = { x: 0, y: 0, vx: 0, vy: 0, a: 0, dir: 1 }, hist = [];
+    const set = () => { const w = pl.offsetWidth; pl.style.transform = `translate(${st.x - w / 2}px, ${st.y - w * .3}px) scaleX(${st.dir}) rotate(${st.a}deg)`; };
+    const move = (ev) => { const r = rr(); st.x = ev.clientX - r.left; st.y = Math.min(ev.clientY - r.top, r.height * .88); hist.push([st.x, st.y, performance.now()]); if (hist.length > 6) hist.shift(); set(); };
+    move(e); speak('home', TL('plane', 'go'));
+    let alive = true;
+    toyAbort = () => { alive = false; pl.remove(); toyEnd(tok); };
+    listen(el, move, () => {
+      const a = hist[0], z = hist[hist.length - 1], dt = Math.max(16, z[2] - a[2]) / 1000, r = rr();
+      st.vx = (z[0] - a[0]) / dt; st.vy = (z[1] - a[1]) / dt; const sp = Math.hypot(st.vx, st.vy);
+      if (sp > 1700) { st.vx *= 1700 / sp; st.vy *= 1700 / sp; }
+      if (sp < 160) { st.vx = (st.x < r.width / 2 ? 1 : -1) * 650; st.vy = -160; }
+      const x0 = st.x; let last = performance.now(); Snd.tap();
+      const step = (t) => {
+        if (!alive) return; if (!homeOn()) { toyAbort && toyAbort(); return; }
+        const d = Math.min(.033, (t - last) / 1000); last = t; const R0 = rr(), floor = R0.height * .9;
+        st.vy += (430 - Math.min(300, Math.abs(st.vx) * .32)) * d; st.vx *= Math.pow(.62, d);
+        st.x += st.vx * d; st.y += st.vy * d;
+        if (st.x < 24) { st.x = 24; st.vx = Math.abs(st.vx) * .4; } if (st.x > R0.width - 24) { st.x = R0.width - 24; st.vx = -Math.abs(st.vx) * .4; }
+        if (st.y < 12) { st.y = 12; st.vy = Math.abs(st.vy) * .3; }
+        st.dir = st.vx < 0 ? -1 : 1; st.a = clamp(Math.atan2(st.vy, Math.abs(st.vx)) * 180 / Math.PI * .7, -30, 40);
+        if (st.y >= floor) { st.y = floor; st.a = 0; set(); return landed(Math.abs(st.x - x0)); }
+        set(); requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+    const landed = (dist) => {
+      Snd.pop(); const r = rr(), m = (dist / r.width * 4).toFixed(1);
+      if (level() === 'talk') speak('home', `우와, ${m} m나 날아갔어! 내가 가져올게!`);
+      setTimeout(() => {
+        if (!alive || tok !== toySeq) return;
+        goTo(clamp(st.x / r.width * 100, 10, 88), () => {
+          if (!alive || tok !== toySeq) return;
+          petHop(); Snd.pop();
+          const carry = () => { if (!alive) return; const pb = petBox(); st.x = pb.x + pb.w * .22 * st.dir; st.y = pb.top + pb.h * .42; st.a = -8; set(); pl._raf = requestAnimationFrame(carry); };
+          carry();
+          setTimeout(() => goTo(clamp((b.left + b.width / 2) / rr().width * 100, 10, 88), () => {
+            alive = false; cancelAnimationFrame(pl._raf); pl.classList.add('away'); setTimeout(() => pl.remove(), 300);
+            toyEnd(tok, TL('plane', 'end'));
+          }, true), 400);
+        }, true);
+      }, 700);
+    };
+  }
+
+  // ---- 4. 털실 공: 굴리면 실이 풀리고, 친구가 공을 굴려 오며 실을 감는다 ----
+  function yarnPlay(tok, e, el, b) {
+    $('room-bg').innerHTML = roomSVG('yarn');
+    const r0 = rr(), ys = Math.max(38, Math.min(60, r0.width * .045));
+    const yb = mk('tyarn', `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#F7A0C1" stroke="#E5679A" stroke-width="2"/><path d="M5 14 q15 6 30 -2 M3 22 q17 8 34 -2 M9 32 q12 3 22 -6 M15 3 q-5 17 4 34" stroke="#E5679A" stroke-width="1.7" fill="none"/></svg>`);
+    yb.style.width = yb.style.height = ys + 'px';
+    const th = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); th.setAttribute('class', 'tthread'); th.innerHTML = '<path d=""/>'; $('room').appendChild(th);
+    const floorTop = () => rr().height * .93 - ys;
+    const st = { x: clamp(b.left + b.width / 2 - ys / 2, 0, r0.width - ys), rot: 0, vx: 0 }, sx = st.x + ys / 2, hist = [];
+    const draw = () => {
+      yb.style.transform = `translate(${st.x}px, ${floorTop()}px) rotate(${st.rot}deg)`;
+      const cx = st.x + ys / 2, fy = floorTop() + ys * .9;
+      th.firstChild.setAttribute('d', Math.abs(cx - sx) < 2 ? '' : `M${sx} ${fy} C${(sx * 2 + cx) / 3} ${fy + 5} ${(sx + cx * 2) / 3} ${fy - 4} ${cx} ${fy}`);
+    };
+    draw(); speak('home', TL('yarn', 'go'));
+    let alive = true;
+    const clean = () => { alive = false; yb.remove(); th.remove(); };
+    toyAbort = () => { clean(); toyEnd(tok); };
+    const move = (ev) => { const r = rr(), nx = clamp(ev.clientX - r.left - ys / 2, 0, r.width - ys); st.rot += (nx - st.x) / (Math.PI * ys) * 360; st.x = nx; hist.push([ev.clientX, performance.now()]); if (hist.length > 6) hist.shift(); draw(); };
+    listen(el, move, () => {
+      const r = rr(); if (hist.length > 1) { const a = hist[0], z = hist[hist.length - 1]; st.vx = (z[0] - a[0]) / Math.max(16, z[1] - a[1]) * 1000; }
+      if (Math.abs(st.vx) < 160) st.vx = (st.x + ys / 2 < r.width / 2 ? 1 : -1) * 750;
+      st.vx = clamp(st.vx, -1500, 1500);
+      let last = performance.now();
+      const roll = (t) => {
+        if (!alive) return; if (!homeOn()) { toyAbort && toyAbort(); return; }
+        const d = Math.min(.033, (t - last) / 1000); last = t; const R0 = rr();
+        st.vx *= Math.pow(.35, d); st.x += st.vx * d; st.rot += st.vx * d / (Math.PI * ys) * 360;
+        if (st.x < 0) { st.x = 0; st.vx = Math.abs(st.vx) * .5; Snd.pop(); } if (st.x > R0.width - ys) { st.x = R0.width - ys; st.vx = -Math.abs(st.vx) * .5; Snd.pop(); }
+        draw();
+        if (Math.abs(st.vx) < 18) return stopped();
+        requestAnimationFrame(roll);
+      };
+      requestAnimationFrame(roll);
+    });
+    const stopped = () => {
+      const r = rr(), cm = Math.round(Math.abs(st.x + ys / 2 - sx) / r.width * 400 / 10) * 10;
+      speak('home', level() === 'talk' ? (cm > 0 ? `털실이 ${cm} cm나 풀렸어! 내가 감아 올게.` : '데굴… 하나도 안 굴러갔네? 헤헤.') : L3('care'));
+      setTimeout(() => {
+        if (!alive || tok !== toySeq) return;
+        const dir = st.x + ys / 2 > sx ? 1 : -1;
+        goTo(clamp((st.x + ys / 2 - dir * ys * .9) / r.width * 100, 10, 88), () => {
+          if (!alive || tok !== toySeq) return;
+          // 친구 앞에서 공을 밀며 돌아온다: 실이 줄어든다
+          const push = () => { if (!alive) return; const pb = petBox(), nx = clamp(pb.x - ys / 2 - dir * pb.w * .4, 0, rr().width - ys); st.rot += (nx - st.x) / (Math.PI * ys) * 360; st.x = nx; draw(); yb._raf = requestAnimationFrame(push); };
+          push();
+          goTo(clamp((sx + dir * ys) / rr().width * 100, 10, 88), () => { cancelAnimationFrame(yb._raf); clean(); toyEnd(tok, TL('yarn', 'end')); }, false);
+        }, true);
+      }, 900);
+    };
+  }
+
+  // ---- 5. 블록 쌓기: 블록을 끌어다 쌓으면 친구가 세어 주고, 다 쌓으면 와르르 ----
+  function blockPlay(tok, e, el, b) {
+    const r = rr(), u = clamp(r.width * .05, 34, 58), floor = r.height * .93;
+    const SPEC = [[1, 1, '#F7A0C1'], [2, 1, '#8FE0C9'], [1, 1, '#9EC2F2'], [1, 2, '#FFB9A6'], [2, 1, '#C9B8FF'], [1, 1, '#FFD36E']];
+    const toyRight = b.left + b.width / 2 > r.width / 2, baseX = r.width * (toyRight ? .3 : .68);
+    const lay = mk('tblocks', `<div class="tmat" style="left:${baseX - u * 1.5}px;top:${floor - 5}px;width:${u * 3}px"></div><button class="btn small tdone">그만할래요</button>`);
+    speak('home', TL('blocks', 'go')); goTo(clamp((baseX + (toyRight ? -1 : 1) * u * 2.6) / r.width * 100, 10, 88), null, true);
+    let stackTop = floor, alive = true; const stack = [];
+    const trayW = SPEC.reduce((t, q) => t + q[0] * u + 8, 0), trayX0 = toyRight ? r.width - trayW - 70 : 16;
+    const blocks = SPEC.map(([w, h, c], i) => {
+      const d = document.createElement('div'); d.className = 'tblk'; d.style.width = w * u + 'px'; d.style.height = h * u + 'px'; d.style.background = c; lay.appendChild(d);
+      const B = { el: d, cube: w === h, w: w * u, h: h * u, hx: 0, hy: 0, x: 0, y: 0 };
+      B.hx = trayX0 + SPEC.slice(0, i).reduce((s, q) => s + q[0] * u + 8, 0); B.hy = floor - B.h; B.x = B.hx; B.y = B.hy;
+      return B;
+    });
+    const put = (B) => { B.el.style.transform = `translate(${B.x}px, ${B.y}px) rotate(${B.rot || 0}deg)`; };
+    blocks.forEach(put);
+    const close = (ln) => { if (!alive) return; alive = false; lay.classList.add('away'); setTimeout(() => lay.remove(), 300); toyEnd(tok, ln); };
+    toyAbort = () => { alive = false; lay.remove(); toyEnd(tok); };
+    lay.querySelector('.tdone').onclick = () => { Snd.tap(); close(stack.length ? TL('blocks', 'end') : null); };
+    blocks.forEach(B => {
+      B.el.addEventListener('pointerdown', (ev) => {
+        if (B.stacked || !alive) return; ev.preventDefault(); try { B.el.setPointerCapture(ev.pointerId); } catch (x) {}
+        const R0 = rr(), ox = ev.clientX - R0.left - B.x, oy = ev.clientY - R0.top - B.y; B.el.classList.remove('anim'); B.el.classList.add('held'); poked();
+        const mv = (m) => { const R1 = rr(); B.x = m.clientX - R1.left - ox; B.y = m.clientY - R1.top - oy; put(B); };
+        listen(B.el, mv, () => {
+          B.el.classList.remove('held'); B.el.classList.add('anim');
+          const cx = B.x + B.w / 2;
+          if (Math.abs(cx - baseX) < u * 1.8 && B.y + B.h < stackTop + u) {
+            B.stacked = true; B.x = baseX - B.w / 2 + R(-4, 4); B.y = stackTop - B.h; stackTop = B.y; stack.push(B); put(B); B.el.classList.add('stacked');
+            Snd.pop(); petHop();
+            if (stack.length < blocks.length) speak('home', level() === 'talk' ? pick([`${stack.length}층!`, `${stack.length}층이야! 더 높이!`, '차곡차곡~']) : L3('care'), { silent: true });
+            else allDone();
+          } else { B.x = B.hx; B.y = B.hy; put(B); }
+        });
+      });
+    });
+    const allDone = () => {
+      const c = stack.filter(B => B.cube).length, n = stack.length - c;
+      speak('home', level() === 'talk' ? `정육면체 ${c}개, 직육면체 ${n}개로 쌓았어! 우와, 높다~` : L3('care')); Snd.combo(); sparks($('room'), 12, baseX, stackTop);
+      setTimeout(() => {
+        if (!alive || tok !== toySeq) return;
+        goTo(clamp((baseX + (toyRight ? -1 : 1) * u * 1.4) / rr().width * 100, 10, 88), () => {
+          if (!alive) return; petHop();
+          stack.forEach((B, i) => { B.el.classList.remove('anim'); B.el.classList.add('fall'); B.x += (toyRight ? 1 : -1) * R(20, 90) * (1 + i * .5); B.y = floor - B.h; B.rot = R(-90, 90); setTimeout(() => put(B), i * 60); setTimeout(() => Snd.pop(), 300 + i * 90); });
+          setTimeout(() => close(TL('blocks', 'end')), 1700);
+        }, true);
+      }, 2200);
+    };
+  }
+
   // ---------- 책장: 책 속 수수께끼 (문제 1개씩, 계속 읽을 수 있다) ----------
   let rq = null;
   function openRiddle() {
@@ -775,7 +1060,7 @@
     const p = S.garden[i], N = 8;
     $('garden-quiz').style.display = 'none'; const box = $('garden-plots'); box.style.display = '';
     box.innerHTML = `<div class="wstage" id="wstage"><p class="sub whint">물뿌리개를 끌어다 흙 위에서 물을 뿌려 주세요</p>
-      <div class="wplant">${plantSVG(p.seed, p.stage)}</div>
+      <div class="wplant">${plantSVG(p.seed, p.stage).replace(/<ellipse cx="40" cy="6[36]"[^>]*\/>/g, '')}</div>
       <div class="wsoil" id="wsoil">${'<i></i>'.repeat(N)}</div>
       <div class="wbar"><i id="wbar"></i></div>
       <div class="wcan" id="wcan">${CAN}</div></div>`;
@@ -1059,7 +1344,8 @@
     if (panel === 'items') {
       const free = S.items.filter(k => ITEMS[k] && ITEMS[k].kind === 'decor' && !placedIn(k));
       body = free.length ? free.map(k => `<button class="eb-item" data-add="${k}"><span>${Scene.item(k)}</span><small>${ITEMS[k].name}</small></button>`).join('')
-        : `<p class="eb-empty">놓을 가구가 없어요. 꾸미기 → 주문하기에서 별사탕으로 더 주문할 수 있어요.</p>`;
+        : `<p class="eb-empty">놓을 가구가 없어요.</p>`;
+      body += `<button class="eb-item eb-shop" data-shop="1"><span>${ICON_SHOP}</span><small>가구·놀잇감 주문하기</small></button>`;
     } else {
       const isW = panel === 'wall', list = isW ? Scene.WALLS : Scene.FLOORS, own = isW ? S.walls : S.floors, cur = isW ? S.wall[R0] : S.floor[R0], price = isW ? WALL_PRICE : FLOOR_PRICE;
       body = Object.keys(list).map(k => `<button class="eb-item sw ${cur === k ? 'cur' : ''}" data-sw="${k}"><span>${Scene.swatch(isW ? 'wall' : 'floor', k, S.kind)}</span><small>${list[k].name}${own.includes(k) ? '' : ` · 별사탕 ${price[k]}`}</small></button>`).join('');
@@ -1067,6 +1353,7 @@
     bar.innerHTML = tabs + `<div class="eb-row">${body}</div>`;
     bar.querySelectorAll('.eb-tab').forEach(b => b.onclick = () => { Snd.tap(); panel = b.dataset.p; renderEditBar(); });
     bar.querySelector('.eb-done').onclick = () => { Snd.tap(); exitEdit(); };
+    const sh = bar.querySelector('[data-shop]'); if (sh) sh.onclick = () => { Snd.tap(); exitEdit(); wdFromEdit = true; openWardrobe('shop'); };
     bar.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
       const k = b.dataset.add; Snd.pop(); S.place[R0][k] = Scene.clampPos(k, ...(Scene.DEF_POS[k] || (Scene.layerOf(k) === 'wall' ? [500, 250] : [500, 600])));
       if (R0 === 'attic' && Scene.layerOf(k) === 'wall') S.place[R0][k] = Scene.clampPos(k, R(200, 300), 330);
@@ -1261,6 +1548,7 @@
   }
   function wdSay(t) { const b = $('wd-say'); b.querySelector('span').innerHTML = t; b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
   function wdPet(mood = 'idle') { $('wd-pet').innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); }
+  let wdFromEdit = false;
   function openWardrobe(tab) {
     initWear(); wdTab = tab || 'wear'; paintQ = null; wdPet('happy');
     wdSay(S.stage < 3 ? '(알에서 나오면 옷을 입을 수 있어요)' : level() === 'talk' ? pick(['오늘은 뭐 입을까?', '거울 앞에 서니까 두근두근!', '예쁘게 꾸며 줘!']) : L3('care'));
@@ -1303,14 +1591,15 @@
       body.innerHTML = `<p class="sub">단계마다 문제를 풀면 옷이 완성돼요 (문제 4개)</p><div class="wd-grid">${SEWABLE.map(k => `<button class="wd-item ${own(k) ? 'on' : ''}" data-sew="${k}"><span class="ia">${Art.wearIcon(k, S.kind)}</span><b>${ITEMS[k].name}</b><small>${own(k) ? '만들었어요 · 다시 만들기' : '만들기'}</small></button>`).join('')}</div>`;
       body.querySelectorAll('[data-sew]').forEach(b => b.onclick = () => { Snd.tap(); overlay('ov-wd', false); startSew(b.dataset.sew); });
     } else {
-      const ids = Object.keys(ITEMS).filter(k => !own(k) && ITEMS[k].price && !ITEMS[k].sew && !ITEMS[k].gift).sort((a, b) => (ITEMS[a].kind === 'acc' ? 0 : 1) - (ITEMS[b].kind === 'acc' ? 0 : 1));
-      body.innerHTML = `<p class="sub">가진 별사탕 <b>${S.candy}</b>개</p><div class="wd-grid">${ids.map(k => `<button class="wd-item" data-buy="${k}"><span class="ia">${ITEMS[k].kind === 'acc' ? Art.wearIcon(k, S.kind) : Scene.item(k)}</span><b>${ITEMS[k].name}</b><small>${ITEMS[k].kind === 'acc' ? '옷' : '가구'} · 별사탕 ${ITEMS[k].price}</small></button>`).join('') || '<p class="sub">모두 모았어요!</p>'}</div>`;
+      const rank = (k) => (ITEMS[k].kind === 'acc' ? 0 : ITEMS[k].toy ? 1 : 2) * (wdFromEdit ? -1 : 1);
+      const ids = Object.keys(ITEMS).filter(k => !own(k) && ITEMS[k].price && !ITEMS[k].sew && !ITEMS[k].gift).sort((a, b) => rank(a) - rank(b));
+      body.innerHTML = `<p class="sub">가진 별사탕 <b>${S.candy}</b>개</p><div class="wd-grid">${ids.map(k => `<button class="wd-item" data-buy="${k}"><span class="ia">${ITEMS[k].kind === 'acc' ? Art.wearIcon(k, S.kind) : Scene.item(k)}</span><b>${ITEMS[k].name}</b><small>${ITEMS[k].kind === 'acc' ? '옷' : ITEMS[k].toy ? '놀잇감' : '가구'} · 별사탕 ${ITEMS[k].price}</small></button>`).join('') || '<p class="sub">모두 모았어요!</p>'}</div>`;
       body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
         const k = b.dataset.buy, I = ITEMS[k];
         if (S.candy < I.price) { Snd.no(); toast(`별사탕이 ${I.price - S.candy}개 더 필요해요. 나들이에서 문제를 풀어 모아요!`); return; }
         S.candy -= I.price; S.items.push(k); Snd.combo(); hud(); save();
         toast(`<b>${I.name}</b>${Prob.jo(I.name, '이').slice(I.name.length)} 도착했어요!`);
-        if (I.kind === 'acc') { wdSlot = I.slot; wdTab = 'wear'; } renderWd();
+        if (I.kind === 'acc') { wdSlot = I.slot; wdTab = 'wear'; } else setTimeout(() => toast(I.toy ? `<b>꾸미기</b>에서 방에 놓으면 ${NM()}랑 같이 놀 수 있어요!` : '<b>꾸미기</b>에서 방에 놓을 수 있어요'), 2500); renderWd();
       });
     }
   }
@@ -1347,7 +1636,7 @@
     save(); setTimeout(renderPaint, ok ? 800 : 1800);
   }
   document.querySelectorAll('#wd-tabs .tab').forEach(b => b.onclick = () => { Snd.tap(); wdTab = b.dataset.tab; paintQ = null; renderWd(); });
-  $('wd-close').onclick = () => { Snd.tap(); overlay('ov-wd', false); paintQ = null; renderHome(); react('happy', 'hop'); if (S.stage < MAX_STAGE && S.xp >= STAGE_XP[S.stage + 1]) setTimeout(() => levelUp(), 300); };
+  $('wd-close').onclick = () => { Snd.tap(); overlay('ov-wd', false); paintQ = null; renderHome(); if (wdFromEdit) { wdFromEdit = false; setTimeout(enterEdit, 200); return; } react('happy', 'hop'); if (S.stage < MAX_STAGE && S.xp >= STAGE_XP[S.stage + 1]) setTimeout(() => levelUp(), 300); };
 
   // ---------- 재봉 공방 (나들이처럼 단계마다 문제) ----------
   const SEW_STEPS = [['천 자르기', 'cut', 'area'], ['바느질하기', 'stitch', 'rule'], ['무늬 넣기', 'pattern', 'sym'], ['리본·레이스 달기', 'ribbon', 'frac']];
@@ -1778,6 +2067,9 @@
     lock = false; renderOut(); save();
     if (level() === 'talk' && Math.random() < .2) setTimeout(() => { if (!lock) speak('out', lineFrom(LINES[S.kind].talk.unit[cur.unit], 'u' + cur.unit), { silent: true }); }, 700);
   }
+  // 요리·재봉은 동작 애니메이션이 끝난 뒤에 말한다 (넣기도 전에 '넣었다'고 하지 않게)
+  function oSay(t) { if (OUT.type === 'walk') { speak('out', t); return; } OUT.say = t; $('obubble').classList.add('hide'); }
+  function sayLater() { if (OUT.say && OUT.step < OUT.n) speak('out', OUT.say); OUT.say = null; }
   function answer(btn, c) {
     if (lock) return; lock = true;
     const ok = c === cur.ans; const st = S.stats[cur.unit] || (S.stats[cur.unit] = { c: 0, w: 0 });
@@ -1787,15 +2079,15 @@
       st.c++; S.correct++; S.today++; S.combo++; S.best = Math.max(S.best, S.combo);
       const bonus = S.combo % 5 === 0 ? 1 : 0; S.candy += 1 + bonus; S.xp += 1 + bonus;
       const big = S.combo === 3 || S.combo === 5 || S.combo === 10 || (S.combo > 10 && S.combo % 5 === 0);
-      if (big) { Snd.combo(); speak('out', line(S.combo === 3 ? 'c3' : S.combo === 5 ? 'c5' : 'c10')); const cw = $('hud-combo-wrap'); cw.classList.remove('hot'); void cw.offsetWidth; cw.classList.add('hot'); }
-      else { Snd.ok(); speak('out', line(OUT.type === 'walk' ? 'walkOk' : OUT.type === 'sew' ? 'sewOk' : 'cookOk')); }
+      if (big) { Snd.combo(); oSay(line(S.combo === 3 ? 'c3' : S.combo === 5 ? 'c5' : 'c10')); const cw = $('hud-combo-wrap'); cw.classList.remove('hot'); void cw.offsetWidth; cw.classList.add('hot'); }
+      else { Snd.ok(); oSay(line(OUT.type === 'walk' ? 'walkOk' : OUT.type === 'sew' ? 'sewOk' : 'cookOk')); }
       outReact('happy', 'hop'); sparks($('ofx'), S.combo >= 5 ? 16 : 10);
     } else {
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === cur.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); });
       st.w++; S.combo = 0;
       if (!S.review.some(r => r.unit === cur.unit && r.type === cur.type)) S.review.push({ unit: cur.unit, type: cur.type, due: S.total + R(3, 6) });
       if (S.review.length > 12) S.review.shift();
-      Snd.no(); speak('out', line(OUT.type === 'walk' ? 'walkNo' : OUT.type === 'sew' ? 'sewNo' : 'cookNo', { a: cur.ans })); outReact('sad', 'shake');
+      Snd.no(); oSay(line(OUT.type === 'walk' ? 'walkNo' : OUT.type === 'sew' ? 'sewNo' : 'cookNo', { a: cur.ans })); outReact('sad', 'shake');
     }
     OUT.res[OUT.step] = ok; OUT.step++; if (OUT.type !== 'walk') OUT.anim = true; // 답을 고른 순간부터 애니메이션이 끝날 때까지 단계 이름을 바꾸지 않는다
     save(); renderOut();
@@ -1809,7 +2101,7 @@
       const T = CookFX.sew($('cook-fx'), st[1], OUT.res[OUT.step - 1]);
       setTimeout(() => { OUT.fill++; const pc = $('sew-piece'); if (pc) pc.className = 's' + OUT.fill; Snd.pop(); }, T * .6);
       setTimeout(() => {
-        OUT.anim = false; renderOut();
+        OUT.anim = false; renderOut(); sayLater();
         if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); const pc = $('sew-piece'); if (pc) pc.classList.add('done'); setTimeout(finishOut, 2600); }
         else nextQ();
       }, T);
@@ -1823,7 +2115,7 @@
       // 재료가 그릇에 닿는 순간에 내용물이 늘어난다
       if (ADDS.includes(st[1])) setTimeout(() => { OUT.fill++; setFill(); Snd.pop(); }, T * CookFX.land(st[1]));
       setTimeout(() => {
-        OUT.anim = false; renderOut();
+        OUT.anim = false; renderOut(); sayLater();
         if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); OUT.anim = true; $('step-label').textContent = '완성!'; setTimeout(() => speak('out', level() === 'talk' ? fillJo(pick(['우와, {x} 완성! 냄새 좋다~', '{x} 다 됐다! 진짜 맛있겠다.', '짠! {x} 완성이야!']), '{x}', FOODS[OUT.id].name) : line('happy')), 500); setTimeout(finishOut, CookFX.done($('cook-fx'), Scene.food(OUT.id))); }
         else nextQ();
       }, T);

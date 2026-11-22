@@ -58,7 +58,12 @@ const DATA = (() => {
     piano:    { name: '꼬마 피아노',   kind: 'decor', price: 40 },
     vase:     { name: '꽃병',         kind: 'decor', price: 15 },
     toybox:   { name: '장난감 상자',   kind: 'decor', price: 25 },
-    mirror:   { name: '거울',         kind: 'decor', price: 25 }
+    mirror:   { name: '거울',         kind: 'decor', price: 25 },
+    feather:  { name: '깃털 낚싯대',   kind: 'decor', toy: true, price: 25 },
+    bubbles:  { name: '비눗방울 통',   kind: 'decor', toy: true, price: 20 },
+    blocks:   { name: '블록 상자',     kind: 'decor', toy: true, price: 30 },
+    plane:    { name: '종이비행기',    kind: 'decor', toy: true, price: 15 },
+    yarn:     { name: '털실 공',       kind: 'decor', toy: true, price: 20 }
   };
   const CARE = {
     pet:    { name: '쓰다듬기',   wish: '쓰다듬어 줬으면 좋겠어…' },
