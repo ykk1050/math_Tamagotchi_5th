@@ -103,6 +103,16 @@ const Art = (() => {
     </g>`;
   }
 
+  // 깨끗함이 줄면 몸에 얼룩·먼지가 묻는다 (lv 0~1). 많이 더러우면 먼지 냄새 줄이 피어오른다
+  const DIRT_AT = { cloud: [[-27, 12, 20], [24, 17, -15], [11, -21, 30], [-13, -19, -25], [-3, 25, 10], [29, 1, 40], [16, 25, -30], [-24, -4, 15]],
+    bunny: [[-15, -13, 20], [16, -9, -20], [-9, 31, 10], [8, 35, -15], [-14, 8, 30], [6, -18, -30], [12, 24, 15], [-4, 37, 0]] };
+  function dirt(kind, lv) {
+    if (!lv) return '';
+    const n = Math.max(1, Math.round(lv * 8)), P = DIRT_AT[kind].slice(0, n);
+    let s = P.map(([x, y, r], i) => `<g transform="translate(${x} ${y}) rotate(${r})" opacity="${(.35 + .35 * lv).toFixed(2)}"><ellipse rx="${4 + (i % 3)}" ry="${2.6 + (i % 2)}" fill="#8B6845"/><circle cx="${3 + (i % 3)}" cy="2.6" r="1.1" fill="#8B6845"/><circle cx="-4" cy="-2" r=".8" fill="#8B6845"/></g>`).join('');
+    if (lv > .55) s += `<g class="dustfx" fill="none" stroke="#A8957F" stroke-width="1.6" stroke-linecap="round">${[[-40, -6], [40, -12], [-34, -26]].map(([x, y], i) => `<path class="df d${i}" d="M${x} ${y} q3 -4 0 -8 q-3 -4 0 -8"/>`).join('')}</g>`;
+    return `<g class="dirt">${s}</g>`;
+  }
   function cloud(stage, mood = 'idle', look = null) {
     if (stage <= 2) return wrap(eggC(stage, mood));
     const L = normLook(look); setTint('cloud', L.tint);
@@ -111,7 +121,7 @@ const Art = (() => {
     if (stage >= 5) back += cloudWings(stage >= 7 ? 1.15 : .85);
     if (stage >= 4 && !L.wear.head) front += star(15, -27, .62, 14);
     const ws = (ly) => wearSVG('cloud', L.wear, ly);
-    return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${ws('back')}${back}${cloudBody(mood)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
+    return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${ws('back')}${back}${cloudBody(mood)}${dirt('cloud', L.dirt)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
   }
 
   // ---------- 아기 토끼 ----------
@@ -174,7 +184,7 @@ const Art = (() => {
     const ty = 60 - 44 * s;
     const extra = stage >= 5 && !L.wear.head ? ribbon : '';
     const ws = (ly) => wearSVG('bunny', L.wear, ly);
-    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
+    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
     setTint('bunny', 'base'); return wrap(out);
   }
 
@@ -292,7 +302,7 @@ const Art = (() => {
   function normLook(look) {
     if (!look) return { wear: {}, tint: 'base' };
     if (typeof look === 'string') return { wear: W[look] ? { [W[look].slot]: look } : {}, tint: 'base' };
-    return { wear: look.wear || {}, tint: look.tint || 'base' };
+    return { wear: look.wear || {}, tint: look.tint || 'base', dirt: look.dirt || 0 };
   }
   // 옷 하나만 따로 (옷장 칸 그림)
   function wearIcon(id, kind = 'bunny') {

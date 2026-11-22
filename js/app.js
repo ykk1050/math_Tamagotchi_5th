@@ -35,7 +35,7 @@
   const bat = (w) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0; };
   const NM = () => S.name + (bat(S.name) ? '이' : ''); // 몽실 → 몽실이, 콩이 → 콩이
   const obj = (w) => w + (bat(w) ? '을' : '를');
-  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base' } : null);
+  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base', dirt: S.needs && S.needs.clean < 65 ? Math.min(1, Math.round((65 - S.needs.clean) / 5) / 10) : 0 } : null);
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const isNight = () => { const h = new Date().getHours(); return h >= 18 || h < 6; };
 
@@ -151,9 +151,16 @@
     const now = Date.now(), h = Math.min(48, (now - (S.needT || now)) / 3600000);
     const N = S.needs;
     N.full = clamp(N.full - 6 * h, 15, 100); N.clean = clamp(N.clean - 4 * h, 15, 100);
-    N.mood = clamp(N.mood - 3 * h, 20, 100); N.energy = clamp(N.energy + 10 * h, 0, 100);
+    N.mood = clamp(N.mood - 3 * h, 20, 100);
+    N.energy = S.asleep ? clamp(N.energy + 12 * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
     if (S.stage <= 2) { N.full = N.clean = N.energy = 100; } // 알은 먹거나 씻거나 자지 않는다
     S.needT = now;
+  }
+  // 기운이 25보다 낮으면 스르르 잠들고, 자는 동안 기운이 차서 가득 차면 깬다
+  function syncSleep() {
+    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) S.asleep = true;
+    if (S.asleep && (S.needs.energy >= 100 || S.stage < 3)) S.asleep = false;
+    const z = !!S.asleep; if (z === sleeping) return false; sleeping = z; return true;
   }
   function addNeed(k, v) { S.needs[k] = clamp(S.needs[k] + v, 0, 100); }
   function lowNeed() { const N = S.needs; if (N.full < 35) return 'hungry'; if (N.clean < 35) return 'dirty'; if (N.energy < 30) return 'sleepy'; return null; }
@@ -239,11 +246,12 @@
     show('scr-home'); renderHome(); neighborVisit();
     if (bday) setTimeout(() => { toast(`오늘은 <b>${NM()}의 생일</b>이에요! 파티를 준비해 줘요`); Snd.level(); }, 900);
     Snd.music(isNight() ? 'night' : 'home');
-    clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); }, 60000);
+    clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); if (syncSleep() && $('scr-home').classList.contains('on') && !sulking && !toyOn && !editing && !document.querySelector('.overlay.on')) renderHome(); }, 60000);
     setTimeout(() => {
       const lv = level();
       if (mode === 'new') { speak('home', S.kind === 'bunny' ? '(딸기 알이 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)' : '(별빛 알이 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)'); return; }
       if (mode === 'out') { speak('home', line('welcome')); return; }
+      if (sleeping) { speak('home', lv === 'talk' ? 'Zzz… 음냐… (기운이 없어서 자고 있어요)' : '(새근새근…)', { silent: true }); return; }
       if (lv !== 'talk') { speak('home', line('idle')); return; }
       const away = S.last ? (Date.now() - S.last) / 86400000 : 0;
       if (away >= 2) speak('home', lineFrom(LINES[S.kind].talk.back, 'back'));
@@ -259,7 +267,7 @@
     $('room-bg').innerHTML = roomSVG();
     renderParty(); renderRoomNav();
     placeHotspots();
-    sleeping = S.needs.energy < 25 && S.stage >= 3;
+    syncSleep();
     drawPet(); renderNeeds(); renderWishes(); renderCare(); hud();
   }
   function drawPet(mood) {
@@ -1689,7 +1697,7 @@
       openPick('무엇을 먹여 줄까요?', '냉장고에 있는 간식이에요', own.map(k => ({ id: k, art: Scene.food(k), name: FOODS[k].name, small: `${S.foods[k]}개`, badge: wishBadge('food', k) || tasteBadge('food', k) })), (k) => runAct('feed', k));
       return;
     }
-    if (sleeping && id !== 'nap') { sleeping = false; S.needs.energy = Math.max(S.needs.energy, 30); }
+    if (sleeping && id !== 'nap') { sleeping = false; S.asleep = false; S.needs.energy = Math.max(S.needs.energy, 30); }
     runAct(id);
   }
   function wishBadge(t, id) { return S.wishes.some(w => !w.done && w.t === t && w.id === id) ? '<span class="badge wishb">바람</span>' : ''; }
@@ -1732,7 +1740,7 @@
       actPet(mood); Snd.heart(); if (mood === 'happy') sparks(field, 14);
       actSay(ln); if (level() !== 'egg') Snd.babble(2, S.kind);
       save();
-      setTimeout(() => { overlay('ov-act', false); sleeping = false; renderHome(); react(mood, mood === 'happy' ? 'hop' : null); }, 2600);
+      setTimeout(() => { overlay('ov-act', false); sleeping = false; if (S.needs.energy >= 30) S.asleep = false; renderHome(); react(mood, mood === 'happy' ? 'hop' : null); }, 2600);
     };
     const tm = setTimeout(finish, id === 'play' ? 60000 : 40000); actClean.push(() => clearTimeout(tm));
     ({ feed: actFeed, pet: actRub, bath: actBath, play: actMathBubble, balloon: actBalloon, nap: actNap })[id](field, bottom, finish, id, foodId);
@@ -2178,7 +2186,7 @@
     }
     if (o.type === 'cook') {
       const stars = good >= 5 ? 3 : good >= 3 ? 2 : 1;
-      S.foods[o.id] = (S.foods[o.id] || 0) + 1; addNeed('full', -5); addNeed('mood', 5); addFriend(3);
+      S.foods[o.id] = (S.foods[o.id] || 0) + 1; S.asleep = false; addNeed('full', -5); addNeed('mood', 5); addFriend(3);
       S.log.push({ e: 'cook', id: o.id, stars, good }); if (o.id === 'cake') partyProgress('cake');
       $('res-art').innerHTML = Scene.food(o.id);
       $('res-title').innerHTML = `${FOODS[o.id].name} 완성! <span class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3 - stars)}</span></span>`;
@@ -2192,7 +2200,7 @@
       $('rb-home').onclick = () => { Snd.tap(); overlay('ov-result', false); backHome(); };
     } else {
       const P = PLACES[o.id]; const first = !S.known.place[o.id]; const ts = TASTE[S.kind].place[o.id]; S.known.place[o.id] = ts;
-      addNeed('energy', -20); addNeed('clean', -15); addNeed('full', -12); addNeed('mood', ts === 'love' ? 25 : 12); addFriend(ts === 'love' ? 8 : 5);
+      S.asleep = false; addNeed('energy', -20); addNeed('clean', -15); addNeed('full', -12); addNeed('mood', ts === 'love' ? 25 : 12); addFriend(ts === 'love' ? 8 : 5);
       S.log.push({ e: 'walk', id: o.id, good, finds: o.finds.slice() });
       $('res-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
       $('res-title').textContent = `${P.name} 도착!`;
