@@ -1051,10 +1051,28 @@
     } else if (act === 'water') { gPlot = i; nextGardenQ(); }
   }
   // ---------- 물 주기: 물뿌리개를 손가락으로 끌어 흙 위에서 기울이면 물이 쏟아진다 ----------
-  const CAN = `<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M30 30 h50 a6 6 0 0 1 6 6 v40 a8 8 0 0 1 -8 8 h-46 a8 8 0 0 1 -8 -8 v-40 a6 6 0 0 1 6 -6z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="3"/>
+  // 물뿌리개 그림: 몸통 안에 물 높이(lv 0~1)를 그린다. tap=true면 위에 수도꼭지와 물줄기까지
+  let canN = 0;
+  const CAN_BODY = 'M30 30 h50 a6 6 0 0 1 6 6 v40 a8 8 0 0 1 -8 8 h-46 a8 8 0 0 1 -8 -8 v-40 a6 6 0 0 1 6 -6z';
+  function canSVG(tap) {
+    const id = 'cnb' + (++canN);
+    return `<svg viewBox="0 ${tap ? -46 : 0} 120 ${tap ? 136 : 90}" aria-hidden="true"><defs><clipPath id="${id}"><path d="${CAN_BODY}"/></clipPath></defs>
+    ${tap ? `<path d="M4 -36 H50 a8 8 0 0 1 8 8 v4" fill="none" stroke="#AEB9C8" stroke-width="10" stroke-linecap="round"/><rect x="48" y="-24" width="20" height="8" rx="3" fill="#8F9CAE"/><path d="M30 -36 v-6" stroke="#8F9CAE" stroke-width="4"/><rect x="22" y="-46" width="16" height="6" rx="3" fill="#F28F8F"/>
+      <rect class="cstream" x="53" y="-16" width="10" height="0" rx="4" fill="#7FB0EA"/>` : ''}
     <path d="M86 40 q24 -4 24 22 q0 12 -14 16" fill="none" stroke="#5D8FD0" stroke-width="5" stroke-linecap="round"/>
     <path d="M26 44 L6 22" stroke="#5D8FD0" stroke-width="7" stroke-linecap="round"/><ellipse cx="5" cy="20" rx="6" ry="8" transform="rotate(-40 5 20)" fill="#7FB0EA" stroke="#5D8FD0" stroke-width="2.4"/>
-    <path d="M36 50 h38" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"/><path d="M50 62 l2 4 4.5 .6 -3.3 3.1 .8 4.5 -4 -2.2 -4 2.2 .8 -4.5 -3.3 -3.1 4.5 -.6z" fill="#FFD36E"/></svg>`;
+    <path d="${CAN_BODY}" fill="#E4EFFC"/>
+    <g clip-path="url(#${id})"><rect class="cw" x="20" y="84" width="72" height="0" fill="#6EA8EE"/><rect class="cws" x="20" y="84" width="72" height="3" fill="#B5D5FA" opacity="0"/></g>
+    <path d="M36 40 v30" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".55"/><path d="M58 52 l2 4 4.5 .6 -3.3 3.1 .8 4.5 -4 -2.2 -4 2.2 .8 -4.5 -3.3 -3.1 4.5 -.6z" fill="#FFD36E"/>
+    <path d="${CAN_BODY}" fill="none" stroke="#5D8FD0" stroke-width="3"/></svg>`;
+  }
+  function setCan(el, lv, stream) {
+    if (!el) return; const y = 84 - 54 * Math.max(0, Math.min(1, lv));
+    const w = el.querySelector('.cw'), ws = el.querySelector('.cws'), sm = el.querySelector('.cstream');
+    if (w) { w.setAttribute('y', y); w.setAttribute('height', 84 - y); }
+    if (ws) { ws.setAttribute('y', y - 1); ws.setAttribute('opacity', lv > .02 ? 1 : 0); }
+    if (sm) sm.setAttribute('height', stream ? Math.max(0, y + 16) : 0);
+  }
   let wcan = null;
   function startWatering(i) {
     const p = S.garden[i], N = 8;
@@ -1063,10 +1081,11 @@
       <div class="wplant">${plantSVG(p.seed, p.stage).replace(/<ellipse cx="40" cy="6[36]"[^>]*\/>/g, '')}</div>
       <div class="wsoil" id="wsoil">${'<i></i>'.repeat(N)}</div>
       <div class="wbar"><i id="wbar"></i></div>
-      <div class="wcan" id="wcan">${CAN}</div></div>`;
+      <div class="wcan" id="wcan">${canSVG(false)}</div></div>`;
     const st = $('wstage'), can = $('wcan'), soil = $('wsoil'), cells = [...soil.children], wet = new Array(N).fill(0);
     let drag = null, pour = false, last = 0, dripT = 0, raf = 0, done = false;
     wcan = { stop: () => { cancelAnimationFrame(raf); done = true; } };
+    setCan(can, 1);
     const place = (x, y) => { can.style.left = x + 'px'; can.style.top = y + 'px'; };
     const sr = () => st.getBoundingClientRect();
     place(sr().width * .74, sr().height * .12);
@@ -1088,7 +1107,7 @@
         st.appendChild(d); setTimeout(() => d.remove(), 520);
         const k = Math.floor((sx - so.left) / so.width * N);
         [k - 1, k, k + 1].forEach((j, q) => { if (j >= 0 && j < N) { wet[j] = Math.min(1, wet[j] + (q === 1 ? .06 : .025)); cells[j].style.setProperty('--w', wet[j]); cells[j].classList.toggle('full', wet[j] >= 1); } });
-        const tot = wet.reduce((a, b) => a + b, 0) / N; $('wbar').style.width = (tot * 100) + '%';
+        const tot = wet.reduce((a, b) => a + b, 0) / N; $('wbar').style.width = (tot * 100) + '%'; setCan(can, 1 - tot);
         if (t - dripT > 380) { dripT = t; Snd.drip(); }
         if (wet.every(w => w >= 1)) finishWater(i);
       }
@@ -1106,6 +1125,7 @@
     const U = Prob.UNITS[gq.unit]; const tag = $('gq-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
     $('gq-fig').innerHTML = gq.fig; $('gq-text').innerHTML = gq.q; $('gq-text').classList.toggle('long', gq.q.replace(/<[^>]+>/g, '').length > 34 || !!gq.fig);
     $('gq-msg').textContent = '맞히면 물뿌리개에 물이 가득 차요!';
+    $('gq-can').className = 'gcan'; $('gq-can').innerHTML = canSVG(true); setCan($('gq-can'), 0);
     const box = $('gq-choices'); box.innerHTML = ''; box.className = 'choices' + (gq.choices.length === 3 ? ' three' : '');
     gq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (gq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => gardenAnswer(b, c); box.appendChild(b); });
     gq.lock = false;
@@ -1115,12 +1135,21 @@
     const all = [...$('gq-choices').children];
     if (ok) {
       btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy++;
-      Snd.ok(); $('gq-msg').textContent = '정답! 물뿌리개에 물이 가득 찼어요';
-      setTimeout(() => { gq = null; save(); hud(); startWatering(gPlot); }, 900);
+      Snd.ok(); $('gq-msg').textContent = '정답! 물뿌리개에 물을 받아요';
+      const gc = $('gq-can'), D = 1400; let t0 = 0, dr = 0; gc.classList.add('filling');
+      const fill = (t) => {
+        if (!gq || !$('ov-garden').classList.contains('on')) return;
+        if (!t0) t0 = t; const k = Math.min(1, (t - t0) / D); setCan(gc, 1 - Math.pow(1 - k, 2), k < 1);
+        if (t - dr > 260 && k < 1) { dr = t; Snd.drip(); }
+        if (k < 1) return requestAnimationFrame(fill);
+        gc.classList.remove('filling'); gc.classList.add('full'); Snd.pop(); $('gq-msg').textContent = '물뿌리개에 물이 가득 찼어요!';
+        setTimeout(() => { if (!gq) return; gq = null; save(); hud(); startWatering(gPlot); }, 800);
+      };
+      setTimeout(() => requestAnimationFrame(fill), 350);
     } else {
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === gq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
       if (!S.review.some(r => r.unit === gq.unit && r.type === gq.type)) S.review.push({ unit: gq.unit, type: gq.type, due: S.total + R(3, 6) });
-      Snd.no(); $('gq-msg').innerHTML = `정답은 ${gq.ans}. 다른 문제로 다시 해 봐요!`;
+      Snd.no(); $('gq-msg').innerHTML = `정답은 ${gq.ans}. 다른 문제로 다시 해 봐요!`; $('gq-can').classList.add('sad');
       setTimeout(nextGardenQ, 2200);
     }
     save();
