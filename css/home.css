@@ -637,7 +637,7 @@ body.lowfx .wl{transition-duration:.4s}
 /* 나들이에서는 포근한 바구니에 담겨 함께 간다 */
 .opet.egg::after{content:"";position:absolute;left:14%;right:14%;bottom:-2%;height:26%;border-radius:0 0 46% 46%/0 0 90% 90%;background:repeating-linear-gradient(90deg,#E8B983 0 8px,#D9A56B 8px 10px);box-shadow:inset 0 5px 0 #F2CF9F,0 4px 0 rgba(0,0,0,.08);z-index:1}
 .opet.egg svg{position:relative;z-index:0}
-.care-row.egg{grid-template-columns:1fr}
+.care-row.egg{grid-template-columns:repeat(4,1fr)}
 
 /* 오븐: 그릇째 들어갔다 나온다 (3.6초) */
 .stage-bg.bowl-away .bowlg{opacity:0}
@@ -913,3 +913,62 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .petgift{position:absolute;z-index:6;width:clamp(48px,6vw,64px);height:clamp(48px,6vw,64px);border:0;background:none;padding:0;transform:translate(-50%,-50%);animation:giftbob 1s ease-in-out infinite;cursor:pointer}
 .petgift svg{width:100%;height:100%;filter:drop-shadow(0 4px 4px rgba(0,0,0,.15))}
 @keyframes giftbob{0%,100%{transform:translate(-50%,-50%) rotate(-4deg)}50%{transform:translate(-50%,-62%) rotate(4deg)}}
+
+/* ---------- 대사 속 몸짓 ---------- */
+.act-roll svg{animation:proll 1.7s ease-in-out;transform-origin:50% 62%}
+.act-spin svg{animation:pspinb .9s ease-in-out;transform-origin:50% 60%}
+.act-dance svg{animation:pdance .5s ease-in-out 3;transform-origin:50% 100%}
+.act-startle svg{animation:pstart .28s ease-out 2;transform-origin:50% 100%}
+.act-look svg{animation:plook 1.6s ease-in-out}
+.act-stomp svg{animation:pstomp .18s ease-in-out 8;transform-origin:50% 100%}
+.act-float svg{animation:pfloat 1.8s ease-in-out}
+.act-hug svg{animation:phug .7s ease-in-out 2;transform-origin:50% 100%}
+.act-sniff svg{animation:psniff .3s ease-in-out 4;transform-origin:50% 100%}
+.act-wobble svg{animation:wobble .7s ease-in-out 2;transform-origin:50% 90%}
+@keyframes proll{0%{transform:none}40%{transform:translateX(34%) rotate(360deg)}55%{transform:translateX(34%) rotate(360deg)}100%{transform:translateX(0) rotate(0)}}
+@keyframes pspinb{0%{transform:none}100%{transform:rotate(360deg)}}
+@keyframes pdance{0%,100%{transform:rotate(0) translateY(0)}25%{transform:rotate(-10deg) translateY(-6px)}75%{transform:rotate(10deg) translateY(-6px)}}
+@keyframes pstart{0%,100%{transform:none}40%{transform:translateY(-10px) scale(.96,1.05)}}
+@keyframes plook{0%,100%{transform:none}25%{transform:translateX(-5px) rotate(-5deg)}70%{transform:translateX(5px) rotate(5deg)}}
+@keyframes pstomp{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes pfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@keyframes phug{0%,100%{transform:scale(1)}50%{transform:scale(.93,1.06)}}
+@keyframes psniff{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg) translateY(2px)}}
+.pf-cold{color:#7FB0EA;font-size:clamp(20px,2.4vw,30px);animation-name:petpuff}
+.pf-warm{color:#F28D6B;animation-name:petup}
+.pf-breeze{color:#9CC8FF;animation-name:petpuff}
+/* ---------- 알 따뜻함 막대 ---------- */
+.need.temp{gap:6px}
+.need.temp .thermo{width:24px;height:24px;flex:none}.need.temp .thermo svg{width:100%;height:100%}
+.need .nb.tb{position:relative;background:linear-gradient(90deg,#9CC8FF 0 30%,#A8E6CF 30% 70%,#FFB3B3 70%)}
+.need .nb.tb i{position:absolute;top:-3px;width:6px!important;height:calc(100% + 6px);border-radius:3px;background:#fff;box-shadow:0 0 0 2px #7A6283;transform:translateX(-50%)}
+.need.temp b{font-size:12px;font-weight:700;color:#7A6283;white-space:nowrap}
+.need.temp.cold b{color:#5D8FD0}.need.temp.hot b{color:#E5679A}
+/* ---------- 둥지 ---------- */
+.walker .nest{position:absolute;left:50%;width:96%;transform:translateX(-50%);pointer-events:none}
+.walker .nest svg{width:100%;height:auto;display:block}
+.walker .nest-b{bottom:-2%;z-index:-1}
+.walker .nest-b.n2{bottom:-2%;width:104%}
+.walker .nest-f{bottom:-6%;z-index:2}
+.walker .nest-f.n2{animation:rock 3.4s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes rock{0%,100%{transform:translateX(-50%) rotate(-2deg)}50%{transform:translateX(-50%) rotate(2deg)}}
+.walker .eggprop{position:absolute;inset:0;z-index:3;pointer-events:none}
+.walker .eggprop svg{width:100%;height:100%}
+.walker .eggprop.warm{animation:blanketin .5s ease-out}
+.walker .eggprop.cool .fanw{animation:fanw .3s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:20% 90%}
+@keyframes blanketin{from{transform:translateY(-30%);opacity:0}to{transform:none;opacity:1}}
+@keyframes fanw{from{transform:rotate(-14deg)}to{transform:rotate(12deg)}}
+/* ---------- 알 산책 유모차 ---------- */
+.opet.pram::after{display:none}
+.opet.pram .pram-b,.opet.pram .pram-f{position:absolute;inset:0;pointer-events:none}
+.opet.pram .pram-b{z-index:0}.opet.pram .pram-f{z-index:2}
+.opet.pram .pram-egg{position:absolute;left:12%;top:-14%;width:62%;height:76%;z-index:1}
+.opet.pram .pram-egg svg{width:100%;height:100%}
+.opet.pram.walking svg{animation:none}
+.opet.pram.walking .pram-egg svg{animation:walkbob .3s ease-in-out 4}
+.opet.pram.walking .wheel{animation:wheelspin .5s linear 3}
+@keyframes wheelspin{to{transform:rotate(360deg)}}
+
+.walker .nest-c{bottom:4%;width:118%;z-index:-2}
+.walker .nest-c .mob{animation:mob 4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
+@keyframes mob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
