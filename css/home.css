@@ -766,7 +766,8 @@ button.grow:active{transform:scale(.97)}
 .grc em{font-style:normal;font-size:11.5px;color:#9A86A6}
 .grc.got em{color:#3E9D78}
 .grc.lock{background:#F4F0F8;box-shadow:0 3px 0 #E4DCEC}
-.grc.lock .grart svg{filter:brightness(0) opacity(.2)}
+.grq{width:100%;height:100%;display:grid;place-items:center;font-family:var(--fh);font-size:clamp(44px,6vw,64px);color:#CDBFDC;line-height:1}
+.grc.next .grq{color:#B49BE6}
 .grc.lock small{color:#A79BB2;font-family:var(--fh);letter-spacing:2px}
 .grc.next{box-shadow:0 0 0 2px #C9B6F0,0 3px 0 #E4DCEC}
 .grc.next small{letter-spacing:0;font-family:inherit;color:#8E7BB0}

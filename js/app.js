@@ -2260,17 +2260,15 @@
   function openGrow() {
     const cur = S.stage, nx = cur + 1, max = cur >= MAX_STAGE;
     $('gr-title').textContent = `${NM()}의 성장 기록`;
-    const left = max ? 0 : Math.max(0, STAGE_XP[nx] - S.xp);
-    $('gr-sub').innerHTML = max ? '가장 높은 10단계까지 다 자랐어요!' : `문제를 <b>${left}개</b> 더 맞히면 ${nx}단계가 돼요`;
+    $('gr-sub').innerHTML = max ? '가장 높은 10단계까지 다 자랐어요!' : `지금은 <b>${cur}단계 ${STAGE_NAME[S.kind][cur]}</b>예요. 문제를 맞힐수록 자라요!`;
     $('gr-fill').style.width = max ? '100%' : Math.max(4, (S.xp - STAGE_XP[cur]) / (STAGE_XP[nx] - STAGE_XP[cur]) * 100) + '%';
     let h = '';
     for (let st = 1; st <= MAX_STAGE; st++) {
       const got = st <= cur, now = st === cur, next = st === nx;
       const look = st >= 3 ? { wear: {}, tint: 'base' } : null;
       h += `<div class="grc ${got ? 'got' : 'lock'} ${now ? 'now' : ''} ${next ? 'next' : ''}">${now ? '<span class="grnow">지금</span>' : ''}
-        <span class="grart">${Art.draw(S.kind, st, got ? 'happy' : 'idle', look)}</span>
-        <b>${st}단계</b><small>${got || next ? STAGE_NAME[S.kind][st] : '???'}</small>
-        <em>${st === 1 ? '처음' : got ? `✓ 문제 ${STAGE_XP[st]}개` : `문제 ${STAGE_XP[st]}개`}</em></div>`;
+        <span class="grart">${got ? Art.draw(S.kind, st, 'happy', look) : '<span class="grq">?</span>'}</span>
+        <b>${st}단계</b><small>${got || next ? STAGE_NAME[S.kind][st] : '???'}</small></div>`;
     }
     $('gr-grid').innerHTML = h; overlay('ov-grow', true);
     const n = $('gr-grid').querySelector('.now'); if (n) n.scrollIntoView({ block: 'nearest' });
