@@ -68,7 +68,7 @@
   <header class="hud">
     <div class="hud-l">
       <div class="chip name-chip"><span id="hud-stage">1단계</span><b id="hud-name">몽실</b></div>
-      <div class="grow" aria-label="자라기"><span class="glabel">자라기</span><div class="grow-bar"><i id="grow-fill"></i></div></div>
+      <button class="grow" id="btn-grow" aria-label="자라기: 성장 과정 보기"><span class="glabel">자라기</span><div class="grow-bar"><i id="grow-fill"></i></div></button>
       <div class="grow friend" aria-label="우정"><span class="glabel">우정 <b id="hud-flv">1</b></span><div class="grow-bar"><i id="friend-fill"></i></div></div>
     </div>
     <div class="hud-r">
@@ -272,6 +272,15 @@
 </div>
 
 <!-- 자랐어요 -->
+<div class="overlay" id="ov-grow">
+  <div class="sheet wide growsheet">
+    <h3 class="h3" id="gr-title">성장 기록</h3>
+    <p class="sub" id="gr-sub"></p>
+    <div class="grbar"><i id="gr-fill"></i></div>
+    <div class="grgrid" id="gr-grid"></div>
+    <button class="btn big primary" data-close="ov-grow">닫기</button>
+  </div>
+</div>
 <div class="overlay" id="ov-level">
   <div class="sheet level">
     <div class="level-burst"></div>

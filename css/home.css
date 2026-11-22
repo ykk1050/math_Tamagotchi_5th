@@ -749,3 +749,28 @@ body.lowfx .wl{transition-duration:.4s}
 .objcup .steam path{animation:cupsteam 1.4s ease-in-out infinite;opacity:0}
 .objcup .steam .s1{animation-delay:.6s}
 @keyframes cupsteam{0%{opacity:0;transform:translateY(3px)}40%{opacity:.9}100%{opacity:0;transform:translateY(-5px)}}
+
+/* 성장 기록 */
+button.grow{border:0;font:inherit;cursor:pointer;touch-action:manipulation}
+button.grow:active{transform:scale(.97)}
+.growsheet{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(940px,100%)}
+.growsheet .sub{margin:0}.growsheet .sub b{color:var(--rose-d);font-size:1.15em}
+.grbar{width:min(420px,90%);height:14px;border-radius:999px;background:#F3E6F0;overflow:hidden}
+.grbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#F7A0C1,#B9A7F5,#8FE0C9)}
+.grgrid{width:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.grc{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px 10px;border-radius:20px;background:#fff;box-shadow:0 3px 0 #EADBEA;text-align:center}
+.grc .grart{width:100%;max-width:120px;aspect-ratio:160/156;display:block}
+.grc .grart svg{width:100%;height:100%;display:block}
+.grc b{font-family:var(--fh);font-weight:400;font-size:16px;color:var(--ink)}
+.grc small{font-size:13px;color:var(--ink-2);line-height:1.25;min-height:2.5em;display:flex;align-items:center;word-break:keep-all}
+.grc em{font-style:normal;font-size:11.5px;color:#9A86A6}
+.grc.got em{color:#3E9D78}
+.grc.lock{background:#F4F0F8;box-shadow:0 3px 0 #E4DCEC}
+.grc.lock .grart svg{filter:brightness(0) opacity(.2)}
+.grc.lock small{color:#A79BB2;font-family:var(--fh);letter-spacing:2px}
+.grc.next{box-shadow:0 0 0 2px #C9B6F0,0 3px 0 #E4DCEC}
+.grc.next small{letter-spacing:0;font-family:inherit;color:#8E7BB0}
+.grc.now{background:#FFF6FA;box-shadow:0 0 0 3px #F28DB2,0 3px 0 #EADBEA}
+.grnow{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--rose);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;z-index:1}
+.growsheet>*{flex:none}
+@media (max-width:560px){.grgrid{grid-template-columns:repeat(3,1fr);gap:8px}.grc b{font-size:14px}.grc small{font-size:12px}}

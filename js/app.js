@@ -2256,6 +2256,26 @@
     let msg = LV_MSG[S.kind][S.stage]; if (S.stage === 5) msg += '<br><small>이제 친구가 이야기를 들려줄 수 있어요.</small>'; if (S.stage >= MAX_STAGE) msg += '<br><small>가장 높은 단계까지 다 자랐어요! 정말 잘했어요.</small>';
     $('level-line').innerHTML = msg; overlay('ov-level', true); S.log.push({ e: 'grow', stage: S.stage });
   }
+  // ---------- 성장 기록: 1~10단계, 아직 못 간 단계는 실루엣 ----------
+  function openGrow() {
+    const cur = S.stage, nx = cur + 1, max = cur >= MAX_STAGE;
+    $('gr-title').textContent = `${NM()}의 성장 기록`;
+    const left = max ? 0 : Math.max(0, STAGE_XP[nx] - S.xp);
+    $('gr-sub').innerHTML = max ? '가장 높은 10단계까지 다 자랐어요!' : `문제를 <b>${left}개</b> 더 맞히면 ${nx}단계가 돼요`;
+    $('gr-fill').style.width = max ? '100%' : Math.max(4, (S.xp - STAGE_XP[cur]) / (STAGE_XP[nx] - STAGE_XP[cur]) * 100) + '%';
+    let h = '';
+    for (let st = 1; st <= MAX_STAGE; st++) {
+      const got = st <= cur, now = st === cur, next = st === nx;
+      const look = st >= 3 ? { wear: {}, tint: 'base' } : null;
+      h += `<div class="grc ${got ? 'got' : 'lock'} ${now ? 'now' : ''} ${next ? 'next' : ''}">${now ? '<span class="grnow">지금</span>' : ''}
+        <span class="grart">${Art.draw(S.kind, st, got ? 'happy' : 'idle', look)}</span>
+        <b>${st}단계</b><small>${got || next ? STAGE_NAME[S.kind][st] : '???'}</small>
+        <em>${st === 1 ? '처음' : got ? `✓ 문제 ${STAGE_XP[st]}개` : `문제 ${STAGE_XP[st]}개`}</em></div>`;
+    }
+    $('gr-grid').innerHTML = h; overlay('ov-grow', true);
+    const n = $('gr-grid').querySelector('.now'); if (n) n.scrollIntoView({ block: 'nearest' });
+  }
+  $('btn-grow').onclick = () => { Snd.tap(); poked(); openGrow(); };
   $('btn-level').onclick = () => {
     Snd.tap(); overlay('ov-level', false); renderHome(); react('happy', 'hop');
     if (S.stage < MAX_STAGE && S.xp >= STAGE_XP[S.stage + 1]) { setTimeout(() => levelUp(afterLevel), 400); return; }
