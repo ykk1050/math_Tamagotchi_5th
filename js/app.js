@@ -35,6 +35,7 @@
   const bat = (w) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0; };
   const NM = () => S.name + (bat(S.name) ? '이' : ''); // 몽실 → 몽실이, 콩이 → 콩이
   const obj = (w) => w + (bat(w) ? '을' : '를');
+  const SC = (t) => `<i class="sc">★${t}</i>`;
   const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base', dirt: S.needs && S.needs.clean < 65 ? Math.min(1, Math.round((65 - S.needs.clean) / 5) / 10) : 0 } : null);
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const isNight = () => { const h = new Date().getHours(); return h >= 18 || h < 6; };
@@ -288,8 +289,8 @@
   }
   function renderWishes() {
     const done = S.wishes.filter(w => w.done).length;
-    $('wish-count').textContent = `${done} / ${S.wishes.length}`;
-    $('wish-list').innerHTML = S.wishes.map((w, i) => `<div class="wish ${w.done ? 'done' : ''}" data-i="${i}"><span class="wi">${wishIcon(w)}</span><span class="wt">${NM()}는 ${wishText(w)}<small>${w.t === 'food' ? '간식 만들기 → 먹이기' : w.t === 'place' ? '산책 가기' : w.id === 'pet' ? (S.stage <= 2 ? '알을 손가락으로 살살 문질러요' : '친구를 손가락으로 쓰다듬어요') : '돌보기'}</small></span><span class="wc">${w.done ? '✓' : ''}</span></div>`).join('');
+    $('wish-count').innerHTML = `${done < S.wishes.length && S.wishes.length > 1 ? SC('+10 모두') + ' ' : ''}${done} / ${S.wishes.length}`;
+    $('wish-list').innerHTML = S.wishes.map((w, i) => `<div class="wish ${w.done ? 'done' : ''}" data-i="${i}"><span class="wi">${wishIcon(w)}</span><span class="wt">${NM()}는 ${wishText(w)}<small>${w.t === 'food' ? '간식 만들기 → 먹이기' : w.t === 'place' ? '산책 가기' : w.id === 'pet' ? (S.stage <= 2 ? '알을 손가락으로 살살 문질러요' : '친구를 손가락으로 쓰다듬어요') : '돌보기'}${w.done ? '' : ' ' + SC('+5')}</small></span><span class="wc">${w.done ? '✓' : ''}</span></div>`).join('');
     const w = S.wishes.find(x => !x.done);
     $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
   }
@@ -298,7 +299,7 @@
     const want = { feed: S.needs.full < 40 || S.wishes.some(w => !w.done && w.t === 'food' && S.foods[w.id]), bath: S.needs.clean < 40, nap: S.needs.energy < 35, play: S.needs.mood < 45 };
     S.wishes.forEach(w => { if (!w.done && w.t === 'care' && (w.id !== 'pet' || S.stage <= 2)) want[w.id] = true; });
     $('care-row').classList.toggle('egg', S.stage <= 2);
-    $('care-row').innerHTML = items.map(([k, n]) => `<button class="care ${want[k] ? 'want' : ''}" data-care="${k}"><span class="ci">${ICON[k]}</span>${n}</button>`).join('');
+    $('care-row').innerHTML = items.map(([k, n]) => `<button class="care ${want[k] ? 'want' : ''}" data-care="${k}">${k === 'play' ? SC('+6') : ''}<span class="ci">${ICON[k]}</span>${n}</button>`).join('');
     $('care-row').querySelectorAll('.care').forEach(b => b.onclick = () => { Snd.tap(); poked(); doCare(b.dataset.care); });
   }
   $('think').onclick = () => { const w = S.wishes.find(x => !x.done); if (!w) return; Snd.tap(); speak('home', level() === 'talk' ? wishSay(w) : line('idle')); react('idle', 'squish'); };
@@ -375,7 +376,18 @@
   function makeUp() {
     if (!sulking) return; sulking = false; madeAt = Date.now(); clearTimeout(sulkT); sulkHint = false; $('walker').classList.remove('sulk');
     react('happy', 'hop'); heartAtPet(); setTimeout(heartAtPet, 250); Snd.heart(); Snd.combo();
-    speak('home', L3('makeup')); addNeed('mood', 8); addFriend(2); S.log.push({ e: 'makeup' }); renderNeeds(); renderWishes(); save(); startWander();
+    const ml = L3('makeup'); speak('home', ml); addNeed('mood', 8); addFriend(2); S.log.push({ e: 'makeup' }); renderNeeds(); renderWishes(); save();
+    if (/무지개/.test(ml)) { rainbowUnder(); objBusy = Date.now() + 4200; setTimeout(() => { if (!sulking) startWander(); }, 4200); } else startWander();
+  }
+  // 친구 발밑에 진짜 무지개가 떴다가 사라진다
+  function rainbowUnder() {
+    const wk = $('walker'); wk.querySelectorAll('.rbow').forEach(e => e.remove());
+    const C = ['#F58A8A', '#F8B46A', '#F7DC6F', '#8ED79A', '#7FB8F0', '#B39AF0'];
+    const el = document.createElement('div'); el.className = 'rbow';
+    el.innerHTML = `<svg viewBox="0 0 200 92" aria-hidden="true">${C.map((c, i) => `<path d="M${8 + i * 8} 90 A${92 - i * 8} ${82 - i * 8} 0 0 1 ${192 - i * 8} 90" fill="none" stroke="${c}" stroke-width="8.4" stroke-linecap="round"/>`).join('')}
+      <g fill="#fff" stroke="#E4E0F5" stroke-width="2"><circle cx="16" cy="86" r="10"/><circle cx="30" cy="88" r="8"/><circle cx="6" cy="89" r="7"/><circle cx="184" cy="86" r="10"/><circle cx="170" cy="88" r="8"/><circle cx="194" cy="89" r="7"/></g></svg>`;
+    wk.insertBefore(el, wk.firstChild); Snd.chime && Snd.chime();
+    setTimeout(() => el.classList.add('out'), 3600); setTimeout(() => el.remove(), 4400);
   }
   function onTap(x) {
     poked(); const now = Date.now();
@@ -534,6 +546,7 @@
     return goTo(x, () => objReact(id, o, b), false) !== false;
   }
   if (/[?&]dev/.test(location.search)) window.__objPlay = (id) => { lastTouch = 0; lastObj = null; objBusy = 0; return objPlay(id); };
+  if (/[?&]dev/.test(location.search)) window.__makeUp = () => { sulking = true; makeUp(); };
   function objReact(id, o, b) {
     if (toyOn) return; // 놀잇감으로 노는 중이면 물건 놀이는 그만
     if (sulking || sleeping || document.querySelector('.overlay.on')) { objBusy = 0; return; }
@@ -969,7 +982,7 @@
   function nextRiddle() {
     rq = Prob.next(S.rot, S.review, S.total); const U = Prob.UNITS[rq.unit];
     rsay(L4('read')); $('rq-more').style.display = 'none';
-    const tag = $('rq-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+    const tag = $('rq-tag'); tag.innerHTML = `${U.sem}학기 · ${U.name} ${SC('+1')}`; tag.classList.toggle('s1', U.sem === 1);
     $('rq-fig').innerHTML = rq.fig; $('rq-text').innerHTML = rq.q; $('rq-text').classList.toggle('long', rq.q.replace(/<[^>]+>/g, '').length > 34 || !!rq.fig);
     const box = $('rq-choices'); box.innerHTML = ''; box.className = 'choices' + (rq.choices.length === 3 ? ' three' : '');
     rq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (rq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => riddleAnswer(b, c); box.appendChild(b); });
@@ -1044,7 +1057,7 @@
       if (!p) { st = '빈 밭'; btn = `<button class="btn primary" data-act="plant" data-i="${i}">씨앗 심기</button>`; }
       else if (p.stage >= RIPE) { st = `${SEEDS[p.seed].name} 다 자랐어요!`; btn = `<button class="btn primary" data-act="harvest" data-i="${i}">수확하기</button>`; }
       else if (p.watered != null) { st = `${SEEDS[p.seed].name} · 물을 줬어요`; btn = `<small class="wait">내일 자라요</small>`; }
-      else { st = `${SEEDS[p.seed].name} · ${['씨앗', '새싹', '잎'][p.stage]}`; btn = `<button class="btn" data-act="water" data-i="${i}">물 주기 (문제 1개)</button>`; }
+      else { st = `${SEEDS[p.seed].name} · ${['씨앗', '새싹', '잎'][p.stage]}`; btn = `<button class="btn" data-act="water" data-i="${i}">물 주기 (문제 1개) ${SC('+1')}</button>`; }
       return `<div class="plot ${p && p.watered != null ? 'wet' : ''}"><span class="pa">${plantSVG(p && p.seed, p ? p.stage : 0)}</span><b>${st}</b>${p && p.stage < RIPE ? `<span class="pbar"><i style="width:${(p.stage / RIPE) * 100}%"></i></span>` : ''}${btn}</div>`;
     }).join('');
     $('garden-plots').querySelectorAll('[data-act]').forEach(b => b.onclick = () => { Snd.tap(); gardenAct(b.dataset.act, +b.dataset.i); });
@@ -1130,7 +1143,7 @@
   }
   function nextGardenQ() {
     gq = Prob.next(S.rot, S.review, S.total); renderGarden();
-    const U = Prob.UNITS[gq.unit]; const tag = $('gq-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+    const U = Prob.UNITS[gq.unit]; const tag = $('gq-tag'); tag.innerHTML = `${U.sem}학기 · ${U.name} ${SC('+1')}`; tag.classList.toggle('s1', U.sem === 1);
     $('gq-fig').innerHTML = gq.fig; $('gq-text').innerHTML = gq.q; $('gq-text').classList.toggle('long', gq.q.replace(/<[^>]+>/g, '').length > 34 || !!gq.fig);
     $('gq-msg').textContent = '맞히면 물뿌리개에 물이 가득 차요!';
     $('gq-can').className = 'gcan'; $('gq-can').innerHTML = canSVG(true); setCan($('gq-can'), 0);
@@ -1250,7 +1263,7 @@
     const met = S.nb[N.id] || 0;
     nq = Prob.story(N.id);
     nsay(met ? `또 왔구나! ${pick(['이번에도 도와줄래?', '오늘도 부탁 하나 있어!', '기다리고 있었어!'])}` : N.hi);
-    const U = Prob.UNITS[nq.unit] || { sem: 1, name: '' }; const tag = $('nq-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+    const U = Prob.UNITS[nq.unit] || { sem: 1, name: '' }; const tag = $('nq-tag'); tag.innerHTML = `${U.sem}학기 · ${U.name}${N.gift[0] === 'candy' ? ' ' + SC('+' + N.gift[1]) : ''}`; tag.classList.toggle('s1', U.sem === 1);
     $('nq-text').innerHTML = nq.q; $('nq-text').classList.add('long');
     const box = $('nq-choices'); box.innerHTML = ''; box.className = 'choices' + (nq.choices.length === 3 ? ' three' : '');
     nq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (nq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => nbAnswer(b, c); box.appendChild(b); });
@@ -1475,7 +1488,7 @@
     } else {
       rq = Prob.next(S.rot, S.review, S.total); const U = Prob.UNITS[rq.unit];
       readSay(level() === 'talk' ? '마지막 장에 수수께끼가 있어! 같이 풀어 보자.' : L3('care'));
-      const tag = $('rd-tag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
+      const tag = $('rd-tag'); tag.innerHTML = `${U.sem}학기 · ${U.name} ${SC('+2')}`; tag.classList.toggle('s1', U.sem === 1);
       $('rd-fig').innerHTML = rq.fig; $('rd-text').innerHTML = rq.q; $('rd-text').classList.toggle('long', rq.q.replace(/<[^>]+>/g, '').length > 30 || !!rq.fig);
       const box = $('rd-choices'); box.innerHTML = ''; box.className = 'choices' + (rq.choices.length === 3 ? ' three' : '');
       rq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (rq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => readAnswer(b, c); box.appendChild(b); });
@@ -2011,7 +2024,7 @@
     openPick('무엇을 만들까요?', '단계마다 문제를 풀면 간식이 완성돼요', Object.keys(FOODS).map(k => { const nd = NEED[k]; return { id: k, art: Scene.food(k), name: FOODS[k].name, small: (nd ? `${ING_NAME[nd]} 1개 필요 (${S.pantry[nd] || 0}개 있음)` : '재료 넉넉해요') + (S.foods[k] ? ` · 냉장고 ${S.foods[k]}` : ''), badge: (partyOn() && k === 'cake' && !S.party.cake ? '<span class="badge wishb">생일</span>' : '') || wishBadge('food', k) || tasteBadge('food', k) }; }), startCook);
   }
   function openWalk() {
-    openPick('어디로 산책 갈까요?', '한 걸음마다 문제를 풀며 걸어가요', Object.keys(PLACES).map(k => ({ id: k, art: Scene.path(k, 6, false, 2.65), name: PLACES[k].name, small: S.known.place[k] ? '가 본 곳' : '처음 가 봐요', badge: wishBadge('place', k) || tasteBadge('place', k) })), startWalk, true);
+    openPick('어디로 산책 갈까요?', '한 걸음마다 문제를 풀며 걸어가요', Object.keys(PLACES).map(k => ({ id: k, art: Scene.path(k, 6, false, 2.65), name: PLACES[k].name, small: (S.known.place[k] ? '가 본 곳' : '처음 가 봐요') + (NEIGH[k] && NEIGH[k].gift[0] === 'candy' ? ' ' + SC('+' + NEIGH[k].gift[1] + ' 선물') : ''), badge: wishBadge('place', k) || tasteBadge('place', k) })), startWalk, true);
   }
   $('btn-cook').onclick = () => { Snd.tap(); poked(); openCook(); };
   $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.needs.energy < 15 && S.stage >= 3) { speak('home', level() === 'talk' ? line('sleepy') : line('idle')); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } openWalk(); };
