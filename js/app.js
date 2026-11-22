@@ -1762,7 +1762,7 @@
       setTimeout(() => { OUT.fill++; const pc = $('sew-piece'); if (pc) pc.className = 's' + OUT.fill; Snd.pop(); }, T * .6);
       setTimeout(() => {
         OUT.anim = false; renderOut();
-        if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); const pc = $('sew-piece'); if (pc) pc.classList.add('done'); setTimeout(finishOut, 1300); }
+        if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); const pc = $('sew-piece'); if (pc) pc.classList.add('done'); setTimeout(finishOut, 2600); }
         else nextQ();
       }, T);
       return;
@@ -1776,7 +1776,7 @@
       if (ADDS.includes(st[1])) setTimeout(() => { OUT.fill++; setFill(); Snd.pop(); }, T * CookFX.land(st[1]));
       setTimeout(() => {
         OUT.anim = false; renderOut();
-        if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); setTimeout(finishOut, CookFX.done($('cook-fx'), Scene.food(OUT.id))); }
+        if (OUT.step >= OUT.n) { Snd.level(); outReact('happy', 'hop'); OUT.anim = true; $('step-label').textContent = '완성!'; setTimeout(() => speak('out', level() === 'talk' ? fillJo(pick(['우와, {x} 완성! 냄새 좋다~', '{x} 다 됐다! 진짜 맛있겠다.', '짠! {x} 완성이야!']), '{x}', FOODS[OUT.id].name) : line('happy')), 500); setTimeout(finishOut, CookFX.done($('cook-fx'), Scene.food(OUT.id))); }
         else nextQ();
       }, T);
     } else {

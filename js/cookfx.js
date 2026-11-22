@@ -1,5 +1,6 @@
 // 요리 단계 애니메이션: 재료·도구 그림과 동작 (모두 SVG·CSS로 직접 만듦)
 const CookFX = (() => {
+  let clearT = 0; // 앞 단계 정리 타이머 (완성 그림을 지우지 않게 취소한다)
   const S = (vb, inner) => `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${inner}</svg>`;
   // 재료와 도구 그림 (64×64)
   const ING = {
@@ -31,6 +32,14 @@ const CookFX = (() => {
     <rect x="14" y="58" width="92" height="32" rx="8" fill="#E8C58F" stroke="#B88A4E" stroke-width="2.4"/><path d="M14 70 h92 M14 80 h92" stroke="#C99A5E" stroke-width="2"/>${[26, 42, 58, 74, 90].map(x => `<path d="M${x} 58 v32" stroke="#C99A5E" stroke-width="1.4" opacity=".7"/>`).join('')}
     <rect x="14" y="26" width="92" height="34" rx="8" fill="#EFCF9B" stroke="#B88A4E" stroke-width="2.4"/><path d="M14 38 h92 M14 48 h92" stroke="#C99A5E" stroke-width="2"/>${[26, 42, 58, 74, 90].map(x => `<path d="M${x} 26 v34" stroke="#C99A5E" stroke-width="1.4" opacity=".7"/>`).join('')}`;
   const LID = `<path d="M10 46 q50 -46 100 0z" fill="#F2D6A8" stroke="#B88A4E" stroke-width="2.4"/><path d="M24 40 q36 -28 72 0 M38 34 q22 -16 44 0" stroke="#C99A5E" stroke-width="2" fill="none"/><rect x="52" y="4" width="16" height="10" rx="4" fill="#C99A5E"/>`;
+  // 큰 오븐: 몸통과 안쪽(어두운 칸). 문은 따로 그려서 열고 닫는다
+  const OVEN = `<rect x="4" y="4" width="112" height="92" rx="12" fill="#FFF4F7" stroke="#E5679A" stroke-width="3"/>
+    <rect x="18" y="22" width="84" height="56" rx="7" fill="#4E3F63"/><rect x="22" y="70" width="76" height="3" rx="1.5" fill="#7A6890"/>
+    <circle cx="20" cy="13" r="3.4" fill="#E5679A"/><circle cx="31" cy="13" r="3.4" fill="#F7A0C1"/><rect x="62" y="10" width="40" height="6" rx="3" fill="#F3D3E2"/>
+    <rect x="14" y="90" width="12" height="8" rx="3" fill="#E5679A"/><rect x="94" y="90" width="12" height="8" rx="3" fill="#E5679A"/>`;
+  const OVEN_DOOR = `<rect x="1" y="1" width="82" height="54" rx="7" fill="#FFE3EC" stroke="#E5679A" stroke-width="2.6"/>
+    <rect x="10" y="12" width="64" height="34" rx="6" fill="#5A4A70"/><rect class="glow" x="12" y="14" width="60" height="30" rx="5" fill="#FFB25A" opacity=".85"/>
+    <rect x="24" y="4" width="36" height="4" rx="2" fill="#E5679A"/>`;
   // 재료가 그릇에 닿는 시점(애니메이션 길이 대비 비율)
   const land = (action) => ({ drop: .62, pour: .5, crack: .8, top: .58 }[action] || .5);
   function el(cls, html, style = '') { const d = document.createElement('div'); d.className = 'cfx ' + cls; d.innerHTML = html; if (style) d.style.cssText = style; return d; }
@@ -43,9 +52,9 @@ const CookFX = (() => {
   }
   // 한 단계 재생. host는 그릇 위에 놓인 상자, stage는 흔들기용 배경. 끝나는 시간(ms)을 돌려준다
   function play(host, bg, action, id, color, ok) {
-    host.innerHTML = '';
+    clearTimeout(clearT); host.innerHTML = '';
     const c = COLORS[id] || color;
-    const T = { steam: 2800, crack: 1700, drop: 1100, pour: 1500, stir: 1500, mash: 1400, bake: 1900, shake: 1200, sprinkle: 1400, spin: 1500, top: 1100, flip: 1400 }[action] || 1100;
+    const T = { steam: 2800, crack: 1700, drop: 1100, pour: 1500, stir: 1500, mash: 1400, bake: 3600, shake: 1200, sprinkle: 1400, spin: 1500, top: 1100, flip: 1400 }[action] || 1100;
     if (action === 'drop') {
       const n = id === 'berry' ? 3 : 1;
       for (let i = 0; i < n; i++) {
@@ -83,7 +92,17 @@ const CookFX = (() => {
       setTimeout(() => host.appendChild(el('tok', '보글보글~', 'left:68%;top:4%')), 900);
       setTimeout(() => host.appendChild(el('tok t2', '모락모락', 'left:-6%;top:10%')), 1500);
     } else if (action === 'bake') {
-      host.appendChild(el('ing oven', ing('oven')));
+      // 오븐이 내려오고 → 그릇째 오븐 안으로 → 문이 닫히고 노릇노릇 → 띵! → 문이 열리고 그릇이 나온다
+      const g = bg.querySelector('.bowlg');
+      host.appendChild(el('oven2', S('0 0 120 100', OVEN)));
+      if (g) {
+        // 진짜 그릇과 똑같은 자리에 겹치는 복사본(cook-fx 상자 = 부엌 그림의 270~450, 115~316 영역)
+        const fb = el('fakebowl', `<svg viewBox="270.24 115.48 179.52 200.64" preserveAspectRatio="none" aria-hidden="true">${g.outerHTML.replace(/ id="[^"]*"/g, '')}</svg>`);
+        host.appendChild(fb); bg.classList.add('bowl-away');
+        setTimeout(() => bg.classList.remove('bowl-away'), T - 40);
+      }
+      host.appendChild(el('ovendoor', S('0 0 84 56', OVEN_DOOR)));
+      setTimeout(() => host.appendChild(el('tok', '지글지글~', 'left:62%;top:-4%')), 1700);
       host.appendChild(el('ding', '띵!'));
     } else if (action === 'shake') {
       bg.classList.remove('shaking'); void bg.offsetWidth; bg.classList.add('shaking');
@@ -103,7 +122,7 @@ const CookFX = (() => {
       host.appendChild(el('ing flipping', ing('pancake')));
     }
     if (!ok) setTimeout(() => { splash(host, color, 5, true); host.appendChild(el('oops', '앗, 조금 흘렸다!')); }, T * .6);
-    setTimeout(() => { host.innerHTML = ''; }, T + 150);
+    clearT = setTimeout(() => { host.innerHTML = ''; }, T + 150);
     return T;
   }
   // 재봉 동작: 자르기 · 바느질 · 대칭 무늬 · 리본 달기
@@ -131,17 +150,18 @@ const CookFX = (() => {
       [0, 1, 2].forEach(i => host.appendChild(el('button-pop', '', `left:${40 + i * 10}%;top:${58 + (i % 2) * 6}%;animation-delay:${.6 + i * .2}s`)));
     }
     if (!ok) setTimeout(() => host.appendChild(el('oops', '앗, 삐뚤빼뚤해졌다!')), T * .6);
-    setTimeout(() => { host.innerHTML = ''; }, T + 150);
+    clearT = setTimeout(() => { host.innerHTML = ''; }, T + 150);
     return T;
   }
 
   // 완성: 그릇 위로 간식이 솟아오른다
   function done(host, foodSvg) {
-    host.innerHTML = '';
+    clearTimeout(clearT); host.innerHTML = '';
     host.appendChild(el('dish', foodSvg));
     const cols = ['#FFD36E', '#F7A0C1', '#B9A7F5', '#8FE0C9'];
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; host.appendChild(el('drop-p star-p', '', `background:${cols[i % 4]};--dx:${Math.cos(a) * 90}px;--dy:${Math.sin(a) * 70 - 40}px;animation-delay:.5s`)); }
-    return 1300;
+    setTimeout(() => host.appendChild(el('tok done-tok', '완성!', 'left:50%;top:-14%')), 700);
+    return 3200;
   }
   return { play, done, ing, land, sew };
 })();

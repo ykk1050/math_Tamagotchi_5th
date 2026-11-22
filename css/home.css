@@ -637,3 +637,20 @@ body.lowfx .wl{transition-duration:.4s}
 .opet.egg::after{content:"";position:absolute;left:14%;right:14%;bottom:-2%;height:26%;border-radius:0 0 46% 46%/0 0 90% 90%;background:repeating-linear-gradient(90deg,#E8B983 0 8px,#D9A56B 8px 10px);box-shadow:inset 0 5px 0 #F2CF9F,0 4px 0 rgba(0,0,0,.08);z-index:1}
 .opet.egg svg{position:relative;z-index:0}
 .care-row.egg{grid-template-columns:1fr}
+
+/* 오븐: 그릇째 들어갔다 나온다 (3.6초) */
+.stage-bg.bowl-away .bowlg{opacity:0}
+.oven2{left:50%;top:-6%;width:104%;transform:translateX(-50%);opacity:0;animation:oven2 3.6s ease forwards}
+@keyframes oven2{0%{opacity:0;transform:translate(-50%,-40%)}10%{opacity:1;transform:translate(-50%,3%)}14%,90%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-30%)}}
+.fakebowl{left:0;top:0;width:100%;height:100%;transform-origin:50% 82%;animation:fakebowl 3.6s ease-in-out forwards}
+.fakebowl svg{width:100%;height:100%;overflow:visible}
+@keyframes fakebowl{0%,13%{transform:none}34%,82%{transform:translateY(-48%) scale(.5)}96%,100%{transform:none}
+  34%,82%{filter:none}83%{filter:saturate(1.3) brightness(.96)}100%{filter:saturate(1.2) brightness(.97)}}
+.ovendoor{left:13.6%;top:11.1%;width:72.8%;height:43.4%;transform-origin:50% 100%;transform:scaleY(.08);opacity:0;animation:ovendoor 3.6s ease forwards}
+.ovendoor svg{width:100%;height:100%;display:block}
+.ovendoor .glow{animation:cglow .45s ease-in-out infinite alternate}
+@keyframes ovendoor{0%{opacity:0;transform:scaleY(.08)}10%{opacity:1;transform:scaleY(.08)}36%{transform:scaleY(.08)}42%{transform:scaleY(1.04)}44%,76%{transform:scaleY(1)}82%,90%{opacity:1;transform:scaleY(.08)}100%{opacity:0;transform:scaleY(.08)}}
+.oven2 ~ .ding{animation-delay:2.65s}
+.done-tok{transform:translateX(-50%);font-size:24px;animation:cding .45s ease forwards}
+/* 요리 화면: 말풍선이 오븐·찜기를 가리지 않게 좁게 */
+.stage.cooking .bubble{max-width:38%}
