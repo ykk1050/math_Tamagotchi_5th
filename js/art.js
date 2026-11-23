@@ -187,8 +187,10 @@ const Art = (() => {
     if (stage >= 6) back += rainbowAura();
     if (stage >= 9) back += auroraTail();
     if (stage >= 5 && L.wear.back !== 'wings') back += cloudWings(stage >= 7 ? 1.22 / s : .85, stage >= 7);
-    if (stage >= 4 && stage < 10 && !L.wear.head) front += star(15, -27, .62, 14);
-    if (stage >= 8 && !L.wear.head) front += moonMark(-17, -29, .78);
+    // 머리 장식을 해도 별·달은 보이게: 장식이 있는 자리를 피해 옮긴다 (왼쪽 장식: 꽃·리본, 귀마개는 아래쪽이라 그대로)
+    const hd = L.wear.head, hLeft = hd === 'flower' || hd === 'bow', hTop = hd && !hLeft && hd !== 'earmuff';
+    if (stage >= 4 && stage < 10) front += hTop ? star(-33, -6, .55, -10) : star(15, -27, .62, 14);
+    if (stage >= 8) front += hd && hd !== 'earmuff' ? moonMark(34, -6, .7) : moonMark(-17, -29, .78);
     if (stage >= 10 && !L.wear.head) front += crown(4, -33, .95);
     if (stage >= 7) front += sparkle(-40, -20, .6) + sparkle(42, 14, .5);
     const ws = (ly) => wearSVG('cloud', L.wear, ly, L.col);
@@ -236,12 +238,14 @@ const Art = (() => {
     const L = normLook(look); setTint('bunny', L.tint);
     const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2;
     const ty = 60 - 44 * s;
-    let extra = stage >= 5 && !L.wear.head ? ribbon : '', back = '';
+    // 머리 장식을 해도 자라며 얻은 표시(리본·네잎클로버·달)는 보이게: 겹치는 것만 자리를 옮긴다
+    const hd = L.wear.head, hTop = hd && hd !== 'flower' && hd !== 'bow' && hd !== 'earmuff';
+    let extra = stage >= 5 && hd !== 'bow' ? ribbon : '', back = '';
     if (stage >= 10) back += `<circle cy="4" r="48" fill="url(#cn-glow)"/>`;
     if (stage >= 8 && L.wear.back !== 'wings') back += `<g opacity=".95"><path d="M-12 18 C-30 4 -40 14 -34 24 C-30 30 -20 28 -12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/><path d="M12 18 C30 4 40 14 34 24 C30 30 20 28 12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/></g>`;
     let tail = stage >= 9 ? `<circle cx="24" cy="31" r="11" fill="url(#cn-glow)"/>` + star(25, 33, .6, 10) : '';
-    if (stage >= 6 && !L.wear.head) extra += `<g transform="translate(-15 -15) rotate(-18)">${[0, 90, 180, 270].map(r => `<path transform="rotate(${r})" d="M0 0 C-4 -3 -4 -8 0 -6 C4 -8 4 -3 0 0Z" fill="#8ED79A" stroke="#4FAA6C" stroke-width=".9"/>`).join('')}<circle r="1.3" fill="#4FAA6C"/></g>`;
-    if (stage >= 7 && !L.wear.head) extra += moonMark(0, -16, .55);
+    if (stage >= 6) extra += `<g transform="translate(${hd === 'flower' || hTop ? '-21 -2' : '-15 -15'}) rotate(-18)${hd === 'flower' || hTop ? ' scale(.85)' : ''}">${[0, 90, 180, 270].map(r => `<path transform="rotate(${r})" d="M0 0 C-4 -3 -4 -8 0 -6 C4 -8 4 -3 0 0Z" fill="#8ED79A" stroke="#4FAA6C" stroke-width=".9"/>`).join('')}<circle r="1.3" fill="#4FAA6C"/></g>`;
+    if (stage >= 7) extra += hTop ? moonMark(21, -2, .5) : moonMark(0, -16, .55);
     if (stage >= 10 && !L.wear.head) extra += crown(0, -26, .8);
     if (stage >= 7) extra += sparkle(-30, -8, .55) + sparkle(30, 20, .5);
     const ws = (ly) => wearSVG('bunny', L.wear, ly, L.col);
