@@ -155,12 +155,14 @@
   // ---------- 하루 바뀜 · 상태 ----------
   const EGG_WISH = () => [{ t: 'care', id: 'pet', done: false }, { t: 'care', id: 'sing', done: false }];
   const EGG_CARE = ['pet', 'warm', 'cool', 'sing'];
+  const PET_CARE = ['pet', 'bath', 'play', 'nap']; // 알에서 나온 뒤의 돌보기 바람
   // 알 단계에는 쓰다듬기 바람만, 알을 깨고 나오면 그날 바람을 새로 만든다
   function fixWishes() {
     if (!S.wishes) return;
     const eggOnly = S.wishes.length && S.wishes.every(w => w.t === 'care' && EGG_CARE.includes(w.id));
     if (S.stage <= 2 && !eggOnly) S.wishes = EGG_WISH().map(w => Object.assign(w, { done: S.wishes.some(x => x.t === 'care' && x.id === w.id && x.done) }));
-    else if (S.stage >= 3 && eggOnly) S.wishes = [{ t: 'food', id: pick(Object.keys(FOODS)), done: false }, { t: 'place', id: pick(Object.keys(PLACES)), done: false }, { t: 'care', id: pick(Object.keys(CARE).filter(k => k !== 'pet')), done: false }];
+    else if (S.stage >= 3 && eggOnly) S.wishes = [{ t: 'food', id: pick(Object.keys(FOODS)), done: false }, { t: 'place', id: pick(Object.keys(PLACES)), done: false }, { t: 'care', id: pick(PET_CARE.filter(k => k !== 'pet')), done: false }];
+    if (S.stage >= 3) S.wishes.forEach(w => { if (w.t === 'care' && !PET_CARE.includes(w.id)) w.id = pick(PET_CARE.filter(k => k !== 'pet' && !S.wishes.some(x => x.t === 'care' && x.id === k))); });
   }
   function newDay() {
     const t = todayStr();
@@ -169,7 +171,7 @@
     if (S.sick) { S.sick.lv--; if (S.sick.lv <= 0) S.sick = null; }
     pcAdd(S.log || []); S.ylog = S.day ? (S.log || []).slice(-30) : []; S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
     { const mo = new Date().getMonth() + 1, winter = mo === 12 || mo <= 2; S.weather = pick(winter ? ['sun', 'sun', 'snow', 'snow', 'rain'] : ['sun', 'sun', 'sun', 'rain', 'rain', 'rainbow']); }
-    const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(Object.keys(CARE));
+    const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(PET_CARE);
     S.wishes = S.stage <= 2 ? EGG_WISH() : [{ t: 'food', id: f, done: false }, { t: 'place', id: p, done: false }, { t: 'care', id: c, done: false }];
     save();
   }
@@ -196,7 +198,8 @@
   }
   // 기운이 25보다 낮으면 스르르 잠들고, 자는 동안 기운이 차서 가득 차면 깬다
   function syncSleep() {
-    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) { S.asleep = true; S.log.push({ e: 'sleep' }); }
+    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) { S.asleep = true; S.napEnd = 0; S.log.push({ e: 'sleep' }); }
+    if (S.asleep && S.napEnd && Date.now() >= S.napEnd) { S.needs.energy = 100; S.napEnd = 0; }
     if (S.asleep && (S.needs.energy >= 100 || S.stage < 3)) { if (S.stage >= 3) ensureDream(); S.asleep = false; }
     const z = !!S.asleep; if (z === sleeping) return false; sleeping = z; return true;
   }
@@ -1191,7 +1194,7 @@
     if (!S.light) {
       if (sleeping || S.asleep) { speak('home', S.stage <= 2 ? '(알이 어둠 속에서 새근새근)' : '(불을 꺼 주니 더 푹 자요… 새근새근)', { silent: true }); return; }
       if (S.stage <= 2) { speak('home', night ? '(깜깜해지니 알이 새근새근 잠들어요)' : '(알이 깜짝! 낮인데 어두워졌어요)', { silent: true }); return; }
-      if (night && S.needs.energy < 70) { speak('home', talk ? pick(['불 끄니까 스르르 졸려… 잘 자!', '하암… 깜깜하니까 눈이 감겨. 잘 자!']) : '(하암… 스르르)'); setTimeout(() => { if (S.light === false) { S.asleep = true; save(); renderHome(); } }, 2200); return; }
+      if (night && S.needs.energy < 70) { speak('home', talk ? pick(['불 끄니까 스르르 졸려… 잘 자!', '하암… 깜깜하니까 눈이 감겨. 잘 자!']) : '(하암… 스르르)'); setTimeout(() => { if (S.light === false) { S.asleep = true; S.napEnd = 0; save(); renderHome(); } }, 2200); return; }
       speak('home', night ? (talk ? '아직 안 졸린데… 깜깜해서 아무것도 안 보여!' : '(두리번두리번)') : (talk ? (S.kind === 'cloud' ? '어? 낮인데 깜깜해! 깜짝 놀랐잖아.' : '깜짝이야! 낮인데 왜 불을 꺼?') : '(깜짝!)'));
     } else {
       if (sleeping || S.asleep) { if (!wakeFuss('light')) speak('home', '(알이 움찔… 눈부신가 봐요)', { silent: true }); return; }
@@ -2857,6 +2860,7 @@
     if (id === 'brush') { if (sleeping) wakeFuss('care'); return brushPlay(); }
     if (id === 'sick') return sickCare();
     if (S.stage <= 2) return eggCare(id);
+    if (id === 'nap' && sleeping) { speak('home', '(벌써 새근새근 자고 있어요)', { silent: true }); return; }
     if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no[1], no[0]); return; } }
     if (id === 'feed') {
       let own = Object.keys(S.foods).filter(k => S.foods[k] > 0);
@@ -2870,8 +2874,19 @@
       openPick('무엇을 먹여 줄까요?', '냉장고에 있는 간식이에요', own.map(k => ({ id: k, art: Scene.food(k), name: FOODS[k].name, small: `${S.foods[k]}개`, badge: wishBadge('food', k) || tasteBadge('food', k) })), (k) => runAct('feed', k));
       return;
     }
+    if (id === 'nap') return napInBed();
     if (sleeping && id !== 'nap') { if (id !== 'sick') wakeFuss('care'); sleeping = false; S.asleep = false; S.needs.energy = Math.max(S.needs.energy, 30); }
     runAct(id);
+  }
+  function napInBed() {
+    const night = isNight(), talk = level() === 'talk', now = Date.now();
+    S.asleep = true; S.covered = false; S.napT = now; S.napEnd = night ? 0 : now + 45000;
+    if (dayCap('care-nap', 2)) addFriend(3); S.log.push({ e: 'care', id: 'nap' }); fulfill('care', 'nap');
+    if (S.sick) { S.sick.lv--; setTimeout(checkWell, 2800); }
+    save(); syncSleep(); renderHome();
+    speak('home', talk ? (night ? pick(['하암… 이제 자야겠다. 잘 자!', '침대 포근하다… 잘 자, 내일 또 놀자!']) : pick(['하암… 낮잠 잘래. 조금만 자고 일어날게!', '침대에 쏙! 잠깐만 낮잠 잘게.'])) : '(하암… 침대에 쏙 들어가 잠들어요)', { silent: !talk });
+    setTimeout(() => toast('이불을 끌어다 덮어 주면 더 포근하게 자요'), 1600);
+    if (!night) { clearTimeout(napInBed.t); napInBed.t = setTimeout(() => { if (S.asleep && S.napEnd && syncSleep() && $('scr-home').classList.contains('on') && !document.querySelector('.overlay.on')) { renderHome(); save(); speak('home', talk ? pick(['잘 잤다! 기운이 펄펄 나!', '낮잠 자고 나니까 개운해!']) : '(기지개를 쭉 켜고 일어났어요)'); } }, 45500); }
   }
   function wishBadge(t, id) { return S.wishes.some(w => !w.done && w.t === t && w.id === id) ? '<span class="badge wishb">바람</span>' : ''; }
   function tasteBadge(t, id) { const k = S.known[t][id]; return k === 'love' ? '<span class="badge love">좋아해</span>' : k === 'hate' ? '<span class="badge hate">별로래</span>' : ''; }
@@ -3232,7 +3247,8 @@
     $('stage-bg').dataset.place = '';
     drawOutPet('idle'); renderOut(); speak('out', OUT.type === 'sew' && level() === 'talk' ? pick(['옷 만들기다! 두근두근.', '내 옷을 만들어 준다고? 고마워!']) : line(OUT.type === 'walk' ? 'walkStart' : 'cookStart'));
     st.classList.toggle('walking-scene', OUT.type === 'walk'); $('opet').style.left = ''; $('stage-bg').style.background = '';
-    if (OUT.type === 'walk') { renderOut(); placeOutPet(0, true); } else { $('cook-fx').innerHTML = ''; placeCookFx(); }
+    $('cook-fx').innerHTML = ''; $('step-label').textContent = '';
+    if (OUT.type === 'walk') { renderOut(); placeOutPet(0, true); } else placeCookFx();
     Snd.music(OUT.type === 'walk' ? 'walk' : 'cook');
     nextQ();
   }
