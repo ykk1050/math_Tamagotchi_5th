@@ -90,7 +90,10 @@
     } else {
       const pack = LINES[S.kind][lv];
       const neg = ['cookNo', 'walkNo', 'sewNo', 'no'].includes(cat);
-      t = lineFrom(neg ? pack.no : POS.includes(cat) ? (cat === 'poke' ? pack.poke : pack.ok) : pack.idle, lv + cat);
+      // 맞혔을 때 말('또 맞혔다!')은 문제를 맞혔을 때만. 시작·도착·바람 같은 때는 따로 고른다
+      const ANS = ['ok', 'cookOk', 'sewOk', 'walkOk', 'c3', 'c5', 'c10'], START = ['cookStart', 'walkStart', 'welcome'];
+      const yay = lv === 'word' ? (START.includes(cat) ? ['좋아, 가자!', '두근두근!', '같이 하자!', '신난다!', '헤헤, 같이!'] : ['와아!', '좋아!', '헤헤, 좋아', '최고!', '반짝반짝!', '신난다!']) : pack.ok;
+      t = lineFrom(neg ? pack.no : POS.includes(cat) ? (cat === 'poke' ? pack.poke : ANS.includes(cat) ? pack.ok : yay) : pack.idle, lv + cat);
     }
     if (v.x != null) t = fillJo(t, '{x}', v.x);
     if (v.a != null) { if (t.includes('{a}')) t = fillJo(t, '{a}', v.a); else t += `<br><small style="font-size:.8em;color:#7A6283">정답은 ${v.a}</small>`; }
@@ -600,16 +603,22 @@
     const bb = roomBox(236, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
     wk.classList.add('fast', 'inbed'); wk.style.left = bb.cx + '%'; wk.style.bottom = (rh - bb.top - bb.height * .78) + 'px'; setTimeout(() => wk.classList.remove('fast'), 700);
     const q = document.createElement('div'); q.className = 'bedquilt' + (S.covered ? ' on' : ''); q.innerHTML = QUILT.replace('<svg ', '<svg preserveAspectRatio="none" '); wk.appendChild(q);
-    if (S.covered) return;
+    if (S.covered) { fitQuilt(q); setTimeout(() => fitQuilt(q), 760); return; }
     let drag = null;
     q.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; q.classList.add('held'); try { q.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); e.stopPropagation(); });
     q.addEventListener('pointermove', (e) => { if (drag) q.style.transform = `translate(${e.clientX - drag.x}px,${e.clientY - drag.y}px)`; });
     const up = (e) => { if (!drag) return; const p = $('pet').getBoundingClientRect(), r = q.getBoundingClientRect(); drag = null; q.classList.remove('held'); q.style.transform = '';
       if (Math.abs((r.left + r.width / 2) - (p.left + p.width / 2)) < p.width * .55 && Math.abs((r.top + r.height / 2) - (p.top + p.height * .6)) < p.height * .6) {
-        S.covered = true; save(); q.classList.add('on'); Snd.heart(); speak('home', '(이불을 덮어 주니 포근하게 잠들어요… 새근새근)', { silent: true }); petFx('warm', $('pet'));
+        S.covered = true; save(); q.classList.add('on'); fitQuilt(q); Snd.heart(); speak('home', '(이불을 덮어 주니 포근하게 잠들어요… 새근새근)', { silent: true }); petFx('warm', $('pet'));
         if (S.sick) { S.sick.lv--; checkWell(); }
       } };
     q.addEventListener('pointerup', up); q.addEventListener('pointercancel', up);
+  }
+  // 덮은 이불: 친구 몸 아래쪽 40%만 덮어서 자는 얼굴이 보이게
+  function fitQuilt(q) {
+    if (!q || !q.isConnected) return; const w = $('walker').getBoundingClientRect(), b = bodyRect($('pet'));
+    if (!b.width) return; const top = b.top + b.height * .58;
+    Object.assign(q.style, { left: (b.left - w.left - b.width * .2) + 'px', width: b.width * 1.4 + 'px', top: (top - w.top) + 'px', bottom: 'auto', height: (b.bottom - top + b.height * .22) + 'px' });
   }
   function poked() { lastTouch = Date.now(); clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
   // 친구가 먼저 앞으로 다가와서 말을 건다
@@ -2868,8 +2877,8 @@
     const N = S.needs, talk = level() === 'talk', now = Date.now();
     if (wished('care', id)) return null;
     if (id === 'bath' && N.clean >= 70) return ['clean', talk ? pick(['아직 뽀송뽀송해! 목욕은 나중에 할래.', '나 지금 깨끗한걸? 냄새 맡아 봐!']) : '(고개를 절레절레)'];
-    if (id === 'nap' && S.napT && now - S.napT < 60 * 60000 && N.energy >= 30) return ['awake', talk ? '방금 일어났는걸? 하나도 안 졸려!' : '(눈이 말똥말똥)'];
-    if (id === 'nap' && N.energy >= 60) return ['awake', talk ? pick(['하나도 안 졸려! 더 놀고 싶어.', '아직 기운이 펄펄해!']) : '(눈이 말똥말똥)'];
+    if (id === 'nap' && S.napT && now - S.napT < 10 * 60000 && N.energy >= 70) return ['awake', talk ? '방금 일어났는걸? 하나도 안 졸려!' : '(눈이 말똥말똥)'];
+    if (id === 'nap' && N.energy >= 70) return ['awake', talk ? pick(['하나도 안 졸려! 더 놀고 싶어.', '아직 기운이 펄펄해!']) : '(눈이 말똥말똥)'];
     if (id === 'play' && S.sick) return ['blue', talk ? '콜록… 오늘은 놀기보다 쉬고 싶어.' : '(콜록콜록…)'];
     if (id === 'play' && N.energy < 25) return ['sleepy', talk ? '너무 졸려서 못 놀겠어… 먼저 재워 줘.' : '(하암…)'];
     if (id === 'pet' && S.petT && now - S.petT < 10 * 60000) return ['later', talk ? '아까 많이 쓰다듬어 줬잖아. 이따 또 해 줘!' : '(헤헤, 이따가!)'];
@@ -2888,7 +2897,7 @@
     if (id === 'sick') return sickCare();
     if (S.stage <= 2) return eggCare(id);
     if (id === 'nap' && sleeping) { speak('home', '(벌써 새근새근 자고 있어요)', { silent: true }); return; }
-    if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no[1], no[0]); return; } }
+    if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no[1], no[0]); if (id === 'nap') setTimeout(() => toast(`기운(달 막대)이 <b>${Math.round(S.needs.energy)}</b>이에요. <b>70보다 적을 때</b> 재울 수 있어요`), 700); return; } }
     if (id === 'feed') {
       let own = Object.keys(S.foods).filter(k => S.foods[k] > 0);
       if (own.length && S.stage >= 3 && S.needs.full >= 85) {
@@ -3069,7 +3078,7 @@
     spawn(); const iv = setInterval(spawn, 650); actClean.push(() => clearInterval(iv));
   }
   // 이불을 끌어다 친구 위에 놓으면 덮이고, 자장가를 들으며 잠든다
-  const QUILT = `<svg viewBox="0 0 120 80" aria-hidden="true"><rect x="4" y="6" width="112" height="68" rx="18" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="3"/><path d="M4 30 h112 M4 52 h112 M42 6 v68 M80 6 v68" stroke="#fff" stroke-width="2.4" stroke-dasharray="6 6" opacity=".8"/><g fill="#FFE29A"><path d="M23 18 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/><path d="M61 40 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/><path d="M99 62 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/></g><rect x="4" y="6" width="112" height="16" rx="10" fill="#fff" opacity=".9"/></svg>`;
+  const QUILT = `<svg viewBox="0 0 120 80" aria-hidden="true"><path d="M8 18 Q60 4 112 18 Q118 44 116 70 Q60 82 4 70 Q2 44 8 18Z" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="3" stroke-linejoin="round"/><path d="M10 40 Q60 30 110 40 M8 58 Q60 50 112 58" stroke="#fff" stroke-width="2" stroke-dasharray="5 5" opacity=".7" fill="none"/><g fill="#FFE29A"><path d="M30 46 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/><path d="M84 52 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z"/><path d="M58 62 l1.4 2.8 2.8 .4 -2 2 .6 2.8 -2.8 -1.4 -2.8 1.4 .6 -2.8 -2 -2 2.8 -.4z"/></g><path d="M8 18 Q60 4 112 18 Q114 26 112 30 Q60 18 8 30 Q6 26 8 18Z" fill="#FFF6FA" stroke="#8F7BE0" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
   function actNap(field, bottom, finish) {
     $('act-hint').textContent = isNight() ? '이불을 끌어다 덮어 주세요. 이제 잘 시간이에요' : '이불을 끌어다 덮어 주세요';
     if (isNight()) $('act-room').classList.add('dark');
