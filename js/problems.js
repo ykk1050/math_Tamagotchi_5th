@@ -492,7 +492,7 @@ const Prob = (() => {
     const keys = Object.keys(G);
     if (review && review.length) {
       const i = review.findIndex(r => r.due <= total && r.unit !== rot.last);
-      if (i >= 0) { const r = review.splice(i, 1)[0]; rot.last = r.unit; return make(r.unit, r.type); }
+      if (i >= 0) { const r = review.splice(i, 1)[0]; rot.last = r.unit; const q = make(r.unit, r.type); q.review = true; return q; }
     }
     if (!rot.bag || !rot.bag.length) {
       let b; do { b = shuffle(keys); } while (b[0] === rot.last && keys.length > 1);
@@ -508,5 +508,14 @@ const Prob = (() => {
     rot.last = unit;
     return make(unit, type);
   }
-  return { make, next, story, themed, UNITS, G, jo, hasBatchim };
+  // 틀린 문제와 같은 유형, 다른 숫자로 다시 (재도전용)
+  function again(q, themeKind) {
+    for (let k = 0; k < 8; k++) {
+      const n = q.type >= 0 ? make(q.unit, q.type) : themeKind ? themed(themeKind) : null;
+      if (!n) return null;
+      if (n.q !== q.q || k === 7) { n.retry = true; return n; }
+    }
+    return null;
+  }
+  return { make, next, again, story, themed, UNITS, G, jo, hasBatchim };
 })();

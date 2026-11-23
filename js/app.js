@@ -237,6 +237,18 @@
       toast('자랄 준비가 거의 됐어요! 위쪽 <b>자라기</b>를 눌러 남은 조건을 봐요');
     }, 1500);
   }
+  // ---------- 오답 회복: 다시 해서 맞히면 반짝 조각 ----------
+  const plainQ = (q) => { const t = String(q.q || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); return t.length > 40 ? t.slice(0, 38) + '…' : t; };
+  function gainShard(q, how) {
+    S.shards = (S.shards || 0) + 1; S.win = S.win || [];
+    const d = new Date(); S.win.unshift({ u: q.unit, q: plainQ(q), how, d: `${d.getMonth() + 1}/${d.getDate()}` }); if (S.win.length > 30) S.win.length = 30;
+    S.log.push({ e: 'shard' });
+    if (S.shards % 5 === 0) { S.candy += 5; setTimeout(() => { Snd.combo(); toast(`반짝 조각 <b>${S.shards}개</b>! 틀린 문제를 이겨 낸 선물로 <b>별사탕 +5</b>`); }, 900); }
+    else setTimeout(() => toast(`${how === 'review' ? '다시 만난 문제를 이겼어요!' : '다시 해서 맞혔어요!'} <b>반짝 조각 +1</b> (${S.shards % 5}/5)`), 700);
+  }
+  const RETRY_SAY = () => level() === 'talk' ? pick(['같이 다시 볼까? 비슷한 문제야!', '괜찮아, 한 번 더! 숫자만 바뀐 문제야.', '방금 그거, 우리 다시 해 보자!']) : '(다시 해 보자는 듯 고개를 끄덕여요)';
+  const WIN_SAY = () => level() === 'talk' ? pick(['해냈다! 다시 해서 맞혔어!', '거봐, 할 수 있잖아! 반짝 조각 생겼다!', '우와, 이번엔 딱 맞혔어!']) : '(신나서 폴짝!)';
+  const REVIEW_SAY = () => level() === 'talk' ? pick(['어? 아까 틀렸던 문제랑 닮았어. 이번엔 맞힐 수 있어!', '다시 만난 문제다! 우리 기억하지?']) : '(눈을 반짝여요)';
   function addNeed(k, v) { S.needs[k] = clamp(S.needs[k] + v, 0, 100); }
   function lowNeed() { const N = S.needs; if (N.full < 35) return 'hungry'; if (N.clean < 35) return 'dirty'; if (N.energy < 30) return 'sleepy'; return null; }
 
@@ -858,6 +870,7 @@
   if (/[?&]dev/.test(location.search)) window.__petNo = (k) => petNo(k);
   if (/[?&]dev/.test(location.search)) window.__emoOf = (t) => emoOf(t);
   if (/[?&]dev/.test(location.search)) window.__petGift = () => petGift();
+  if (/[?&]dev/.test(location.search)) window.__q = () => ({ cur, gq, rq, step: OUT && OUT.step, res: OUT && OUT.res });
   if (/[?&]dev/.test(location.search)) window.__nbArt = (id, m) => nbArt(id, m);
   function objReact(id, o, b) {
     if (toyOn) return; // 놀잇감으로 노는 중이면 물건 놀이는 그만
@@ -1457,11 +1470,11 @@
     Snd.combo(); const st = $('wstage'); if (st) { st.classList.add('done'); sparks(st, 14); $('wstage').querySelector('.whint').textContent = '흙이 촉촉해졌어요! 내일 쑥 자랄 거예요'; }
     setTimeout(() => { if ($('ov-garden').classList.contains('on')) renderGarden(); }, 1800);
   }
-  function nextGardenQ() {
-    gq = Prob.next(S.rot, S.review, S.total, weakUnits()); renderGarden();
+  function nextGardenQ(q0) {
+    gq = q0 || Prob.next(S.rot, S.review, S.total, weakUnits()); renderGarden();
     const U = Prob.UNITS[gq.unit]; const tag = $('gq-tag'); tag.innerHTML = `${U.sem}학기 · ${U.name} ${SC('+1')}`; tag.classList.toggle('s1', U.sem === 1);
     $('gq-fig').innerHTML = gq.fig; $('gq-text').innerHTML = gq.q; $('gq-text').classList.toggle('long', gq.q.replace(/<[^>]+>/g, '').length > 34 || !!gq.fig);
-    $('gq-msg').textContent = '맞히면 물뿌리개에 물이 가득 차요!';
+    $('gq-msg').textContent = gq.retry ? '괜찮아요, 비슷한 문제로 한 번 더!' : gq.review ? '다시 만난 문제예요! 이번엔 맞힐 수 있어요' : '맞히면 물뿌리개에 물이 가득 차요!';
     $('gq-can').className = 'gcan'; $('gq-can').innerHTML = canSVG(true); setCan($('gq-can'), 0);
     const box = $('gq-choices'); box.innerHTML = ''; box.className = 'choices' + (gq.choices.length === 3 ? ' three' : '');
     gq.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (gq.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => gardenAnswer(b, c); box.appendChild(b); });
@@ -1472,7 +1485,7 @@
     const all = [...$('gq-choices').children];
     if (ok) {
       btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy++;
-      Snd.ok(); $('gq-msg').textContent = '정답! 물뿌리개에 물을 받아요';
+      Snd.ok(); $('gq-msg').textContent = '정답! 물뿌리개에 물을 받아요'; if (gq.retry || gq.review) gainShard(gq, gq.retry ? 'retry' : 'review');
       const gc = $('gq-can'), D = 1400; let t0 = 0, dr = 0; gc.classList.add('filling');
       const fill = (t) => {
         if (!gq || !$('ov-garden').classList.contains('on')) return;
@@ -1487,7 +1500,7 @@
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === gq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
       if (!S.review.some(r => r.unit === gq.unit && r.type === gq.type)) S.review.push({ unit: gq.unit, type: gq.type, due: S.total + R(3, 6) });
       Snd.no(); $('gq-msg').innerHTML = `정답은 ${gq.ans}. 다른 문제로 다시 해 봐요!`; $('gq-can').classList.add('sad');
-      setTimeout(nextGardenQ, 2200);
+      { const ag = !gq.retry ? Prob.again(gq) : null; setTimeout(() => nextGardenQ(ag || undefined), 2200); }
     }
     save();
   }
@@ -1839,8 +1852,13 @@
       const t = level() === 'talk' ? (rb.page === 1 ? B.chat[0] : rb.page === 2 ? B.chat[1] : rb.page === 0 ? pick(['이 책 재밌어 보여!', '같이 읽자!', '두근두근, 무슨 이야기일까?']) : '오, 그다음은?') : L3('care');
       readSay(t); Snd.pop();
     } else {
-      rq = Prob.next(S.rot, S.review, S.total, weakUnits()); const U = Prob.UNITS[rq.unit];
-      readSay(level() === 'talk' ? '마지막 장에 수수께끼가 있어! 같이 풀어 보자.' : L3('care'));
+      readQuiz(Prob.next(S.rot, S.review, S.total, weakUnits()));
+    }
+  }
+  function readQuiz(q) {
+    {
+      rq = q; const U = Prob.UNITS[rq.unit];
+      readSay(rq.retry ? RETRY_SAY() : rq.review ? REVIEW_SAY() : level() === 'talk' ? '마지막 장에 수수께끼가 있어! 같이 풀어 보자.' : L3('care'));
       const tag = $('rd-tag'); tag.innerHTML = `${U.sem}학기 · ${U.name} ${SC('+2')}`; tag.classList.toggle('s1', U.sem === 1);
       $('rd-fig').innerHTML = rq.fig; $('rd-text').innerHTML = rq.q; $('rd-text').classList.toggle('long', rq.q.replace(/<[^>]+>/g, '').length > 30 || !!rq.fig);
       const box = $('rd-choices'); box.innerHTML = ''; box.className = 'choices' + (rq.choices.length === 3 ? ' three' : '');
@@ -1851,8 +1869,9 @@
   function readAnswer(btn, c) {
     if (rq.lock) return; rq.lock = true; const ok = c === rq.ans, st = S.stats[rq.unit] || (S.stats[rq.unit] = { c: 0, w: 0 }); S.total++; rec(rq.unit, ok);
     const all = [...$('rd-choices').children];
-    if (ok) { btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy += 2; Snd.ok(); readSay(L4('riddleOk') + '<br><small style="font-size:.8em;color:#7A6283">별사탕 +2</small>'); }
+    if (ok) { btn.classList.add('ok'); all.forEach(b => b !== btn && b.classList.add('dim')); st.c++; S.correct++; S.today++; S.xp++; S.candy += 2; if (rq.retry || rq.review) gainShard(rq, rq.retry ? 'retry' : 'review'); Snd.ok(); readSay(L4('riddleOk') + '<br><small style="font-size:.8em;color:#7A6283">별사탕 +2</small>'); }
     else { btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === rq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++; Snd.no(); readSay(L4('riddleNo', { a: rq.ans })); if (!S.review.some(r => r.unit === rq.unit && r.type === rq.type)) S.review.push({ unit: rq.unit, type: rq.type, due: S.total + R(3, 6) }); }
+    if (!ok && !rq.retry) { const ag = Prob.again(rq); if (ag) { save(); setTimeout(() => readQuiz(ag), 2300); return; } }
     S.read = S.read || {}; S.read[rb.id] = (S.read[rb.id] || 0) + 1; S.readT = (S.readT || []).filter(t => Date.now() - t < 40 * 60000).concat(Date.now()); if (dayCap('read', 3)) addFriend(3); S.log.push({ e: 'read', id: rb.id });
     $('read-close').style.display = ''; hud(); save();
   }
@@ -2822,8 +2841,8 @@
     drawOutPet(mood); const p = $('opet'); p.classList.remove('hop', 'shake', 'walking', 'wobble', ...ACT_CLS); emoLock.out = Date.now(); if (anim && S.stage <= 2) anim = 'wobble'; if (anim) { void p.offsetWidth; p.classList.add(anim); }
     clearTimeout(outReact.t); outReact.t = setTimeout(() => drawOutPet('idle'), 1500);
   }
-  function nextQ() {
-    cur = OUT.type === 'sew' ? Prob.themed(SEW_STEPS[OUT.step][2]) : Prob.next(S.rot, S.review, S.total, weakUnits());
+  function nextQ(q0) {
+    cur = q0 || (OUT.type === 'sew' ? Prob.themed(SEW_STEPS[OUT.step][2]) : Prob.next(S.rot, S.review, S.total, weakUnits()));
     const U = Prob.UNITS[cur.unit];
     const tag = $('qtag'); tag.textContent = `${U.sem}학기 · ${U.name}`; tag.classList.toggle('s1', U.sem === 1);
     $('qfig').innerHTML = cur.fig; $('qtext').innerHTML = cur.q;
@@ -2831,10 +2850,19 @@
     const box = $('choices'); box.innerHTML = ''; box.className = 'choices' + (cur.choices.length === 3 ? ' three' : '');
     cur.choices.forEach(c => { const b = document.createElement('button'); b.className = 'ch' + (cur.txt ? ' txt' : ''); b.innerHTML = c; b.onclick = () => answer(b, c); box.appendChild(b); });
     const qc = $('qcard'); qc.classList.remove('in'); void qc.offsetWidth; qc.classList.add('in');
+    qc.classList.toggle('retry', !!cur.retry); qc.classList.toggle('review', !!cur.review && !cur.retry);
+    let qb = qc.querySelector('.qbadge'); if (!qb) { qb = document.createElement('span'); qb.className = 'qbadge'; qc.appendChild(qb); } qb.textContent = cur.retry ? '한 번 더! 비슷한 문제' : '다시 만난 문제';
+    if (cur.retry) setTimeout(() => speak('out', RETRY_SAY()), 150); else if (cur.review) setTimeout(() => speak('out', REVIEW_SAY()), 400);
     lock = false; renderOut(); save();
-    if (level() === 'talk' && Math.random() < .2) setTimeout(() => { if (!lock) speak('out', lineFrom(LINES[S.kind].talk.unit[cur.unit], 'u' + cur.unit), { silent: true }); }, 700);
+    if (!cur.retry && !cur.review && level() === 'talk' && Math.random() < .2) setTimeout(() => { if (!lock) speak('out', lineFrom(LINES[S.kind].talk.unit[cur.unit], 'u' + cur.unit), { silent: true }); }, 700);
   }
   // 요리·재봉은 동작 애니메이션이 끝난 뒤에 말한다 (넣기도 전에 '넣었다'고 하지 않게)
+  // 반짝 조각이 떠오르는 효과
+  function shardFx(host) {
+    if (!host) return; const s = document.createElement('div'); s.className = 'shardfx';
+    s.innerHTML = '<svg viewBox="0 0 40 40"><path d="M20 2 L27 15 L38 18 L29 27 L31 38 L20 32 L9 38 L11 27 L2 18 L13 15Z" fill="#FFF3B0" stroke="#F2C75C" stroke-width="2" stroke-linejoin="round"/><path d="M14 16 L20 8 L22 18Z" fill="#fff" opacity=".8"/></svg>';
+    host.appendChild(s); setTimeout(() => s.remove(), 1600);
+  }
   function oSay(t) { if (OUT.type === 'walk') { speak('out', t); return; } OUT.say = t; $('obubble').classList.add('hide'); }
   function sayLater() { if (OUT.say && OUT.step < OUT.n) speak('out', OUT.say); OUT.say = null; }
   function answer(btn, c) {
@@ -2848,13 +2876,18 @@
       const big = S.combo === 3 || S.combo === 5 || S.combo === 10 || (S.combo > 10 && S.combo % 5 === 0);
       if (big) { Snd.combo(); oSay(line(S.combo === 3 ? 'c3' : S.combo === 5 ? 'c5' : 'c10')); const cw = $('hud-combo-wrap'); cw.classList.remove('hot'); void cw.offsetWidth; cw.classList.add('hot'); }
       else { Snd.ok(); oSay(line(OUT.type === 'walk' ? 'walkOk' : OUT.type === 'sew' ? 'sewOk' : 'cookOk')); }
+      if (cur.retry || cur.review) { gainShard(cur, cur.retry ? 'retry' : 'review'); OUT.win = (OUT.win || 0) + 1; oSay(WIN_SAY()); shardFx($('ofx')); }
       outReact('happy', 'hop'); sparks($('ofx'), S.combo >= 5 ? 16 : 10);
     } else {
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === cur.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); });
       st.w++; S.combo = 0;
       if (!S.review.some(r => r.unit === cur.unit && r.type === cur.type)) S.review.push({ unit: cur.unit, type: cur.type, due: S.total + R(3, 6) });
       if (S.review.length > 12) S.review.shift();
-      Snd.no(); oSay(line(OUT.type === 'walk' ? 'walkNo' : OUT.type === 'sew' ? 'sewNo' : 'cookNo', { a: cur.ans })); outReact('sad', 'shake');
+      Snd.no(); outReact('sad', 'shake');
+      // 처음 틀렸으면: 정답을 보여 주고, 같은 유형 다른 숫자로 바로 한 번 더 (단계는 그대로)
+      const again = !cur.retry ? Prob.again(cur, OUT.type === 'sew' ? SEW_STEPS[OUT.step][2] : null) : null;
+      if (again) { speak('out', level() === 'talk' ? `정답은 ${cur.ans}였어. 괜찮아!` : line('no', { a: cur.ans })); save(); setTimeout(() => { if ($('scr-out').classList.contains('on')) nextQ(again); }, 2300); return; }
+      oSay(cur.retry ? (level() === 'talk' ? `정답은 ${cur.ans}! 괜찮아, 다음에 또 만나면 꼭 이기자.` : line('no', { a: cur.ans })) : line(OUT.type === 'walk' ? 'walkNo' : OUT.type === 'sew' ? 'sewNo' : 'cookNo', { a: cur.ans }));
     }
     OUT.res[OUT.step] = ok; OUT.step++; if (OUT.type !== 'walk') OUT.anim = true; // 답을 고른 순간부터 애니메이션이 끝날 때까지 단계 이름을 바꾸지 않는다
     save(); renderOut();
@@ -2921,7 +2954,7 @@
       $('res-art').innerHTML = Scene.food(o.id);
       $('res-title').innerHTML = `${FOODS[o.id].name} 완성! <span class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3 - stars)}</span></span>`;
       $('res-line').innerHTML = line('cookDone');
-      gets = [`맞힌 문제 ${good} / ${o.n}`, `${FOODS[o.id].name} +1`];
+      gets = [`맞힌 문제 ${good} / ${o.n}`, `${FOODS[o.id].name} +1`].concat(o.win ? [`다시 해서 이긴 문제 ${o.win}개 ✦`] : []);
       $('res-btns').innerHTML = S.stage <= 2 ? `<button class="btn big primary" id="rb-home">냉장고에 넣기</button><span id="rb-feed" hidden></span>` : `<button class="btn big primary" id="rb-feed">지금 먹여 주기</button><button class="btn" id="rb-home">냉장고에 넣기</button>`;
       if (S.stage <= 2) $('res-line').innerHTML = '간식은 냉장고에 넣어 두었어요. 알을 깨고 나오면 같이 먹어요!';
       $('res-gets').innerHTML = gets.map(g => `<span>${g}</span>`).join('');
@@ -2937,7 +2970,7 @@
       $('res-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
       $('res-title').textContent = `${P.name} 도착!`;
       $('res-line').innerHTML = level() === 'talk' ? fillJo(lineFrom(TASTE_LINE[S.kind].place[ts], 'tp'), '{x}', P.name) : line('arrive');
-      gets = [`맞힌 문제 ${good} / ${o.n}`, ...o.finds.map(f => `${ITEMS[f].name} 얻음`)];
+      gets = [`맞힌 문제 ${good} / ${o.n}`, ...o.finds.map(f => `${ITEMS[f].name} 얻음`)].concat(o.win ? [`다시 해서 이긴 문제 ${o.win}개 ✦`] : []);
       if (first) gets.push('처음 와 본 곳!');
       $('res-gets').innerHTML = gets.map(g => `<span>${g}</span>`).join('');
       $('res-btns').innerHTML = `<button class="btn big primary" id="rb-home">집으로 가기</button>`;
@@ -3028,8 +3061,10 @@
       `<div class="book-sec"><h4>산책길 이웃</h4><div class="book-items">${Object.keys(NEIGH).map(k => { const N = NEIGH[k], n = (S.nb || {})[N.id] || 0; return `<span class="bi ${n ? '' : 'unk'}"><span class="bic">${NB_ART[N.id]}</span>${n ? N.name : '???'}${n ? `<em class="love">${'♥'.repeat(Math.min(5, n))}</em>` : `<em>${PLACES[k].name}</em>`}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>그림책</h4><div class="book-items">${Object.keys(BOOKS).map(id => { const has = ownBooks().includes(id), n = (S.read || {})[id] || 0; return `<span class="bi ${has ? '' : 'unk'}">${has ? BOOKS[id].title : '???'}${n ? `<em class="like">${n}번 읽음</em>` : ''}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>이야기</h4>${stories}</div>` +
+      `<div class="book-sec"><h4>같이 이겨 낸 문제 <small>반짝 조각 ${S.shards || 0}개</small></h4>${(S.win || []).length ? `<div class="win-list">${S.win.slice(0, 8).map(w => `<div class="win"><span class="win-u">${(Prob.UNITS[w.u] || { name: '' }).name}</span><span class="win-q">${w.q}</span><small>${w.how === 'review' ? '다시 만나 이김' : '다시 해서 맞힘'} · ${w.d}</small></div>`).join('')}</div>` : '<p class="sub">틀린 문제를 다시 풀어 맞히면 여기에 모여요</p>'}</div>` +
       `<div class="book-sec"><h4>함께한 기록</h4><div class="book-items"><span class="bi">함께한 날 ${S.days}일</span><span class="bi">맞힌 문제 ${S.correct}개</span><span class="bi">최고 연속 ${S.best}번</span><span class="bi">우정 ${S.flv}단계</span></div></div>`;
     $('book-body').querySelectorAll('.story-btn:not(.lock)').forEach(b => b.onclick = () => { Snd.tap(); playStory(+b.dataset.i); });
+    { const bb = $('book-body'), w = [...bb.querySelectorAll('.book-sec')].find(e => e.querySelector('h4') && e.querySelector('h4').textContent.startsWith('같이 이겨 낸')); if (w) bb.prepend(w); bb.scrollTop = 0; }
     overlay('ov-book', true);
   }
   $('btn-book').onclick = () => { Snd.tap(); poked(); openBook(); };
