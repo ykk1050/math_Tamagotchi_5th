@@ -27,7 +27,26 @@ const Snd = (() => {
       o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
     } catch (e) {}
   }
+  // 잡음(바람·천 스치는 소리)
+  let nbuf = null;
+  function noise(d, v, f, t0 = 0, q = 1, swell = false) {
+    if (!on || !ctx) return;
+    try {
+      if (!nbuf) { nbuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const a = nbuf.getChannelData(0); for (let i = 0; i < a.length; i++) a[i] = Math.random() * 2 - 1; }
+      const t = ctx.currentTime + t0, s = ctx.createBufferSource(), bf = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = nbuf; bf.type = 'bandpass'; bf.frequency.value = f; bf.Q.value = q;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + (swell ? d * .45 : .012)); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      s.connect(bf); bf.connect(g); g.connect(master); s.start(t); s.stop(t + d + .05);
+    } catch (e) {}
+  }
   const S = {
+    fluff() { noise(.11, .05, 2400 + Math.random() * 900, 0, .8); },
+    boing() { tone(250, .12, 'sine', .2, 0, 520); tone(520, .24, 'sine', .14, .09, 280); },
+    boop() { tone(1150, .07, 'sine', .18, 0, 1750); },
+    giggle(kind = 'cloud') { const b = kind === 'bunny' ? 980 : 780; [0, .11, .22, .33, .44].forEach((t, i) => tone(b + (i % 2 ? 90 : 0) - i * 25, .08, 'sine', .12, t, b * 1.18)); },
+    flap() { [0, .08, .16, .24].forEach(t => noise(.06, .07, 1700, t, 1.2)); },
+    hum(kind = 'cloud') { const k = kind === 'bunny' ? 1 : .84; [523, 587, 659, 587, 523, 659, 784].forEach((f, i) => tone(f * k, .3, 'triangle', .07, i * .26)); },
+    breath() { noise(1.2, .022, 520, 0, .6, true); noise(1.4, .016, 380, 1.5, .6, true); },
     tap() { tone(880, .08, 'sine', .15); },
     piano() { const sc = [523, 587, 659, 784, 880, 1047]; let t = 0; for (let i = 0; i < 7; i++) { tone(sc[Math.floor(Math.random() * sc.length)], .32, 'triangle', .2, t); t += .2 + (i % 3 === 2 ? .12 : 0); } },
     chime() { [1568, 2093, 2637, 2093].forEach((f, i) => tone(f, .5, 'sine', .1, i * .12)); },

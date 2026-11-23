@@ -410,5 +410,10 @@ const Art = (() => {
   };
   function icon(n) { installDefs(); return icons[n] || ''; }
 
-  return { draw, icon, star, ACC, installDefs, mouth, WEAR: W, wearIcon, TINT_DEF, PAL };
+  function frame(kind, stage) {
+    if (stage <= 2) return { s: 1, ty: 0 };
+    if (kind === 'bunny') { const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2; return { s, ty: 60 - 44 * s }; }
+    const s = [0, 0, 0, 1.0, 1.16, 1.28, 1.34, 1.38, 1.42, 1.46, 1.5][stage] || 1.2; return { s, ty: 50 - 30 * s };
+  }
+  return { frame, draw, icon, star, ACC, installDefs, mouth, WEAR: W, wearIcon, TINT_DEF, PAL };
 })();

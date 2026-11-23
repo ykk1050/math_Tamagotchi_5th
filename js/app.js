@@ -19,7 +19,7 @@
   });
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); S = Object.assign(fresh(), o); S.needs = Object.assign(fresh().needs, o.needs || {}); S.known = Object.assign(fresh().known, o.known || {}); } } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const save = () => { try { noteFirsts(); } catch (e) {} try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   if (S.acc) { S.wear = S.wear || {}; const SL = { flower: 'head', crown: 'head', berryhat: 'head', phat: 'head', bow: 'head', scarf: 'neck' }; S.wear[SL[S.acc] || 'head'] = S.acc; S.acc = null; }
 
   // ---------- 친구 정보 ----------
@@ -46,7 +46,7 @@
   function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
   function overlay(id, on) { $(id).classList.toggle('on', on); }
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { Snd.tap(); overlay(b.dataset.close, false); });
-  function toast(t) { const el = $('toast'); el.innerHTML = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2400); }
+  function toast(t, ms = 2400) { const el = $('toast'); el.innerHTML = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), ms); }
   function applyFx() { document.body.classList.toggle('lowfx', !!S.lowfx); Snd.set(!!S.sound); Snd.musicSet(S.music !== false); }
   function applyTime() { document.body.classList.toggle('night', isNight()); }
   applyFx(); applyTime();
@@ -167,7 +167,7 @@
     if (S.day === t) return;
     if (S.day && S.log.length) { S.diary.unshift({ day: S.day, text: diaryText(S.log, S.day) }); S.diary = S.diary.slice(0, 14); }
     if (S.sick) { S.sick.lv--; if (S.sick.lv <= 0) S.sick = null; }
-    S.ylog = S.day ? (S.log || []).slice(-30) : []; S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
+    pcAdd(S.log || []); S.ylog = S.day ? (S.log || []).slice(-30) : []; S.day = t; S.today = 0; S.log = []; S.pokeToday = 0; S.days++;
     { const mo = new Date().getMonth() + 1, winter = mo === 12 || mo <= 2; S.weather = pick(winter ? ['sun', 'sun', 'snow', 'snow', 'rain'] : ['sun', 'sun', 'sun', 'rain', 'rain', 'rainbow']); }
     const f = pick(Object.keys(FOODS)), p = pick(Object.keys(PLACES)), c = pick(Object.keys(CARE));
     S.wishes = S.stage <= 2 ? EGG_WISH() : [{ t: 'food', id: f, done: false }, { t: 'place', id: p, done: false }, { t: 'care', id: c, done: false }];
@@ -196,8 +196,8 @@
   }
   // 기운이 25보다 낮으면 스르르 잠들고, 자는 동안 기운이 차서 가득 차면 깬다
   function syncSleep() {
-    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) S.asleep = true;
-    if (S.asleep && (S.needs.energy >= 100 || S.stage < 3)) S.asleep = false;
+    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) { S.asleep = true; S.log.push({ e: 'sleep' }); }
+    if (S.asleep && (S.needs.energy >= 100 || S.stage < 3)) { if (S.stage >= 3) ensureDream(); S.asleep = false; }
     const z = !!S.asleep; if (z === sleeping) return false; sleeping = z; return true;
   }
   // 하루 한도: 같은 활동으로 우정이 끝없이 오르지 않게 (날이 바뀌면 다시)
@@ -331,7 +331,15 @@
     nameSel = okName(v) ? v : null; $('btn-name').disabled = !nameSel;
   });
   $('name-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('name-input').blur(); } });
-  function renameOpen() { $('set-name').value = S.name || ''; }
+  function renameOpen() { $('set-name').value = S.name || ''; $('set-me').value = S.me || ''; $('me-row').style.display = S.me || S.flv >= ME_LV ? '' : 'none'; }
+  $('btn-me').onclick = () => {
+    const v = cleanName($('set-me').value);
+    if (!v) { if (!S.me) return; S.me = null; S.meNo = true; save(); toast('이름을 지웠어요. 친구가 다시 묻지 않아요'); return; }
+    if (!okName(v)) { Snd.no(); toast('한글이나 영어로 이름을 써 주세요 (8글자까지)'); return; }
+    if (v === S.me) { toast('지금과 같은 이름이에요'); return; }
+    setMe(v, false); $('set-me').value = v; toast(`이제 친구가 <b>${you()}</b> 하고 불러요`);
+  };
+  $('set-me').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('btn-me').click(); } });
   $('btn-rename').onclick = () => {
     const v = cleanName($('set-name').value);
     if (!okName(v)) { Snd.no(); toast('한글이나 영어로 이름을 써 주세요 (8글자까지)'); return; }
@@ -344,7 +352,7 @@
   $('btn-name-back').onclick = () => { Snd.tap(); openChoose(); };
   $('btn-name').onclick = () => {
     if (!nameSel) return; nameSel = cleanName(nameSel); if (!okName(nameSel)) return;
-    S = Object.assign(fresh(), { kind: choice, name: nameSel, sound: S.sound, lowfx: S.lowfx }); save(); Snd.level(); enterHome('new');
+    S = Object.assign(fresh(), { kind: choice, name: nameSel, sound: S.sound, lowfx: S.lowfx, born: Date.now() }); save(); Snd.level(); enterHome('new');
   };
 
   // =====================================================================
@@ -380,15 +388,16 @@
 
   function enterHome(mode) {
     const away0 = S.last ? (Date.now() - S.last) / 86400000 : 0; // 마지막으로 본 뒤 지난 날 (아래에서 last가 바뀌기 전에 잰다)
-    applyTime(); newDay(); tickNeeds(); growGarden(); const bday = checkBirthday();
+    applyTime(); newDay(); tickNeeds(); growGarden(); const bday = checkBirthday(); backfillFirsts(); const anniv = checkAnniv(); updatePers();
     if (S.fxp < (FRIEND_XP[S.flv] || 0)) S.fxp = FRIEND_XP[S.flv];
     if (S.stage >= 6 && !S.trait) { S.trait = pickTrait(); setTimeout(() => toast(`${AREA_NAME[S.trait]} 문제를 많이 맞혀서 <b>${TRAIT_NAME[S.trait]}</b>가 생겼어요!`), 2200); }
     S.badges = S.badges || {}; Object.keys(Prob.UNITS).forEach(u => { const t = badgeTier(u); if (t > (S.badges[u] || 0)) S.badges[u] = t; }); save();
     show('scr-home'); renderHome(); neighborVisit();
     if (bday) setTimeout(() => { toast(`오늘은 <b>${NM()}의 생일</b>이에요! 파티를 준비해 줘요`); Snd.level(); }, 900);
     else if (canGrow()) setTimeout(() => { if (!document.querySelector('.overlay.on')) levelUp(); }, 1400); else growHint();
+    if (anniv) setTimeout(() => celebrateAnniv(anniv), bday ? 5200 : 2200);
     Snd.music(isNight() ? 'night' : 'home');
-    clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); if (syncSleep() && $('scr-home').classList.contains('on') && !sulking && !toyOn && !editing && !document.querySelector('.overlay.on')) renderHome(); }, 60000);
+    clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); if (syncSleep() && $('scr-home').classList.contains('on') && !sulking && !toyOn && !editing && !hiding && !document.querySelector('.overlay.on')) renderHome(); }, 60000);
     setTimeout(() => {
       const lv = level();
       if (mode === 'new') { speak('home', S.kind === 'bunny' ? '(딸기 알이 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)' : '(별빛 알이 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)'); return; }
@@ -398,9 +407,9 @@
       const away = away0;
       if (away >= 1 && !sleeping && !sulking) {
         const wk = $('walker'); wk.classList.add('fast'); wk.style.left = '64%'; drawPet('wide'); speak('home', '(창밖을 보며 기다리고 있었어요)', { silent: true, noEmo: true });
-        setTimeout(() => { wk.classList.remove('fast'); goTo(46, () => { react('happy', 'hop'); heartAtPet(); speak('home', lineFrom(LINES[S.kind].talk.back, 'back')); }, true); }, 1800);
+        setTimeout(() => { wk.classList.remove('fast'); goTo(46, () => { react('happy', 'hop'); heartAtPet(); speak('home', callYou(.7) + lineFrom(LINES[S.kind].talk.back, 'back')); }, true); }, 1800);
       }
-      else { const h = new Date().getHours(), g = LINES[S.kind].talk.greet; speak('home', pick(h < 12 ? g.morning : h < 17 ? g.day : g.evening)); }
+      else { const h = new Date().getHours(), g = LINES[S.kind].talk.greet; speak('home', callYou(.5) + pick(h < 12 ? g.morning : h < 17 ? g.day : g.evening)); }
     }, 350);
     S.last = Date.now(); save();
     startWander(); poked();
@@ -408,6 +417,7 @@
   }
   function renderHome() {
     if (toyAbort) { const f = toyAbort; toyAbort = null; f(); }
+    if (hiding) hideEnd('abort');
     initRooms(); fixWishes();
     $('room-bg').innerHTML = roomSVG();
     renderParty(); renderRoomNav(); drawLight();
@@ -480,6 +490,7 @@
     const step = () => {
       if (!$('scr-home').classList.contains('on')) return;
       const wk = $('walker');
+      if (hiding) { wanderT = setTimeout(step, 3000); return; }
       if (sulking) { /* 구석에서 삐쳐 있음 */ }
       else if (sleeping) { sleepSpot(); wk.classList.remove('flying'); }
       else if (Date.now() < objBusy) { wanderT = setTimeout(step, objBusy - Date.now() + 300); return; }
@@ -581,7 +592,7 @@
     return true;
   }
   function sleepSpot() {
-    const wk = $('walker'); wk.querySelectorAll('.bedquilt').forEach(e => e.remove());
+    const wk = $('walker'); wk.querySelectorAll('.bedquilt').forEach(e => e.remove()); setTimeout(dreamTick, 900);
     if (!sleeping || S.stage <= 2) { wk.classList.remove('inbed'); if (!sleeping) S.covered = false; return; }
     if ((S.roomId || 'main') !== 'main') { wk.style.left = '34%'; wk.style.bottom = ''; return; }
     const bb = roomBox(236, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
@@ -601,6 +612,7 @@
   function poked() { lastTouch = Date.now(); clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
   // 친구가 먼저 앞으로 다가와서 말을 건다
   function comeSay(fn) {
+    if (hiding) return;
     if (S.stage < 3 || sleeping || sulking || toyOn || editing) return fn();
     const ok = goTo(48, () => { drawPet('wide'); setTimeout(fn, 250); }, true); if (ok === false) fn();
   }
@@ -625,12 +637,13 @@
       const g = document.createElement('button'); g.className = 'petgift'; g.setAttribute('aria-label', '선물 상자');
       g.innerHTML = '<svg viewBox="0 0 40 40"><rect x="7" y="16" width="26" height="18" rx="3" fill="#FFC7D9" stroke="#E5679A" stroke-width="2"/><rect x="5" y="11" width="30" height="7" rx="2" fill="#F7A0C1" stroke="#E5679A" stroke-width="2"/><path d="M20 11v23" stroke="#FFD36E" stroke-width="4"/><path d="M20 11 C14 2 8 6 12 10 M20 11 C26 2 32 6 28 10" fill="none" stroke="#FFD36E" stroke-width="2.6" stroke-linecap="round"/></svg>';
       Object.assign(g.style, { left: (pr.left - r.left + pr.width * .78) + 'px', top: (pr.top - r.top + pr.height * .55) + 'px' });
-      room.appendChild(g); react('happy', 'hop'); speak('home', pick(['짜잔! 너 주려고 찾았어. 열어 봐!', '선물이야! 몰래 숨겨 뒀던 거야.', '이거 받아! 우리 우정 선물!']));
+      room.appendChild(g); react('happy', 'hop'); speak('home', callYou(.4) + pick(['짜잔! 너 주려고 찾았어. 열어 봐!', '선물이야! 몰래 숨겨 뒀던 거야.', '이거 받아! 우리 우정 선물!']));
       g.onclick = (e) => { e.stopPropagation(); Snd.combo(); const n = 2 + (S.flv >= 6 ? 1 : 0); S.candy += n; S.log.push({ e: 'gift' }); save(); hud(); sparks(room, 10); toast(`선물 상자에서 <b>별사탕 ${n}개</b>가 나왔어요!`); speak('home', '헤헤, 마음에 들어? 또 찾아 올게!'); g.remove(); };
       setTimeout(() => g.isConnected && g.remove(), 30000);
     });
   }
   function idleTalk() {
+    if (hiding || document.querySelector('.mecard,.hscard')) { idleT = setTimeout(idleTalk, 22000); return; }
     if ($('scr-home').classList.contains('on') && !document.querySelector('.overlay.on')) {
       const ln = lowNeed(), w = S.wishes.find(x => !x.done);
       if (S.stage <= 2 && S.wishes.some(w => !w.done && w.t === 'care' && w.id === 'pet') && Math.random() < .55) { speak('home', pick(['(저를 쓰다듬어 주세요…)', '(알이 손길을 기다리는 것 같아요. 살살 문질러 주세요)', '(쓰담쓰담 해 줄래요?)']), { silent: true }); petFx('heart', $('pet')); }
@@ -639,11 +652,17 @@
       else if (sulking) speak('home', L3('sulk'), { silent: true });
       else if (S.sick && !sleeping && S.stage >= 3 && Math.random() < .6) { Snd.sneeze && Snd.sneeze(); speak('home', pick(['에취! 콜록콜록…', '훌쩍… 콧물이 나와.', '으슬으슬 추워… 콜록.'])); }
       else if (S.brushDue && !sleeping && S.stage >= 3 && Date.now() - S.brushDue > 60000 && Math.random() < .5) comeSay(() => speak('home', level() === 'talk' ? pick(['이 닦아 줘! 입에 간식이 남았어.', '치카치카 할 시간이야!']) : '(입을 아~ 벌려요)'));
+      else if (askNameReady()) askName();
+      else if (S.dream && !S.dream.told && !sleeping && !sulking && level() === 'talk' && Date.now() - (S.dream.at || 0) > 30000) tellDream();
+      else if (S.stage >= 4 && !S.trickHint && !sleeping && !sulking) trickHint();
       else if (!sleeping && level() === 'talk' && isNight() && S.light !== false && S.needs.energy < 45 && Math.random() < .5) speak('home', pick(['하암… 졸린데 불 좀 꺼 줄래?', '눈이 부셔서 잠이 안 와… 불 꺼 줄래?']));
       else if (!sleeping && level() === 'talk' && !isNight() && S.light === false && Math.random() < .6) speak('home', pick(['아침이야! 불 켜 줄래?', '깜깜해서 아무것도 안 보여~ 불 켜 줘!']));
-      else if (sleeping) speak('home', level() === 'egg' ? '(새근새근…)' : 'Zzz… 음냐…', { silent: true });
+      else if (sleeping) sleepTalk();
       else if (ln && level() === 'talk') comeSay(() => { react('sad'); speak('home', line(ln)); });
       else if (level() === 'talk' && S.flv >= 3 && S.giftDay !== S.day && Math.random() < .25) petGift();
+      else if (canHide() && Math.random() < (S.pers === 'play' ? .3 : .14)) hideAsk();
+      else if (level() === 'talk' && S.pers && Math.random() < .3) persAct();
+      else if (level() !== 'egg' && S.needs.mood >= 75 && !lowNeed() && Math.random() < .18) humming();
       else if (w && level() === 'talk' && Math.random() < .5) comeSay(() => { react('happy', 'hop'); speak('home', wishSay(w)); });
       else if (level() === 'talk' && memLine() && Math.random() < .35) comeSay(() => speak('home', memLine()));
       else if (level() === 'talk' && S.trait && Math.random() < .3) speak('home', pick(TRAIT_LINES[S.trait]));
@@ -651,6 +670,381 @@
       else speak('home', level() === 'talk' && Math.random() < .4 ? line('happy') : line('idle'));
     }
     idleT = setTimeout(idleTalk, 22000);
+  }
+  // =====================================================================
+  // 애착: 부위별 터치 · 재주 · 꿈 · 추억 앨범과 기념일 · 내 이름 · 숨바꼭질 · 성격
+  // =====================================================================
+  const mkEl = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  const dstr = () => { const d = new Date(); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+  // ---------- 내 이름: 우정이 깊어지면 친구가 물어본다 (이 기기에만 저장) ----------
+  const you = () => (S.me ? S.me + (/[가-힣]$/.test(S.me) ? (bat(S.me) ? '아' : '야') : '') : '');
+  const callYou = (p = .5) => (S.me && level() === 'talk' && Math.random() < p ? you() + '! ' : '');
+  const ME_LV = 4;
+  const askNameReady = () => level() === 'talk' && S.flv >= ME_LV && !S.me && !S.meNo && S.meAsk !== S.day && !sleeping && !sulking && !hiding && !toyOn && !editing;
+  function askName() {
+    S.meAsk = S.day; save();
+    comeSay(() => {
+      react('happy', 'squish');
+      speak('home', pick(['있잖아… 우리 이렇게 친해졌는데, 나 아직 네 이름을 몰라. 알려 줄래?', '너는 이름이 뭐야? 나도 네 이름 불러 보고 싶어!']));
+      document.querySelectorAll('.mecard').forEach(e => e.remove());
+      const c = mkEl('div', 'prepcard mecard', `<b>${NM()}가 물어봐요: "너는 이름이 뭐야?"</b><span>친구가 부를 이름을 써 주세요 (8글자까지)<br><small>이 기기에만 저장돼요</small></span><input class="me-input" type="text" maxlength="8" autocomplete="off" enterkeyhint="done" aria-label="내 이름"><div><button class="btn primary" data-m="ok" disabled>알려 주기</button><button class="btn" data-m="later">나중에</button></div>`);
+      setTimeout(() => { if (!c.isConnected) return; c.classList.add('show'); $('bubble').classList.add('hide'); }, 2400); $('room').appendChild(c);
+      const inp = c.querySelector('input'), ok = c.querySelector('[data-m="ok"]');
+      inp.addEventListener('input', () => { ok.disabled = !okName(cleanName(inp.value)); });
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (!ok.disabled) ok.click(); } });
+      ok.onclick = () => { const v = cleanName(inp.value); if (!okName(v)) return; c.remove(); setMe(v, true); };
+      c.querySelector('[data-m="later"]').onclick = () => { Snd.tap(); c.remove(); drawPet('sad'); speak('home', '알았어! 다음에 꼭 알려 줘.'); };
+      setTimeout(() => { if (c.isConnected && document.activeElement !== inp) c.remove(); }, 45000);
+    });
+  }
+  function setMe(v, fromAsk) {
+    const first = !S.me; S.me = v; S.meNo = false; if (first) S.log.push({ e: 'name' }); save();
+    Snd.combo(); react('happy', 'hop'); heartAtPet(); setTimeout(heartAtPet, 300);
+    if (level() === 'talk') speak('home', fromAsk ? `${v}! 예쁜 이름이다. 이제 '${you()}' 하고 부를게!` : `알았어! 이제 '${you()}' 하고 부를게!`);
+    if (fromAsk && first) addFriend(3);
+  }
+  // ---------- 추억 앨범: '처음' 순간과 기념일 ----------
+  const FIRST_T = { hatch: '알에서 나온 날', word: '처음 말한 날', talk: '처음 이야기한 날', walk: '첫 산책', cook: '처음 만든 간식', bath: '첫 목욕', badge: '첫 배지', party: '첫 생일 파티', makeup: '처음 화해한 날', gift: '첫 선물 받은 날', read: '처음 같이 읽은 책', photo: '첫 사진', trick: '첫 재주', name: '내 이름을 알려 준 날', hide: '첫 숨바꼭질', grow10: '다 자란 날' };
+  const FIRST_IC = { hatch: '✦', word: '“', talk: '♪', walk: '✿', cook: '★', bath: '◌', badge: '✪', party: '♛', makeup: '♥', gift: '✉', read: '❦', photo: '◎', trick: '☆', name: '♡', hide: '?', grow10: '♛' };
+  const firstTitle = (k) => (/^d\d+$/.test(k) ? `함께한 ${k.slice(1)}일` : FIRST_T[k] || k);
+  function firstOf(e) {
+    if (e.e === 'grow') return { 3: 'hatch', 4: 'word', 5: 'talk', 10: 'grow10' }[e.stage];
+    if (e.e === 'care') return e.id === 'bath' ? 'bath' : null;
+    return ['walk', 'cook', 'badge', 'party', 'makeup', 'gift', 'read', 'photo', 'trick', 'name', 'hide'].includes(e.e) ? e.e : null;
+  }
+  function noteFirsts() {
+    if (!S.log || !S.kind) return; S.firsts = S.firsts || [];
+    const have = new Set(S.firsts.map(f => f.k));
+    S.log.forEach(e => {
+      const k = firstOf(e); if (!k || have.has(k)) return; have.add(k);
+      S.firsts.push({ k, d: dstr(), st: S.stage });
+      setTimeout(() => toast(`추억 앨범에 '<b>${firstTitle(k)}</b>' 순간이 남았어요`), 2600);
+    });
+  }
+  function backfillFirsts() {
+    if (S.fb) return; S.fb = 1; S.firsts = S.firsts || [];
+    const add = (k) => { if (!S.firsts.some(f => f.k === k)) S.firsts.push({ k, d: null }); };
+    if (S.stage >= 3) add('hatch'); if (S.stage >= 4) add('word'); if (S.stage >= 5) add('talk'); if (S.stage >= 10) add('grow10');
+    if ((S.album || []).length) add('photo'); if (Object.keys(S.read || {}).length) add('read'); if (Object.values(S.badges || {}).some(t => t > 0)) add('badge');
+  }
+  const ANNIV = [10, 30, 50, 100, 150, 200, 300, 365, 500, 730, 1000];
+  function togetherDays() {
+    if (!S.born) return S.days || 1;
+    const a = new Date(S.born); a.setHours(0, 0, 0, 0); const b = new Date(); b.setHours(0, 0, 0, 0);
+    return Math.round((b - a) / 86400000) + 1;
+  }
+  function checkAnniv() {
+    if (!S.born) S.born = Date.now() - Math.max(0, (S.days || 1) - 1) * 86400000;
+    S.anniv = S.anniv || []; const n = togetherDays(), due = ANNIV.filter(m => n >= m && !S.anniv.includes(m));
+    if (!due.length) return 0;
+    due.forEach(m => S.anniv.push(m)); const m = due[due.length - 1];
+    S.firsts = S.firsts || []; S.firsts.push({ k: 'd' + m, d: dstr(), st: S.stage }); save(); return m;
+  }
+  function celebrateAnniv(m) {
+    if (!$('scr-home').classList.contains('on') || document.querySelector('.overlay.on')) { setTimeout(() => celebrateAnniv(m), 4000); return; }
+    Snd.level(); sparks($('room'), 18); heartAtPet(); setTimeout(heartAtPet, 350); addFriend(5);
+    toast(`${NM()}${Prob.jo(NM(), '와').slice(NM().length)} 함께한 지 <b>${m}일</b>이 됐어요! <b>우정 +5</b>`, 3600);
+    if (S.stage >= 3) { rainbowUnder(); react('happy', 'hop'); }
+    speak('home', level() === 'talk' ? `${callYou(1)}우리 함께한 지 ${m}일이야! ${pick(['늘 같이 있어 줘서 고마워.', '앞으로도 계속 같이 있자!', '너랑 함께라서 매일 행복해.'])}` : S.stage <= 2 ? '(함께한 날을 축하하듯 알이 반짝반짝 빛나요)' : '(함께한 날을 축하하며 폴짝폴짝!)');
+  }
+  // ---------- 성격: 어떻게 키웠는지에 따라 ----------
+  const PERS = {
+    eat: { n: '먹보', d: '맛있는 걸 많이 먹어서', act: '먹이기·간식', w: .8 },
+    play: { n: '장난꾸러기', d: '같이 많이 놀아서', act: '놀이·재주·숨바꼭질', w: 1.2 },
+    cuddle: { n: '애교쟁이', d: '많이 쓰다듬고 만져 줘서', act: '쓰다듬기·터치', w: .45 },
+    sleep: { n: '잠꾸러기', d: '푹 재워 줘서', act: '재우기', w: 1.6 },
+    walk: { n: '모험가', d: '산책을 많이 다녀서', act: '산책', w: 1.4 },
+    book: { n: '책벌레', d: '책을 많이 읽어 줘서', act: '책 읽기', w: 1.6 }
+  };
+  function pcOf(e) {
+    if (e.e === 'care') return { play: 'play', pet: 'cuddle', nap: 'sleep' }[e.id] || null;
+    return { feed: 'eat', cook: 'eat', walk: 'walk', read: 'book', trick: 'play', hide: 'play', touch: 'cuddle', sleep: 'sleep' }[e.e] || null;
+  }
+  function pcAdd(log) { S.pc = S.pc || {}; (log || []).forEach(e => { const k = pcOf(e); if (k) S.pc[k] = (S.pc[k] || 0) + 1; }); }
+  function pcNow() { const c = Object.assign({}, S.pc || {}); (S.log || []).forEach(e => { const k = pcOf(e); if (k) c[k] = (c[k] || 0) + 1; }); return c; }
+  function updatePers() {
+    if (S.stage < 5) return; const c = pcNow(), tot = Object.values(c).reduce((a, b) => a + b, 0); if (tot < 12) return;
+    const sc = (k) => (c[k] || 0) * PERS[k].w, top = Object.keys(PERS).sort((a, b) => sc(b) - sc(a))[0];
+    if (top === S.pers || (S.pers && sc(top) < sc(S.pers) * 1.2)) return;
+    const old = S.pers; S.pers = top; save();
+    setTimeout(() => toast(old ? `요즘 ${NM()}의 성격이 바뀌었어요: <b>${PERS[top].n}</b>` : `${NM()}에게 성격이 생겼어요: <b>${PERS[top].n}</b> (${PERS[top].d})`, 3400), 3000);
+  }
+  const PERS_LINES = {
+    eat: ['배에서 꼬르륵… 간식 생각만 나!', '오늘 간식은 뭐야? 냠냠 기대돼!', '킁킁, 어디서 맛있는 냄새 안 나?', '먹는 게 세상에서 제일 좋아!'],
+    play: ['심심해~ 우리 놀자! 숨바꼭질 어때?', '히히, 장난치고 싶다!', '공 던지기 하자! 내가 다 잡을 거야.', '재주 하나 더 가르쳐 줘!'],
+    cuddle: ['안아 줘! 쓰담쓰담도!', '너 옆에 있으면 제일 좋아~', '볼 만져 줘! 말랑말랑해.', '오늘도 너 좋아해!'],
+    sleep: ['하암… 조금만 누워 있고 싶다…', '이불 속이 제일 포근해…', '꿈나라 가고 싶어~ 하암', '폭신한 베개 생각나…'],
+    walk: ['밖에 나가고 싶어! 오늘은 어디 갈까?', '새로운 곳 탐험하고 싶어!', '창밖이 궁금해! 저기 뭐가 있을까?', '산책 가면 신나는 일이 생길 것 같아!'],
+    book: ['책 읽어 줘! 그림책 좋아.', '책 속 이야기 생각하고 있었어.', '다락방 책장에 새 책 없나?', '나 글자 읽는 거 연습했어!']
+  };
+  function persAct() {
+    const p = S.pers, ln = () => lineFrom(PERS_LINES[p], 'pers');
+    if (p === 'eat') comeSay(() => { drawPet('chew'); speak('home', ln()); });
+    else if (p === 'play') { react('happy', 'hop'); speak('home', ln()); }
+    else if (p === 'cuddle') comeSay(() => { react('happy', 'squish'); heartAtPet(); speak('home', ln()); });
+    else if (p === 'sleep') { drawPet('sleepy'); speak('home', ln()); }
+    else if (p === 'walk' && (S.roomId || 'main') === 'main') { if (goTo(roomBox(550, 64, 800, 286).cx, () => { drawPet('wide'); speak('home', ln()); }) === false) speak('home', ln()); }
+    else if (p === 'book' && (S.roomId || 'main') === 'main') { if (goTo(roomBox(210, 136, 445, 222).cx, () => { drawPet('smug'); speak('home', ln()); }) === false) speak('home', ln()); }
+    else speak('home', ln());
+  }
+  // ---------- 부위별 터치 반응 ----------
+  const TOUCH = {
+    cheek: { mood: 'full', cls: 't-cheek', snd: 'boing', pop: '뽀잉', talk: ['볼 말랑말랑하지? 헤헤', '뽀잉~ 볼이 쭉 늘어났다!', '내 볼은 찹쌀떡이야!'], baby: '(볼이 말랑~ 늘어났어요)' },
+    ear: { mood: 'happy', cls: 't-ear', snd: 'flap', pop: '파닥', talk: ['귀 간지러워! 파닥파닥!', '내 귀 보들보들하지?', '귀 만져 주면 기분 좋아~'], baby: '(귀를 파닥파닥!)' },
+    head: { mood: 'smug', cls: 't-pat', snd: 'heart', pop: '쓰담', talk: ['머리 쓰담쓰담 좋아~', '헤헤, 칭찬받는 것 같아!', '더 해 줘! 기분 좋아.'], baby: '(눈을 지그시 감고 좋아해요)' },
+    nose: { mood: 'wide', cls: 't-boop', snd: 'boop', pop: '톡!', talk: ['앗, 코 톡! 깜짝이야~', '코가 간질간질해!', '코 누르면 뿅 소리 나지?'], baby: '(코를 톡! 눈이 동그래졌어요)' },
+    belly: { mood: 'tickle', cls: 't-tickle', snd: 'giggle', pop: '까르르', talk: ['까르르! 배 간지러워!', '히히히, 거기는 간지럼 타!', '으하하, 그만그만!'], baby: '(까르르 몸을 배배 꼬아요)' },
+    hand: { mood: 'happy', cls: 't-hand', snd: 'heart', pop: '꼭!', talk: ['손 꼭! 우리 손잡았다!', '네 손 따뜻하다~', '손잡으니까 든든해!'], baby: '(작은 손으로 손가락을 꼭 잡아요)' },
+    foot: { mood: 'tickle', cls: 't-tickle', snd: 'giggle', pop: '간질', talk: ['발바닥은 안 돼~ 까르르!', '히힛, 발가락 간지러워!'], baby: '(발을 꼼지락꼼지락)' },
+    wing: { mood: 'happy', cls: 't-wing', snd: 'flap', pop: '파닥', talk: ['날개 파닥파닥! 날아 볼까?', '날개 만지면 간질간질해!'], baby: '(날개를 파닥파닥!)' },
+    side: { mood: 'tickle', cls: 't-tickle', snd: 'giggle', pop: '까르르', talk: ['옆구리는 간지러워! 까르르!', '히히, 거기 만지면 웃음이 나!'], baby: '(간지러워서 까르르)' }
+  };
+  const TCLS = ['t-cheek', 't-ear', 't-pat', 't-boop', 't-tickle', 't-hand', 't-wing', 'tr-jump', 'tr-spin', 'tr-bow', 'tr-paw', 'tr-oops'];
+  // 누른 곳을 친구 그림 좌표로 바꿔서 어느 부위인지 알아낸다
+  function zoneOf(cx, cy) {
+    const svg = $('pet').querySelector('svg'); if (!svg) return 'head';
+    const r = svg.getBoundingClientRect(), k = Math.min(r.width / 160, r.height / 156); if (!k) return 'head';
+    const vx = (cx - (r.left + (r.width - 160 * k) / 2)) / k - 80, vy = (cy - (r.top + (r.height - 156 * k) / 2)) / k - 92;
+    const F = Art.frame(S.kind, S.stage), lx = Math.abs(vx / F.s), ly = (vy - F.ty) / F.s;
+    if (S.kind === 'bunny') {
+      if (ly < -20) return 'ear';
+      if (ly < 18) { if (lx < 6 && ly > 3 && ly < 12) return 'nose'; if (lx >= 8 && ly >= 2) return 'cheek'; return 'head'; }
+      if (ly > 35) return 'foot';
+      return lx >= 9 && ly < 33 ? 'hand' : 'belly';
+    }
+    const fy = ly - 4; // 구름 얼굴은 4만큼 아래
+    if (lx > 28) return S.stage >= 5 ? 'wing' : 'side';
+    if (fy < -9) return 'head';
+    if (lx < 6 && fy > 0 && fy < 13) return 'nose';
+    if (lx >= 9 && fy >= 2 && fy <= 17) return 'cheek';
+    if (fy > 15) return 'belly';
+    return 'head';
+  }
+  function tpop(x, y, txt, cls = '') {
+    const room = $('room'), r = room.getBoundingClientRect(), e = mkEl('span', 'tpop ' + cls, txt);
+    Object.assign(e.style, { left: (x - r.left) + 'px', top: (y - r.top) + 'px' }); room.appendChild(e); setTimeout(() => e.remove(), 1100);
+  }
+  function handPop(x, y) {
+    const room = $('room'), r = room.getBoundingClientRect(), e = mkEl('span', 'thand', Art.icon('hand'));
+    Object.assign(e.style, { left: (x - r.left) + 'px', top: (y - r.top) + 'px' }); room.appendChild(e); setTimeout(() => e.remove(), 1300);
+  }
+  function petAnim(cls, ms = 1400, mood) {
+    const p = $('pet'); if (mood) drawPet(mood);
+    p.classList.remove('hop', 'shake', 'squish', 'wobble', ...TCLS); void p.offsetWidth; p.classList.add(cls);
+    clearTimeout(moodT); moodT = setTimeout(() => { p.classList.remove(...TCLS); drawPet(); }, ms);
+  }
+  function touchZone(ev) {
+    const z = zoneOf(ev.clientX, ev.clientY), T = TOUCH[z] || TOUCH.head;
+    petAnim(T.cls, 1500, T.mood);
+    Snd[T.snd] && Snd[T.snd](S.kind); tpop(ev.clientX, ev.clientY - 10, T.pop);
+    if (z === 'hand') handPop(ev.clientX, ev.clientY);
+    speak('home', level() === 'talk' ? lineFrom(T.talk, 'tz' + z) : T.baby, { noEmo: true, silent: true });
+    heartAtPet(); if (S.pokeToday < 10) S.log.push({ e: 'touch', z });
+  }
+  function humming() {
+    Snd.hum && Snd.hum(S.kind); drawPet('smug'); petFx('note', $('pet'));
+    speak('home', level() === 'talk' ? pick(['흥얼흥얼~ ♪ 기분 좋아!', '랄라라~ ♪', '룰루~ 오늘 기분 최고야 ♪']) : '(기분이 좋아서 흥얼흥얼~ ♪)', { silent: true });
+  }
+  // ---------- 재주 가르치기: 손가락 동작으로 ----------
+  const TRICK = {
+    paw: { n: '손!', how: '친구를 꾹 길게 누르기', cls: 'tr-paw', mood: 'happy', ok: ['손! 여기 있어!', '손 줄게! 꼭 잡아 줘!'] },
+    jump: { n: '점프', how: '친구 위에서 위로 휙 쓸어 올리기', cls: 'tr-jump', mood: 'happy', ok: ['점프! 영차!', '하늘까지 뛰어 볼게!'] },
+    spin: { n: '빙글빙글', how: '친구 위에 동그라미 그리기', cls: 'tr-spin', mood: 'happy', ok: ['빙글빙글~ 한 바퀴!', '빙그르르! 멋있지?'] },
+    bow: { n: '꾸벅 인사', how: '친구 위에서 아래로 휙 쓸어내리기', cls: 'tr-bow', mood: 'smug', ok: ['꾸벅! 안녕하세요~', '공손하게 인사! 꾸벅!'] }
+  };
+  const TRICK_NEED = 5;
+  const trickKnown = (k) => ((S.tricks || {})[k] || 0) >= TRICK_NEED;
+  function gestureOf(P) {
+    if (!P || !P.length) return null;
+    const A = P[0], Z = P[P.length - 1], t = Z[2] - A[2], dx = Z[0] - A[0], dy = Z[1] - A[1];
+    let len = 0; for (let i = 1; i < P.length; i++) len += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]);
+    if (len < 15 && t >= 650) return 'paw';
+    if (t < 800 && len > 50) {
+      if (dy < -50 && Math.abs(dx) < -dy * .7 && len < -dy * 1.6) return 'jump';
+      if (dy > 50 && Math.abs(dx) < dy * .7 && len < dy * 1.6) return 'bow';
+    }
+    if (len > 140 && t < 3000) {
+      const cx = P.reduce((a, p) => a + p[0], 0) / P.length, cy = P.reduce((a, p) => a + p[1], 0) / P.length; let sw = 0;
+      for (let i = 1; i < P.length; i++) { let d = Math.atan2(P[i][1] - cy, P[i][0] - cx) - Math.atan2(P[i - 1][1] - cy, P[i - 1][0] - cx); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; sw += d; }
+      if (Math.abs(sw) >= 5.6) return 'spin';
+    }
+    return null;
+  }
+  let lastTrick = 0;
+  function tryTrick(g) {
+    if (S.stage < 4 || sleeping || sulking || hiding || toyOn || editing || Date.now() - madeAt < 2500) return false;
+    if (Date.now() - lastTrick < 1400) return true; lastTrick = Date.now(); poked(); doTrick(g); return true;
+  }
+  function trickShow(k, ms = 1200) { const T = TRICK[k]; petAnim(T.cls, ms, T.mood); if (k === 'paw') { const p = $('pet').getBoundingClientRect(); handPop(p.left + p.width * .62, p.top + p.height * .62); } if (k === 'spin') Snd.pop(); else if (k === 'jump') Snd.boing(); else Snd.heart(); }
+  function doTrick(k) {
+    S.tricks = S.tricks || {}; const n = S.tricks[k] || 0, T = TRICK[k], talk = level() === 'talk';
+    if (n >= TRICK_NEED) { trickShow(k); tpop(...petTop(), T.n); speak('home', talk ? callYou(.3) + lineFrom(T.ok, 'trk' + k) : `(${T.n} 짜잔! 뿌듯한 얼굴이에요)`, { noEmo: true, silent: true }); heartAtPet(); addNeed('mood', 2); renderNeeds(); S.log.push({ e: 'trick', id: k }); save(); return; }
+    if (!dayCap('trickp', 16)) { refuse('trick', talk ? '오늘은 재주 연습 많이 했어… 힘들어. 내일 또 하자!' : '(지쳐서 털썩 주저앉아요)', 'sleepy'); return; }
+    if (Math.random() < .35 + n * .12) {
+      S.tricks[k] = n + 1; trickShow(k); heartAtPet(); addNeed('mood', 2); renderNeeds(); S.log.push({ e: 'trick', id: k });
+      if (dayCap('trickf', 3)) addFriend(1);
+      if (n + 1 >= TRICK_NEED) {
+        setTimeout(() => { Snd.combo(); sparks($('room'), 14); toast(`재주 <b>${T.n}</b>를 다 배웠어요! 이제 언제든 할 수 있어요`, 3200); }, 700);
+        addFriend(3); speak('home', talk ? `${T.n} 다 배웠다! ${S.me ? you() + ' 덕분이야!' : '네 덕분이야!'}` : `(${T.n}! 이제 척척 해내요)`, { noEmo: true, silent: true });
+      } else { speak('home', talk ? pick(['이렇게? 맞았어?', '해냈다! 칭찬해 줘!', '조금씩 알 것 같아!']) : '(해냈다는 듯 뿌듯해해요)', { noEmo: true, silent: true }); toast(`<b>${T.n}</b> 배우는 중 ${'●'.repeat(n + 1)}${'○'.repeat(TRICK_NEED - n - 1)}`); }
+      save(); return;
+    }
+    // 아직 헷갈려서 엉뚱한 걸 한다
+    const other = pick(Object.keys(TRICK).filter(x => x !== k));
+    if (Math.random() < .5) { petAnim(TRICK[other].cls, 1200, 'wide'); setTimeout(() => { petFx('q', $('pet')); }, 900); }
+    else { petAnim('tr-oops', 1200, 'dizzy'); petFx('q', $('pet')); }
+    speak('home', talk ? pick(['어… 이렇게 하는 거 맞아?', '어라? 이게 아닌가?', '헷갈려~ 다시 해 줘!']) : '(고개를 갸웃갸웃)', { noEmo: true, silent: true });
+    toast(`<b>${T.n}</b> 배우는 중 ${'●'.repeat(n)}${'○'.repeat(TRICK_NEED - n)} · 다시 해 봐요`); save();
+  }
+  const petTop = () => { const p = $('pet').getBoundingClientRect(); return [p.left + p.width / 2, p.top + p.height * .12]; };
+  function trickHint() {
+    S.trickHint = true; save();
+    comeSay(() => { react('happy', 'hop'); speak('home', level() === 'talk' ? '나 재주 배우고 싶어! 가르쳐 줄래?' : '(뭔가 배우고 싶은 눈치예요)'); });
+    setTimeout(() => toast('친구를 <b>꾹 길게 누르거나</b> 위로 <b>휙 쓸어 올리면</b> 재주를 가르칠 수 있어요. 방법은 수첩에 있어요', 4200), 1600);
+  }
+  // 이웃이 놀러 오면 배운 재주를 자랑한다
+  function showOff(N) {
+    const ks = Object.keys(TRICK).filter(trickKnown); if (!ks.length || sleeping || sulking || hiding || S.stage < 4 || Math.random() > .55) return false;
+    const k = pick(ks); poked();
+    speak('home', level() === 'talk' ? `${N.name}! 내 재주 볼래? ${TRICK[k].n}!` : `(${N.name}에게 재주를 보여 줘요)`, { noEmo: true });
+    setTimeout(() => trickShow(k), 700);
+    setTimeout(() => { Snd.babble(2, 'bunny'); speak('home', `<b>${N.name}</b>: ${pick(['우와! 정말 대단하다!', '나도 가르쳐 줘!', '최고야! 박수 짝짝짝!'])}`, { silent: true, emo: 'visitor' }); }, 2300);
+    return true;
+  }
+  // ---------- 꿈과 잠꼬대 ----------
+  const DREAM_GEN = [
+    { k: 'candy', t: '하늘에서 별사탕 비가 내리는' }, { k: 'moon', t: '달님이랑 그네 타는' }, { k: 'bubble', t: '비눗방울 타고 둥둥 떠다니는' }, { k: 'heart', t: '너랑 손잡고 하늘을 나는' }
+  ];
+  function nbById(id) { return Object.values(NEIGH).find(n => n.id === id); }
+  function dreamPool() {
+    const L = (S.log || []).concat(S.ylog || []), out = [];
+    L.forEach(e => {
+      if ((e.e === 'cook' || e.e === 'feed') && FOODS[e.id]) out.push({ k: 'food', id: e.id, t: `우리 둘이 구름 위에서 ${obj(FOODS[e.id].name)} 산더미만큼 만드는`, talk: `음냐… ${FOODS[e.id].name}… 하나만 더…` });
+      else if (e.e === 'walk' && PLACES[e.id]) out.push({ k: 'place', id: e.id, t: `${PLACES[e.id].name}에서 너랑 술래잡기하는`, talk: `음냐… ${PLACES[e.id].name}… 또 가자…` });
+      else if (e.e === 'help' && nbById(e.id)) { const N = nbById(e.id); out.push({ k: 'nb', id: e.id, t: `${N.name}${Prob.jo(N.name, '와').slice(N.name.length)} 같이 소풍 가는`, talk: `음냐… ${N.name}… 같이 놀자…` }); }
+      else if (e.e === 'wear' && ITEMS[e.id]) out.push({ k: 'wear', id: e.id, t: `${ITEMS[e.id].name} 입고 무도회에 가는`, talk: '음냐… 나 예쁘지…' });
+      else if (e.e === 'read') out.push({ k: 'book', t: '그림책 속으로 쏙 들어가는', talk: '음냐… 그래서… 어떻게 됐어…' });
+      else if (e.e === 'hide') out.push({ k: 'heart', t: '너랑 숨바꼭질하는', talk: '음냐… 나 찾아 봐라… 히히…' });
+    });
+    return out;
+  }
+  function dreamIc(d) {
+    if (!d) return Art.icon('moon');
+    if (d.k === 'food' && FOODS[d.id]) return Scene.food(d.id);
+    if (d.k === 'place') return ICON.walk.replace(/#fff/g, '#55C3A3');
+    if (d.k === 'nb' && NB_ART[d.id]) return NB_ART[d.id];
+    if (d.k === 'wear' && ITEMS[d.id]) return Art.wearIcon(d.id, S.kind);
+    if (d.k === 'book') return ICON.book;
+    if (d.k === 'heart') return '<svg viewBox="0 0 32 32"><path d="M16 27 C4 19 3 11 8 7.5 C11.5 5 14.5 6.5 16 9.5 C17.5 6.5 20.5 5 24 7.5 C29 11 28 19 16 27Z" fill="#F7A0C1" stroke="#E5679A" stroke-width="2"/></svg>';
+    return Art.icon(d.k === 'candy' ? 'candy' : d.k === 'bubble' ? 'bubble' : 'moon');
+  }
+  function newDream() {
+    const P = dreamPool(), d = P.length && Math.random() < .75 ? pick(P) : pick(DREAM_GEN);
+    return Object.assign({}, d, { told: false, at: Date.now(), night: isNight() });
+  }
+  function ensureDream() { if (S.stage >= 3 && (!S.dream || S.dream.told)) { S.dream = newDream(); save(); } }
+  function dreamTick() {
+    const wk = $('walker'); let b = wk.querySelector('.dreamb');
+    const on = $('scr-home').classList.contains('on') && sleeping && S.stage >= 3 && !document.querySelector('.overlay.on');
+    if (!on) { if (b) b.remove(); return; }
+    ensureDream();
+    if (!b) { b = mkEl('div', 'dreamb', '<i class="d1"></i><i class="d2"></i><span class="cl"></span><span class="ic"></span>'); wk.appendChild(b); dreamTick.i = 0; b.querySelector('.ic').innerHTML = dreamIc(S.dream); }
+    else {
+      dreamTick.i = (dreamTick.i || 0) + 1; const i = dreamTick.i % 3, ic = b.querySelector('.ic');
+      b.classList.add('sw'); setTimeout(() => { ic.innerHTML = i ? dreamIc(S.dream) : dreamIc(pick(DREAM_GEN)); b.classList.remove('sw'); }, 420);
+    }
+    if (dreamTick.i % 2 === 0) Snd.breath && Snd.breath();
+  }
+  setInterval(dreamTick, 4200);
+  function sleepTalk() {
+    if (S.stage <= 2) { speak('home', '(새근새근…)', { silent: true, noEmo: true }); return; }
+    if (level() !== 'talk') { speak('home', pick(['(쿨쿨… 입을 오물오물)', '(새근새근… 꿈을 꾸나 봐요)']), { silent: true, noEmo: true }); return; }
+    ensureDream(); const d = S.dream;
+    const t = S.me && Math.random() < .3 ? `음냐… ${you()}… 고마워…` : d && d.talk && Math.random() < .7 ? d.talk : pick(['Zzz… 음냐…', '음냐… 둥실둥실…', '음냐… 별사탕… 냠냠…']);
+    speak('home', t, { silent: true, noEmo: true });
+  }
+  function tellDream() {
+    const d = S.dream; d.told = true; save();
+    const h = new Date().getHours(), when = d.night && h >= 5 && h < 12 ? '어젯밤에' : '아까 자면서';
+    comeSay(() => { react('happy', 'hop'); speak('home', `${callYou(.6)}있잖아, ${when} ${d.t} 꿈 꿨어!`); });
+  }
+  // ---------- 숨바꼭질 ----------
+  let hiding = null;
+  const HS_SVG = {
+    box: '<svg viewBox="0 0 100 80" aria-hidden="true"><path d="M8 26 L2 12 L44 12 L50 26Z M92 26 L98 12 L56 12 L50 26Z" fill="#F2CA9C" stroke="#B9875A" stroke-width="3" stroke-linejoin="round"/><path d="M8 26 L92 26 L88 76 L12 76Z" fill="#E7B98A" stroke="#B9875A" stroke-width="3" stroke-linejoin="round"/><path d="M34 46 h32" stroke="#B9875A" stroke-width="3" stroke-linecap="round" opacity=".45"/></svg>',
+    quilt: '<svg viewBox="0 0 160 70" aria-hidden="true"><path d="M6 66 C10 30 40 10 80 12 C120 10 150 30 154 66 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="3"/><path d="M30 42 q20 -8 40 0 q20 8 40 0 q10 -4 20 0" stroke="#fff" stroke-width="3" fill="none" stroke-dasharray="4 5"/><circle cx="48" cy="54" r="3" fill="#fff"/><circle cx="112" cy="54" r="3" fill="#fff"/></svg>',
+    curtain: () => { const f = S.kind === 'bunny' ? '#FFC7D9' : '#D9CCFF', k = S.kind === 'bunny' ? '#E5679A' : '#8F7BE0'; return `<svg viewBox="0 0 60 200" preserveAspectRatio="none" aria-hidden="true"><path d="M8 2 C2 60 14 120 4 196 Q30 188 56 196 C50 130 58 60 52 2Z" fill="${f}" stroke="${k}" stroke-width="2.4" opacity=".97"/><path d="M22 6 C18 70 26 130 20 190 M38 6 C42 70 34 130 40 190" stroke="${k}" stroke-width="1.6" fill="none" opacity=".35"/></svg>`; }
+  };
+  const canHide = () => level() === 'talk' && S.stage >= 5 && S.flv >= 2 && !sleeping && !S.sick && !sulking && !toyOn && !editing && !hiding && (S.roomId || 'main') === 'main' && !(S.hs && S.hs.day === S.day && S.hs.n >= 3) && !document.querySelector('.prepcard');
+  function hideAsk() {
+    S.hs = S.hs && S.hs.day === S.day ? S.hs : { day: S.day, n: 0 }; S.hs.n++; save();
+    comeSay(() => {
+      react('happy', 'hop'); speak('home', pick(['우리 숨바꼭질 하자! 내가 숨을게. 열까지 세어 줘!', '심심해~ 숨바꼭질 할래? 내가 꼭꼭 숨을게!']));
+      const c = mkEl('div', 'prepcard hscard', '<b>숨바꼭질 할까요?</b><span>눈을 감고 열까지 세면 친구가 방 어딘가에 숨어요</span><div><button class="btn primary" data-h="go">좋아! 열 세기</button><button class="btn" data-h="no">다음에</button></div>');
+      $('room').appendChild(c); setTimeout(() => { if (!c.isConnected) return; c.classList.add('show'); $('bubble').classList.add('hide'); }, 2200);
+      c.querySelector('[data-h="go"]').onclick = () => { Snd.tap(); c.remove(); hideStart(); };
+      c.querySelector('[data-h="no"]').onclick = () => { Snd.tap(); c.remove(); drawPet('sad'); speak('home', '힝, 알았어. 다음에 꼭 하자!'); };
+      setTimeout(() => c.isConnected && c.remove(), 20000);
+    });
+  }
+  function hideStart() {
+    if (hiding) return; const room = $('room'), wk = $('walker');
+    hiding = { spots: [], at: null, ready: false, iv: [], to: [], miss: 0 };
+    clearTimeout(wanderT); clearTimeout(idleT); objBusy = Date.now() + 600000; $('bubble').classList.add('hide');
+    const veil = mkEl('div', 'hsveil', '<span>눈 감고 열까지 세는 중…</span><b>하나</b>'); room.appendChild(veil); hiding.veil = veil;
+    const NUM = ['하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
+    let n = 0; const iv = setInterval(() => { n++; if (n >= NUM.length) { clearInterval(iv); veil.remove(); hideReady(); return; } veil.querySelector('b').textContent = NUM[n]; Snd.tap(); }, 340); hiding.iv.push(iv);
+    setTimeout(() => wk.classList.add('hs-hidden'), 150);
+    const W = room.clientWidth;
+    const defs = [{ k: 'box', b: roomBox(680, 440, 780, 520) }, { k: 'quilt', b: roomBox(205, 402, 365, 472) }, { k: 'curtain', b: roomBox(572, 60, 628, 478) }];
+    defs.forEach(d => {
+      const left = Math.max(6, Math.min(W - d.b.width - 6, d.b.left)), sv = HS_SVG[d.k], e = mkEl('button', 'hspot hs-' + d.k, typeof sv === 'function' ? sv() : sv);
+      e.setAttribute('aria-label', { box: '상자', quilt: '이불 더미', curtain: '커튼' }[d.k]);
+      Object.assign(e.style, { left: left + 'px', top: d.b.top + 'px', width: d.b.width + 'px', height: d.b.height + 'px' });
+      e.onclick = (ev) => { ev.stopPropagation(); hideTap(d, e); }; room.appendChild(e);
+      Object.assign(d, { el: e, left, cx: (left + d.b.width / 2) / W * 100 });
+    });
+    hiding.spots = defs; const at = pick(defs); hiding.at = at.k;
+    if (at.k === 'box') {
+      const w = at.b.width, pk = mkEl('div', 'hs-peek', `<div>${Art.draw(S.kind, S.stage, 'happy', showAcc())}</div>`), h = w * .62;
+      Object.assign(pk.style, { left: (at.left + w * .1) + 'px', width: w * .8 + 'px', height: h + 'px', top: (at.b.top + at.b.height * .33 - h) + 'px' }); room.appendChild(pk); hiding.peek = pk;
+    }
+  }
+  function hideTell(strong) {
+    if (!hiding || !hiding.ready) return; const d = hiding.spots.find(s => s.k === hiding.at);
+    d.el.classList.remove('wig'); void d.el.offsetWidth; d.el.classList.add('wig');
+    if (hiding.peek) { hiding.peek.classList.add('up'); hiding.to.push(setTimeout(() => hiding && hiding.peek && hiding.peek.classList.remove('up'), strong ? 1300 : 800)); }
+    if (strong) { const r = d.el.getBoundingClientRect(); tpop(r.left + r.width / 2, r.top + r.height * .2, '키득', 'soft'); }
+  }
+  function hideReady() {
+    if (!hiding) return; hiding.ready = true;
+    toast('친구가 어디 숨었을까요? 숨을 만한 곳을 눌러 봐요', 3200);
+    hiding.iv.push(setInterval(() => hideTell(false), 2900));
+    hiding.to.push(setTimeout(() => { if (!hiding) return; toast('키득키득… 어디선가 웃음소리가 들려요'); Snd.giggle(S.kind); hiding.iv.push(setInterval(() => hideTell(true), 1700)); }, 15000));
+    hiding.to.push(setTimeout(() => hideEnd($('scr-home').classList.contains('on') ? 'timeout' : 'abort'), 45000));
+  }
+  function hideTap(d, e) {
+    if (!hiding || !hiding.ready) return; poked();
+    if (d.k === hiding.at) { hideEnd('found'); return; }
+    Snd.tap(); e.classList.remove('nope'); void e.offsetWidth; e.classList.add('nope'); hiding.miss++;
+    const r = e.getBoundingClientRect(); tpop(r.left + r.width / 2, r.top + Math.min(r.height * .3, 60), pick(['여기는 없네!', '텅 비었어', '없다~']), 'soft');
+    setTimeout(() => hideTell(true), 600);
+  }
+  function hideEnd(how) {
+    if (!hiding) return; const H = hiding; hiding = null;
+    H.iv.forEach(clearInterval); H.to.forEach(clearTimeout); H.veil && H.veil.remove(); H.peek && H.peek.remove();
+    const d = H.spots.find(s => s.k === H.at); H.spots.forEach(s => s.el && s.el.remove());
+    const wk = $('walker'); objBusy = 0;
+    if (d && how !== 'abort') { wk.classList.add('fast'); wk.style.left = d.cx + '%'; wk.style.bottom = ''; setTimeout(() => wk.classList.remove('fast'), 700); }
+    wk.classList.remove('hs-hidden');
+    if (how === 'found') {
+      Snd.giggle(S.kind); react('happy', 'hop'); heartAtPet(); setTimeout(heartAtPet, 300); sparks($('room'), 10);
+      speak('home', callYou(.5) + pick(['들켰다! 까르르~ 어떻게 알았어?', '찾았다! 히히, 너 정말 잘 찾는다!', '에이~ 들켰네! 다음엔 더 꼭꼭 숨을 거야!']), { noEmo: true });
+      S.log.push({ e: 'hide' }); addNeed('mood', 6); renderNeeds();
+      if (dayCap('hide', 2)) { addFriend(3); setTimeout(() => toast('숨바꼭질 성공! <b>우정 +3</b>'), 900); }
+      save();
+    } else if (how === 'timeout') { react('happy', 'hop'); speak('home', pick(['여기 있었지롱! 다음엔 꼭 찾아 줘~', '짜잔! 나 여기 있었어. 못 찾았지? 히히']), { noEmo: true }); }
+    poked(); setTimeout(() => { if (!hiding) startWander(); }, 1600);
   }
   // ---------- 누르기 · 쓰다듬기 · 마구 두드리기 ----------
   // 한 번 누르면 반가워하고, 문지르면 좋아하고, 짧은 시간에 여러 번 두드리면 아파서 울며 도망간다.
@@ -696,7 +1090,7 @@
     wk.insertBefore(el, wk.firstChild); Snd.chime && Snd.chime();
     setTimeout(() => el.classList.add('out'), 3600); setTimeout(() => el.remove(), 4400);
   }
-  function onTap(x) {
+  function onTap(x, ev) {
     poked(); const now = Date.now();
     taps = taps.filter(t => now - t < 1800); taps.push(now);
     if (sulking) { Snd.ouch(); speak('home', L3('sulk'), { silent: true }); drawPet('pout'); if (taps.length >= 3) { taps = []; runAway(x); } return; }
@@ -704,17 +1098,19 @@
     if (taps.length >= 3) { ouch(); return; }
     if (sleeping) { if (now - lastPoke > 900) speak('home', level() === 'egg' ? '(알이 꿈틀… 다시 새근새근)' : '음냐… 오 분만 더…', { silent: true }); lastPoke = now; return; }
     if (now - lastPoke < 700) return; lastPoke = now;
-    react('happy', 'squish'); speak('home', line('poke')); heartAtPet(); addNeed('mood', 3);
+    if (S.stage >= 3 && ev) touchZone(ev); else { react('happy', 'squish'); speak('home', line('poke')); heartAtPet(); }
+    addNeed('mood', 3);
     if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); }
     renderNeeds(); save();
   }
   (() => {
-    const pet = $('pet'); let down = false, lx = 0, ly = 0, moved = 0, rub = 0, nextHeart = 220, rubLog = [], tiredT = 0, tiredSaid = 0;
-    pet.addEventListener('pointerdown', (e) => { down = true; lx = e.clientX; ly = e.clientY; moved = 0; try { pet.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    const pet = $('pet'); let down = false, lx = 0, ly = 0, moved = 0, rub = 0, nextHeart = 220, rubLog = [], tiredT = 0, tiredSaid = 0, path = [], fl = 0;
+    pet.addEventListener('pointerdown', (e) => { down = true; lx = e.clientX; ly = e.clientY; moved = 0; path = [[e.clientX, e.clientY, Date.now()]]; fl = 0; try { pet.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
     pet.addEventListener('pointermove', (e) => {
-      if (!down) return; const d = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY; moved += d;
+      if (!down) return; const d = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY; moved += d; path.push([e.clientX, e.clientY, Date.now()]);
       if (moved < 15) return;
       rub += d; poked();
+      if (rub - fl > 90) { fl = rub; Snd.fluff && Snd.fluff(); }
       const now = Date.now();
       if (!sulking && now < tiredT) { if (now - tiredSaid > 2500) { tiredSaid = now; speak('home', S.stage <= 2 ? '(알이 충분히 따뜻해졌어요. 조금 쉬게 해 줘요)' : level() === 'talk' ? pick(['간지러워! 이제 그만~', '털이 다 헝클어지겠어!']) : '(몸을 배배 꼬아요)', { silent: level() !== 'talk' }); }
         rub = 0; nextHeart = 220; return; }
@@ -729,9 +1125,10 @@
       if (rub > nextHeart) { nextHeart = rub + 220; heartAtPet(); Snd.heart(); if (!sulking && Date.now() - madeAt > 2500) { react('happy'); addNeed('mood', 2); renderNeeds(); } }
       if (sulking && rub > 900) { rub = 0; nextHeart = 220; makeUp(); }
     });
-    const up = () => {
+    const up = (e) => {
       if (!down) return; down = false;
-      if (moved < 15) { const r = $('room').getBoundingClientRect(), p = pet.getBoundingClientRect(); onTap((p.left + p.width / 2 - r.left) / r.width * 100); }
+      if (e && e.type === 'pointerup') { path.push([e.clientX, e.clientY, Date.now()]); const g = gestureOf(path); if (g && tryTrick(g)) { rub = 0; nextHeart = 220; return; } }
+      if (moved < 15) { const r = $('room').getBoundingClientRect(), p = pet.getBoundingClientRect(); onTap((p.left + p.width / 2 - r.left) / r.width * 100, e); }
       else if (!sulking && rub > 600 && Date.now() - madeAt > 2500) { rub = 0; nextHeart = 220; if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); } S.log.push({ e: 'care', id: 'pet' }); speak('home', line('poke')); if (fulfill('care', 'pet')) { renderWishes(); renderCare(); hud(); } save(); }
     };
     pet.addEventListener('pointerup', up); pet.addEventListener('pointercancel', up);
@@ -899,6 +1296,7 @@
   if (/[?&]dev/.test(location.search)) window.__petNo = (k) => petNo(k);
   if (/[?&]dev/.test(location.search)) window.__emoOf = (t) => emoOf(t);
   if (/[?&]dev/.test(location.search)) window.__petGift = () => petGift();
+  if (/[?&]dev/.test(location.search)) window.__bond = { askName, hideAsk, hideStart, hideEnd, trickHint, tellDream, persAct, humming, doTrick, zoneOf, celebrateAnniv, sleepTalk, dreamTick, get hiding() { return hiding; } };
   if (/[?&]dev/.test(location.search)) window.__q = () => ({ cur, gq, rq, step: OUT && OUT.step, res: OUT && OUT.res });
   if (/[?&]dev/.test(location.search)) window.__nbArt = (id, m) => nbArt(id, m);
   function objReact(id, o, b) {
@@ -1694,6 +2092,7 @@
     if (!friends.length || Math.random() > .5) return;
     const N = pick(friends); v.innerHTML = NB_ART[N.id]; v.style.display = ''; v.dataset.id = N.id;
     v.onclick = () => {
+      if (showOff(N)) return;
       Snd.babble(2, 'bunny'); poked();
       speak('home', `<b>${N.name}</b>: ${pick(['놀러 왔어! 지난번에 도와줘서 고마워.', '너희 방 정말 예쁘다!', `${NM()}${Prob.jo(NM(), '와').slice(NM().length)} 너는 정말 사이좋구나.`, '다음에 우리 동네에도 또 놀러 와!'])}`, { silent: true, emo: 'visitor' });
     };
@@ -3076,6 +3475,17 @@
   }
 
   // ---------- 친구 수첩 ----------
+  function bondBook() {
+    const F = (S.firsts || []).slice().reverse(), n = togetherDays(), nx = ANNIV.find(m => m > n);
+    const mem = `<div class="book-sec mem-sec"><h4>추억 앨범 <small>만난 지 ${n}일째</small></h4>${F.length ? `<div class="mem-list">${F.map(f => `<div class="mem ${/^d\d+$/.test(f.k) ? 'anniv' : ''}"><span class="mem-ic">${/^d\d+$/.test(f.k) ? '♥' : FIRST_IC[f.k] || '♥'}</span><b>${firstTitle(f.k)}</b><small>${f.d || '예전에'}</small></div>`).join('')}</div>` : '<p class="sub">처음 함께한 순간들이 여기에 모여요</p>'}${nx ? `<p class="sub mem-next">다음 기념일: 만난 지 <b>${nx}일</b> (${nx - n}일 남았어요)</p>` : ''}</div>`;
+    const c = pcNow(), mx = Math.max(1, ...Object.keys(PERS).map(k => (c[k] || 0) * PERS[k].w));
+    const pers = `<div class="book-sec pers-sec"><h4>성격</h4>${S.pers ? `<p class="pers-line"><b>${PERS[S.pers].n}</b> · ${PERS[S.pers].d} 생긴 성격이에요</p>` : `<p class="sub">${S.stage < 5 ? '말을 하게 되면' : '조금 더 함께 지내면'} 어떻게 키웠는지에 따라 성격이 생겨요</p>`}
+      <div class="pers-bars">${Object.keys(PERS).map(k => `<div class="pb ${S.pers === k ? 'on' : ''}"><span>${PERS[k].n}</span><i><b style="width:${Math.round((c[k] || 0) * PERS[k].w / mx * 100)}%"></b></i><small>${PERS[k].act}</small></div>`).join('')}</div></div>`;
+    const learned = Object.keys(TRICK).filter(trickKnown).length;
+    const trick = `<div class="book-sec trick-sec"><h4>재주 <small>${learned} / ${Object.keys(TRICK).length}</small></h4><p class="sub">${S.stage < 4 ? '4단계가 되면 재주를 배울 수 있어요. ' : ''}손가락 동작을 여러 번 하면 조금씩 배워요. 다 배운 재주는 놀러 온 이웃에게 자랑해요</p>
+      <div class="trick-grid">${Object.keys(TRICK).map(k => { const m = Math.min(TRICK_NEED, (S.tricks || {})[k] || 0); return `<div class="trk ${m >= TRICK_NEED ? 'got' : ''}"><b>${TRICK[k].n}</b><small>${TRICK[k].how}</small><span class="dots">${'●'.repeat(m)}${'○'.repeat(TRICK_NEED - m)}</span></div>`; }).join('')}</div></div>`;
+    return mem + pers + trick;
+  }
   function openBook() {
     const tn = { love: '좋아해', like: '괜찮아', hate: '별로래' };
     const sec = (title, type, ids, nameOf, artOf) => `<div class="book-sec"><h4>${title}</h4><div class="book-items">${ids.map(id => { const k = S.known[type][id]; return `<span class="bi ${k ? '' : 'unk'}"><span class="bic">${artOf(id)}</span>${k ? nameOf(id) : '???'}${k ? `<em class="${k}">${tn[k]}</em>` : ''}</span>`; }).join('')}</div></div>`;
@@ -3096,9 +3506,10 @@
         <div class="badge-grid">${Object.keys(Prob.UNITS).map(u => { const t = (S.badges || {})[u] || 0, U = Prob.UNITS[u]; return `<div class="ubadge t${t}"><span class="medal"><b>${BADGE_SYM[u] || '?'}</b></span><span class="bn">${U.name}</span><small>${U.sem}학기 · ${t ? TIER[t] : '아직'}</small></div>`; }).join('')}</div>
         ${S.trait ? `<p class="trait-line">${NM()}의 특성: <b>${TRAIT_NAME[S.trait]}</b> (${AREA_NAME[S.trait]})</p>` : S.stage < 6 ? '<p class="trait-line">6단계가 되면 많이 맞힌 문제에 따라 특별한 무늬가 생겨요</p>' : ''}</div>` +
       `<div class="book-sec"><h4>같이 이겨 낸 문제 <small>반짝 조각 ${S.shards || 0}개</small></h4>${(S.win || []).length ? `<div class="win-list">${S.win.slice(0, 8).map(w => `<div class="win"><span class="win-u">${(Prob.UNITS[w.u] || { name: '' }).name}</span><span class="win-q">${w.q}</span><small>${w.how === 'review' ? '다시 만나 이김' : '다시 해서 맞힘'} · ${w.d}</small></div>`).join('')}</div>` : '<p class="sub">틀린 문제를 다시 풀어 맞히면 여기에 모여요</p>'}</div>` +
-      `<div class="book-sec"><h4>함께한 기록</h4><div class="book-items"><span class="bi">함께한 날 ${S.days}일</span><span class="bi">맞힌 문제 ${S.correct}개</span><span class="bi">최고 연속 ${S.best}번</span><span class="bi">우정 ${S.flv}단계</span></div></div>`;
+      bondBook() +
+      `<div class="book-sec"><h4>함께한 기록</h4><div class="book-items"><span class="bi">만난 지 ${togetherDays()}일째</span><span class="bi">함께한 날 ${S.days}일</span><span class="bi">맞힌 문제 ${S.correct}개</span><span class="bi">최고 연속 ${S.best}번</span><span class="bi">우정 ${S.flv}단계</span></div></div>`;
     $('book-body').querySelectorAll('.story-btn:not(.lock)').forEach(b => b.onclick = () => { Snd.tap(); playStory(+b.dataset.i); });
-    { const bb = $('book-body'), w = [...bb.querySelectorAll('.book-sec')].find(e => e.querySelector('h4') && e.querySelector('h4').textContent.startsWith('같이 이겨 낸')); if (w) bb.prepend(w); const bg = bb.querySelector('.badge-sec'); if (bg) bb.prepend(bg); bb.scrollTop = 0; }
+    { const bb = $('book-body'), w = [...bb.querySelectorAll('.book-sec')].find(e => e.querySelector('h4') && e.querySelector('h4').textContent.startsWith('같이 이겨 낸')); if (w) bb.prepend(w); const bg = bb.querySelector('.badge-sec'); if (bg) bb.prepend(bg); ['.trick-sec', '.pers-sec', '.mem-sec'].forEach(s => { const x = bb.querySelector(s); if (x) bb.prepend(x); }); bb.scrollTop = 0; }
     overlay('ov-book', true);
   }
   $('btn-book').onclick = () => { Snd.tap(); poked(); openBook(); };
