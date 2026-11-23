@@ -1314,7 +1314,7 @@
   if (/[?&]dev/.test(location.search)) window.__petNo = (k) => petNo(k);
   if (/[?&]dev/.test(location.search)) window.__emoOf = (t) => emoOf(t);
   if (/[?&]dev/.test(location.search)) window.__petGift = () => petGift();
-  if (/[?&]dev/.test(location.search)) window.__bond = { askName, hideAsk, hideStart, hideEnd, trickHint, tellDream, persAct, humming, doTrick, zoneOf, celebrateAnniv, sleepTalk, dreamTick, get hiding() { return hiding; } };
+  if (/[?&]dev/.test(location.search)) window.__bond = { askName, hideAsk, hideStart, hideEnd, trickHint, tellDream, persAct, humming, doTrick, zoneOf, celebrateAnniv, sleepTalk, dreamTick, get hiding() { return hiding; }, speak, emoteText };
   if (/[?&]dev/.test(location.search)) window.__q = () => ({ cur, gq, rq, step: OUT && OUT.step, res: OUT && OUT.res });
   if (/[?&]dev/.test(location.search)) window.__nbArt = (id, m) => nbArt(id, m);
   function objReact(id, o, b) {
@@ -2027,7 +2027,7 @@
   const NB_FACE = {
     squirrel: { e: [[35, 44], [50, 44]], r: 3.4, ink: '#4A3552', m: [42.5, 55.5] },
     penguin: { e: [[41, 44], [59, 44]], r: 3.6, ink: '#2C2C2A', m: null },
-    hedgehog: { e: [[26, 66], [40, 64]], r: 3.3, ink: '#3A2A30', m: [15, 79] },
+    hedgehog: { e: [[26, 67], [41, 65.5]], r: 3.3, ink: '#3A2A30', m: [15, 79] },
     owl: { e: [[38, 47], [62, 47]], r: 4.6, ink: '#4A3552', m: null }
   };
   function nbFace(id, mood) {
@@ -2062,7 +2062,7 @@
   const NB_SVG = {
     squirrel: (F) => `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/><path d="M28 37 q3 -9 12 -11" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".75"/>${F}<ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="56" cy="52" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
     penguin: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="28" ry="34" fill="#4E5A8C" stroke="#323C66" stroke-width="3"/><ellipse cx="50" cy="64" rx="19" ry="25" fill="#fff"/><path d="M22 58 q-10 10 -2 20 M78 58 q10 10 2 20" stroke="#323C66" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M31 38 q4 -11 14 -13" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".45"/>${F}<path d="M44 51 l6 6 l6 -6z" fill="#FFB25A" stroke="#E08A2E" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="34" cy="53" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="66" cy="53" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="40" cy="93" rx="8" ry="4" fill="#FFB25A"/><ellipse cx="60" cy="93" rx="8" ry="4" fill="#FFB25A"/><path d="M36 22 q14 -8 28 0" stroke="#F7A0C1" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    hedgehog: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="42" cy="91" rx="7" ry="4" fill="#7A5440"/><ellipse cx="74" cy="91" rx="7" ry="4" fill="#7A5440"/><path d="M26.7 67.6 L16.0 62.4 L26.5 57.0 L19.0 48.1 L31.1 47.2 L27.8 36.0 L39.7 39.6 L41.2 27.9 L50.9 35.5 L57.0 25.0 L63.1 35.5 L72.8 27.9 L74.3 39.6 L86.2 36.0 L82.9 47.2 L95.0 48.1 L87.5 57.0 L98.0 62.4 L87.3 67.6 C92 80 82 90 62 90 C44 90 30 84 26.7 67.6Z" fill="#8A6248" stroke="#5A3E2E" stroke-width="3" stroke-linejoin="round"/><path d="M33.4 58.5 L27.2 51.8 L36.8 51.1 L34.1 42.4 L43.5 45.5 L44.6 36.2 L52.2 42.4 L57.0 34.0 L61.8 42.4 L69.4 36.2 L70.5 45.5 L79.9 42.4 L77.2 51.1 L86.8 51.8 L80.6 58.5 C80 68 68 72 57 72 C46 72 36 68 33.4 58.5Z" fill="#A98062"/><path d="M48 44 l3 -6 M60 40 l1 -7 M72 46 l4 -5 M40 52 l-4 -5" stroke="#C9A27E" stroke-width="2" stroke-linecap="round" opacity=".7"/><path d="M40 86 Q62 94 86 82" stroke="#F6DEC0" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="44" cy="51" r="6" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.4"/><circle cx="44" cy="51" r="2.8" fill="#F7A0C1"/><path d="M48 54 C38 48 25 52 19 61 C15 67 6 69 6 74 C6 79 13 82 22 82 C32 88 50 87 55 76 C58 66 55 58 48 54Z" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 63 q5 -7 13 -8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".85"/>${F}<ellipse cx="7.6" cy="73.6" rx="3.6" ry="3.1" fill="#3A2A30"/><circle cx="6.6" cy="72.6" r="1" fill="#fff"/><ellipse cx="27" cy="74" rx="5" ry="3.2" fill="url(#cn-blush)"/><ellipse cx="46" cy="72" rx="5" ry="3.2" fill="url(#cn-blush)"/><path d="M60 34 Q68 28 76 34 Q76 42 68 49 Q60 42 60 34Z" fill="#F2678F" stroke="#C94775" stroke-width="1.6" stroke-linejoin="round"/><path d="M62 33 L64 28 L68 32 L72 28 L74 33Z" fill="#7CC48A" stroke="#4E9A60" stroke-width="1.2" stroke-linejoin="round"/><circle cx="65" cy="37" r=".9" fill="#FFE6A8"/><circle cx="71" cy="37" r=".9" fill="#FFE6A8"/><circle cx="68" cy="42" r=".9" fill="#FFE6A8"/></svg>`,
+    hedgehog: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="42" cy="91" rx="7" ry="4" fill="#7A5440"/><ellipse cx="74" cy="91" rx="7" ry="4" fill="#7A5440"/><path d="M26.7 67.6 L16.0 62.4 L26.5 57.0 L19.0 48.1 L31.1 47.2 L27.8 36.0 L39.7 39.6 L41.2 27.9 L50.9 35.5 L57.0 25.0 L63.1 35.5 L72.8 27.9 L74.3 39.6 L86.2 36.0 L82.9 47.2 L95.0 48.1 L87.5 57.0 L98.0 62.4 L87.3 67.6 C92 80 82 90 62 90 C44 90 30 84 26.7 67.6Z" fill="#8A6248" stroke="#5A3E2E" stroke-width="3" stroke-linejoin="round"/><path d="M33.4 58.5 L27.2 51.8 L36.8 51.1 L34.1 42.4 L43.5 45.5 L44.6 36.2 L52.2 42.4 L57.0 34.0 L61.8 42.4 L69.4 36.2 L70.5 45.5 L79.9 42.4 L77.2 51.1 L86.8 51.8 L80.6 58.5 C80 68 68 72 57 72 C46 72 36 68 33.4 58.5Z" fill="#A98062"/><path d="M48 44 l3 -6 M60 40 l1 -7 M72 46 l4 -5 M40 52 l-4 -5" stroke="#C9A27E" stroke-width="2" stroke-linecap="round" opacity=".7"/><path d="M40 86 Q62 94 86 82" stroke="#F6DEC0" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M48 54 C38 48 25 52 19 61 C15 67 6 69 6 74 C6 79 13 82 22 82 C32 88 50 87 55 76 C58 66 55 58 48 54Z" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.6" stroke-linejoin="round"/><path d="M15 66 L17 55 L23 58 L24 47 L31 52 L35 41 L41 48 L47 39 L50 47 L57 42 L57 51 L63 52 L58 62 Q52 57 45 59 Q38 55 31 59 Q24 60 15 66Z" fill="#8A6248" stroke="#5A3E2E" stroke-width="2.6" stroke-linejoin="round"/><path d="M26 52 l-1 -4 M37 47 l0 -4 M48 46 l1 -4" stroke="#C9A27E" stroke-width="1.8" stroke-linecap="round" opacity=".7"/><path d="M52 61 C50 54 55 50 60 52 C64 54 63 60 58 62Z" fill="#F6DEC0" stroke="#C9A27E" stroke-width="2.2"/><path d="M55 59 C55 56 58 55 60 56" stroke="#F7A0C1" stroke-width="2.4" fill="none" stroke-linecap="round"/>${F}<ellipse cx="7.6" cy="73.6" rx="3.6" ry="3.1" fill="#3A2A30"/><circle cx="6.6" cy="72.6" r="1" fill="#fff"/><ellipse cx="27" cy="74" rx="5" ry="3.2" fill="url(#cn-blush)"/><ellipse cx="46" cy="72" rx="5" ry="3.2" fill="url(#cn-blush)"/><path d="M60 34 Q68 28 76 34 Q76 42 68 49 Q60 42 60 34Z" fill="#F2678F" stroke="#C94775" stroke-width="1.6" stroke-linejoin="round"/><path d="M62 33 L64 28 L68 32 L72 28 L74 33Z" fill="#7CC48A" stroke="#4E9A60" stroke-width="1.2" stroke-linejoin="round"/><circle cx="65" cy="37" r=".9" fill="#FFE6A8"/><circle cx="71" cy="37" r=".9" fill="#FFE6A8"/><circle cx="68" cy="42" r=".9" fill="#FFE6A8"/></svg>`,
     owl: (F) => `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="32" fill="#9C86C9" stroke="#6E5CA3" stroke-width="3"/><path d="M24 34 l-4 -16 l14 10z M76 34 l4 -16 l-14 10z" fill="#9C86C9" stroke="#6E5CA3" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="18" ry="16" fill="#E9E1FF"/><path d="M40 66 q4 4 8 0 M52 72 q4 4 8 0 M42 78 q4 4 8 0" stroke="#C9B8FF" stroke-width="2" fill="none"/><circle cx="38" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><circle cx="62" cy="46" r="11" fill="#fff" stroke="#6E5CA3" stroke-width="2.4"/><path d="M27 33 q4 -9 12 -11" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/>${F}<path d="M46 55 l4 6 l4 -6z" fill="#FFB25A"/><path d="M27 38 h22 M51 38 h22" stroke="#4A3552" stroke-width="2.4"/><circle cx="38" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><circle cx="62" cy="46" r="12.5" fill="none" stroke="#4A3552" stroke-width="2"/><path d="M50.5 46 h-0" stroke="#4A3552" stroke-width="2"/></svg>`
   };
   const nbArt = (id, mood) => NB_SVG[id] ? NB_SVG[id](nbFace(id, mood || 'idle')) : '';
@@ -2595,7 +2595,7 @@
     [/킁킁/, { cls: 'act-sniff' }], [/꾸벅|새근|꿈을|쿨쿨/, { cls: 'act-yawn', fx: 'zz' }], [/♪|노래/, { cls: 'act-sway', fx: 'note' }],
     [/따뜻|따끈|포근/, { cls: 'act-hug', fx: 'warm' }], [/시원/, { cls: 'act-sway', fx: 'breeze' }],
     [/반짝|빛나|별빛/, { cls: 'act-nod', fx: 'shine' }], [/뛰었|깡총|콩콩|폴짝|퐁퐁|통통|콩!/, { cls: 'act-boing' }],
-    [/흔들|꿈틀/, { cls: 'act-wobble' }], [/쏙/, { cls: 'act-hug' }]
+    [/갸우뚱|갸웃/, { cls: 'act-tilt', fx: 'q' }], [/흔들|꿈틀/, { cls: 'act-wobble' }], [/쏙/, { cls: 'act-hug' }]
   ];
   const actOf = (html) => { const t = String(html).replace(/<[^>]+>/g, ''); const r = ACT_RULES.find(([re]) => re.test(t)); return r ? r[1] : null; };
   const emoOf = (html) => { const t = String(html).replace(/<[^>]+>/g, ''); const r = EMO_RULES.find(([, re]) => re.test(t)); return r ? r[0] : 'talk'; };
@@ -2634,12 +2634,13 @@
   function emote(where, F, soft, force) {
     const C = EMO_CTX[where] && EMO_CTX[where](); if (!C || !C.el || !C.ok()) return;
     const el = C.el; if (!el.getBoundingClientRect().width) return;
-    const egg = S.stage <= 2 && !['nbw', 'nbart', 'visitor'].includes(where);
+    const egg = S.stage <= 2 && !['nbw', 'nbart', 'visitor'].includes(where)
+    const eggFace = egg && S.stage === 2 && ['sleepy', 'happy', 'pout'].includes(F.mood); // 금 간 알은 눈이 보여서 졸림·웃음·삐침 눈을 그린다
     if (!soft || force) {
       clearTimeout(el._emoT);
-      if (F.mood && !soft && !egg) C.draw(F.mood);
+      if (F.mood && !soft && (!egg || eggFace)) C.draw(F.mood);
       el.classList.remove(...ACT_CLS, 'hop', 'shake', 'squish', 'wobble', 'talk'); void el.offsetWidth; el.classList.add(F.cls);
-      el._emoT = setTimeout(() => { el.classList.remove(F.cls); if (F.mood && !soft && !egg) C.draw(); }, 2400);
+      el._emoT = setTimeout(() => { el.classList.remove(F.cls); if (F.mood && !soft && (!egg || eggFace)) C.draw(); }, 2400);
     }
     if (F.fx) petFx(F.fx, el);
   }
@@ -2699,7 +2700,7 @@
     if ((id === 'warm' && t >= 62 || id === 'cool' && t <= 38) && wished('care', 'pet') && !wished('care', id)) { rubHint(); return; }
     if (id === 'warm' && t >= 62 && !wished('care', id)) return refuse('egg-warm', '(알이 벌써 따끈따끈해요. 더 덮으면 더울 거예요)', 'awake');
     if (id === 'cool' && t <= 38 && !wished('care', id)) return refuse('egg-cool', '(알이 벌써 서늘해요. 부채질하면 추울 거예요)', 'awake');
-    if (id === 'sing' && S.singT && now - S.singT < 5 * 60000 && !wished('care', id)) return refuse('egg-sing', '(알이 노래를 듣고 새근새근 자고 있어요. 조금 이따 불러 줘요)', 'sleepy');
+    if (id === 'sing' && S.singT && now - S.singT < 5 * 60000 && !wished('care', id)) return refuse('egg-sing', '(알이 아까 들은 노래에 아직 살랑살랑 흔들리고 있어요 ♪ 조금 이따 또 불러 줘요)', 'later');
     if (eggBusy) return; if (id === 'warm') return blanketPlay(); if (id === 'cool') return fanPlay(); if (id === 'sing') return singPlay();
   }
   // 알 돌보기를 끝까지 해냈을 때

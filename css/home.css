@@ -73,7 +73,7 @@
 .stage-bg{position:absolute;inset:0;background:linear-gradient(180deg,#DDF1FF,#F3FBFF)}.stage-bg svg{width:100%;height:100%;display:block;overflow:hidden}
 .opet{position:absolute;bottom:6%;left:50%;width:min(34%,210px);aspect-ratio:160/156;transform:translateX(-50%);transition:left 1.2s ease-in-out;z-index:2}
 .opet svg{width:100%;height:100%;overflow:visible}
-.opet.walking svg{animation:walkbob .3s ease-in-out 4}
+.opet.walking:not([class*="act-"]) svg{animation:walkbob .3s ease-in-out 4}
 @keyframes walkbob{50%{transform:translateY(-10px)}}
 .opet.hop svg{animation:hop .5s cubic-bezier(.3,1.5,.5,1) 2}
 .opet.shake svg{animation:shake .45s ease}
@@ -485,7 +485,7 @@ body.lowfx .walker.flying .wl,body.lowfx .walker.flying .wr{animation:none}
 .wl svg{width:100%;height:100%;display:block}
 .wl.far{width:125%}.wl.mid{width:190%}.wl.near{width:280%}
 .stage.walking-scene .opet{left:32%;width:min(30%,190px);bottom:5%}
-.stage.walking-scene .opet.walking svg{animation:walkbob .28s ease-in-out 5}
+.stage.walking-scene .opet.walking:not([class*="act-"]) svg{animation:walkbob .28s ease-in-out 5}
 .twk{animation:tw 2.6s ease-in-out infinite}
 .wave{animation:wave 2s linear infinite}@keyframes wave{to{transform:translateX(-40px)}}
 .bob{animation:float 3s ease-in-out infinite}
@@ -964,8 +964,8 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .opet.pram .pram-b{z-index:0}.opet.pram .pram-f{z-index:2}
 .opet.pram .pram-egg{position:absolute;left:25%;top:15%;width:60%;height:66%;z-index:1}
 .opet.pram .pram-egg svg{width:100%;height:100%}
-.opet.pram.walking svg{animation:none}
-.opet.pram.walking .pram-egg svg{animation:walkbob .3s ease-in-out 4}
+.opet.pram.walking .pram-b svg,.opet.pram.walking .pram-f svg,.opet.pram[class*="act-"] .pram-b svg,.opet.pram[class*="act-"] .pram-f svg{animation:none}
+.opet.pram.walking:not([class*="act-"]) .pram-egg svg{animation:walkbob .3s ease-in-out 4}
 .opet.pram.walking .wheel{animation:wheelspin .5s linear 3}
 @keyframes wheelspin{to{transform:rotate(360deg)}}
 

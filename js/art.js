@@ -124,6 +124,7 @@ const Art = (() => {
   function eggEyes(ink, mood, y) {
     if (mood === 'cry') return `<path d="M-13 ${y - 3} L-7 ${y} L-13 ${y + 3} M13 ${y - 3} L7 ${y} L13 ${y + 3}" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M-14 ${y + 4} q-2 3.6 0 5 q2 -1.4 0 -5z" fill="#9CC8FF"/>`;
     if (mood === 'pout') return `<path d="M-13 ${y - 1} h7 M6 ${y - 1} h7" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/><circle cx="-7.5" cy="${y + 1.4}" r="2" fill="${ink}"/><circle cx="11.5" cy="${y + 1.4}" r="2" fill="${ink}"/>`;
+    if (mood === 'sleepy' || mood === 'sleep') return `<path d="M-13 ${y} Q-9.5 ${y + 3.6} -6 ${y} M6 ${y} Q9.5 ${y + 3.6} 13 ${y}" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
     if (mood === 'happy') return `<path d="M-13 ${y + 1} Q-9.5 ${y - 4} -6 ${y + 1} M6 ${y + 1} Q9.5 ${y - 4} 13 ${y + 1}" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
     return `<g class="look"><g class="eyes"><ellipse cx="-9.5" cy="${y}" rx="3.4" ry="4" fill="${ink}"/><ellipse cx="9.5" cy="${y}" rx="3.4" ry="4" fill="${ink}"/><circle cx="-8.4" cy="${y - 1.4}" r="1.3" fill="#fff"/><circle cx="10.6" cy="${y - 1.4}" r="1.3" fill="#fff"/></g></g>`;
   }
