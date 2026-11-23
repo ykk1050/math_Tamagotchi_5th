@@ -38,7 +38,7 @@
   const NM = () => S.name + (bat(S.name) ? '이' : ''); // 몽실 → 몽실이, 콩이 → 콩이
   const obj = (w) => w + (bat(w) ? '을' : '를');
   const SC = (t) => `<i class="sc">★${t}</i>`;
-  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base', col: S.wcol || {}, dirt: S.needs && S.needs.clean < 65 ? Math.min(1, Math.round((65 - S.needs.clean) / 5) / 10) : 0 } : null);
+  const showAcc = () => (S.stage >= 3 ? { wear: S.wear || {}, tint: S.tint || 'base', col: S.wcol || {}, trait: S.trait || null, dirt: S.needs && S.needs.clean < 65 ? Math.min(1, Math.round((65 - S.needs.clean) / 5) / 10) : 0 } : null);
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const isNight = () => { const h = new Date().getHours(); return h >= 18 || h < 6; };
 
@@ -207,7 +207,7 @@
   }
   // ---------- 성장 조건 ----------
   // 단원별 최근 5문제 정답 기록 (1=맞힘)
-  function rec(u, ok) { if (!u || !Prob.UNITS[u]) return 0; S.ur = S.ur || {}; const a = S.ur[u] || (S.ur[u] = []); a.push(ok ? 1 : 0); if (a.length > 5) a.shift(); return 0; }
+  function rec(u, ok) { if (!u || !Prob.UNITS[u]) return 0; setTimeout(() => badgeCheck(u), 0); S.ur = S.ur || {}; const a = S.ur[u] || (S.ur[u] = []); a.push(ok ? 1 : 0); if (a.length > 5) a.shift(); return 0; }
   const unitGood = (u, n) => ((S.ur || {})[u] || []).reduce((a, b) => a + b, 0) >= n;
   // 약한 단원: 2번 넘게 풀었는데 최근 정답이 3개가 안 되는 단원 → 더 자주 낸다
   const weakUnits = () => Object.keys(Prob.UNITS).filter(u => { const a = (S.ur || {})[u] || []; return a.length >= 2 && a.reduce((x, y) => x + y, 0) < Math.min(3, a.length); });
@@ -237,6 +237,32 @@
       toast('자랄 준비가 거의 됐어요! 위쪽 <b>자라기</b>를 눌러 남은 조건을 봐요');
     }, 1500);
   }
+  // ---------- 단원 배지(동·은·금)와 영역 특성 ----------
+  // 동: 그 단원 문제를 5개 맞힘 / 은: 15개 + 최근 5문제 중 4개 정답 / 금: 30개 + 최근 5문제 모두 정답
+  const TIER = ['', '동', '은', '금'];
+  const BADGE_SYM = { u11: '( )', u13: '→', u14: '½', u15: '+', u16: '⬠', u21: '≈', u22: '×', u23: '◇', u24: '0.1', u25: '▣', u26: '평' };
+  function badgeTier(u) {
+    const c = ((S.stats || {})[u] || {}).c || 0, a = (S.ur || {})[u] || [], r = a.reduce((x, y) => x + y, 0);
+    return c >= 30 && a.length >= 5 && r === 5 ? 3 : c >= 15 && r >= 4 ? 2 : c >= 5 ? 1 : 0;
+  }
+  function badgeCheck(u) {
+    if (!u || !Prob.UNITS[u]) return; S.badges = S.badges || {};
+    const t = badgeTier(u), old = S.badges[u] || 0; if (t <= old) return;
+    S.badges[u] = t; S.log.push({ e: 'badge', u, t }); save();
+    setTimeout(() => { Snd.combo(); toast(`<b>${Prob.UNITS[u].name}</b> ${TIER[t]} 배지를 받았어요! ${t === 3 ? '최고 등급이에요 ✦' : ''}`); }, 1600);
+  }
+  const AREAS = { num: ['u11', 'u14', 'u15', 'u21', 'u22', 'u24'], shape: ['u16', 'u23', 'u25'], data: ['u13', 'u26'] };
+  const TRAIT_NAME = { num: '반짝 별 무늬', shape: '알록달록 도형 무늬', data: '무지개 막대 무늬' };
+  const AREA_NAME = { num: '수와 연산', shape: '도형과 측정', data: '규칙과 자료' };
+  function pickTrait() {
+    const sc = Object.fromEntries(Object.entries(AREAS).map(([k, us]) => [k, us.reduce((a, u) => a + (((S.stats || {})[u] || {}).c || 0), 0) / us.length]));
+    return Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+  }
+  const TRAIT_LINES = {
+    num: ['숫자 세는 게 제일 재밌어! 하나, 둘, 셋…', '내 별 무늬 몇 개인지 세어 볼래?', '계산할 때 머리가 반짝반짝해!'],
+    shape: ['저 창문은 직사각형이야! 저 쿠션은 동그라미!', '내 무늬에 세모, 네모, 동그라미가 다 있어!', '접으면 똑같이 겹치는 모양, 신기하지?'],
+    data: ['오늘 맞힌 문제를 막대그래프로 그려 볼까?', '규칙을 찾으면 다음에 뭐가 올지 알 수 있어!', '내 무늬는 막대그래프 모양이야. 키가 다 달라!']
+  };
   // ---------- 오답 회복: 다시 해서 맞히면 반짝 조각 ----------
   const plainQ = (q) => { const t = String(q.q || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); return t.length > 40 ? t.slice(0, 38) + '…' : t; };
   function gainShard(q, how) {
@@ -355,7 +381,9 @@
   function enterHome(mode) {
     const away0 = S.last ? (Date.now() - S.last) / 86400000 : 0; // 마지막으로 본 뒤 지난 날 (아래에서 last가 바뀌기 전에 잰다)
     applyTime(); newDay(); tickNeeds(); growGarden(); const bday = checkBirthday();
-    if (S.fxp < (FRIEND_XP[S.flv] || 0)) S.fxp = FRIEND_XP[S.flv]; save();
+    if (S.fxp < (FRIEND_XP[S.flv] || 0)) S.fxp = FRIEND_XP[S.flv];
+    if (S.stage >= 6 && !S.trait) { S.trait = pickTrait(); setTimeout(() => toast(`${AREA_NAME[S.trait]} 문제를 많이 맞혀서 <b>${TRAIT_NAME[S.trait]}</b>가 생겼어요!`), 2200); }
+    S.badges = S.badges || {}; Object.keys(Prob.UNITS).forEach(u => { const t = badgeTier(u); if (t > (S.badges[u] || 0)) S.badges[u] = t; }); save();
     show('scr-home'); renderHome(); neighborVisit();
     if (bday) setTimeout(() => { toast(`오늘은 <b>${NM()}의 생일</b>이에요! 파티를 준비해 줘요`); Snd.level(); }, 900);
     else if (canGrow()) setTimeout(() => { if (!document.querySelector('.overlay.on')) levelUp(); }, 1400); else growHint();
@@ -618,6 +646,7 @@
       else if (level() === 'talk' && S.flv >= 3 && S.giftDay !== S.day && Math.random() < .25) petGift();
       else if (w && level() === 'talk' && Math.random() < .5) comeSay(() => { react('happy', 'hop'); speak('home', wishSay(w)); });
       else if (level() === 'talk' && memLine() && Math.random() < .35) comeSay(() => speak('home', memLine()));
+      else if (level() === 'talk' && S.trait && Math.random() < .3) speak('home', pick(TRAIT_LINES[S.trait]));
       else if (level() === 'talk' && S.read && Object.keys(S.read).length && Math.random() < .3) speak('home', BOOKS[pick(Object.keys(S.read))].mem);
       else speak('home', level() === 'talk' && Math.random() < .4 ? line('happy') : line('idle'));
     }
@@ -2996,11 +3025,12 @@
   // ---------- 자랐어요 ----------
   let afterLevel = null;
   function levelUp(then) {
-    S.stage++; afterLevel = then || null; fixWishes(); save(); Snd.level();
+    S.stage++; afterLevel = then || null; fixWishes(); if (S.stage >= 6 && !S.trait) S.trait = pickTrait(); save(); Snd.level();
     $('level-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', showAcc());
     const la = $('level-art'); la.classList.remove('grow-in'); void la.offsetWidth; la.classList.add('grow-in');
     $('level-title').textContent = `${S.stage}단계 ${STAGE_NAME[S.kind][S.stage]}`;
-    let msg = LV_MSG[S.kind][S.stage]; if (S.stage === 5) msg += '<br><small>이제 친구가 이야기를 들려줄 수 있어요.</small>'; if (S.stage >= MAX_STAGE) msg += '<br><small>가장 높은 단계까지 다 자랐어요! 정말 잘했어요.</small>';
+    let msg = LV_MSG[S.kind][S.stage]; if (S.stage === 5) msg += '<br><small>이제 친구가 이야기를 들려줄 수 있어요.</small>';
+    if (S.stage === 6 && S.trait) msg += `<br><small>${AREA_NAME[S.trait]} 문제를 많이 맞혀서 <b>${TRAIT_NAME[S.trait]}</b>가 생겼어요!</small>`; if (S.stage >= MAX_STAGE) msg += '<br><small>가장 높은 단계까지 다 자랐어요! 정말 잘했어요.</small>';
     $('level-line').innerHTML = msg; overlay('ov-level', true); S.log.push({ e: 'grow', stage: S.stage });
   }
   // ---------- 성장 기록: 1~10단계, 아직 못 간 단계는 실루엣 ----------
@@ -3014,7 +3044,7 @@
     let h = '';
     for (let st = 1; st <= MAX_STAGE; st++) {
       const got = st <= cur, now = st === cur, next = st === nx;
-      const look = st >= 3 ? { wear: {}, tint: 'base' } : null;
+      const look = st >= 3 ? { wear: {}, tint: 'base', trait: S.trait || null } : null;
       h += `<div class="grc ${got ? 'got' : 'lock'} ${now ? 'now' : ''} ${next ? 'next' : ''}">${now ? '<span class="grnow">지금</span>' : ''}
         <span class="grart">${got ? Art.draw(S.kind, st, 'happy', look) : '<span class="grq">?</span>'}</span>
         <b>${st}단계</b><small>${got || next ? STAGE_NAME[S.kind][st] : '???'}</small></div>`;
@@ -3061,10 +3091,14 @@
       `<div class="book-sec"><h4>산책길 이웃</h4><div class="book-items">${Object.keys(NEIGH).map(k => { const N = NEIGH[k], n = (S.nb || {})[N.id] || 0; return `<span class="bi ${n ? '' : 'unk'}"><span class="bic">${NB_ART[N.id]}</span>${n ? N.name : '???'}${n ? `<em class="love">${'♥'.repeat(Math.min(5, n))}</em>` : `<em>${PLACES[k].name}</em>`}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>그림책</h4><div class="book-items">${Object.keys(BOOKS).map(id => { const has = ownBooks().includes(id), n = (S.read || {})[id] || 0; return `<span class="bi ${has ? '' : 'unk'}">${has ? BOOKS[id].title : '???'}${n ? `<em class="like">${n}번 읽음</em>` : ''}</span>`; }).join('')}</div></div>` +
       `<div class="book-sec"><h4>이야기</h4>${stories}</div>` +
+      `<div class="book-sec badge-sec"><h4>단원 배지 <small>${Object.values(S.badges || {}).filter(t => t > 0).length} / 11 · 금 ${Object.values(S.badges || {}).filter(t => t === 3).length}</small></h4>
+        <p class="sub badge-help">동: 5문제 맞히기 · 은: 15문제 + 최근 5문제 중 4개 · 금: 30문제 + 최근 5문제 모두 정답</p>
+        <div class="badge-grid">${Object.keys(Prob.UNITS).map(u => { const t = (S.badges || {})[u] || 0, U = Prob.UNITS[u]; return `<div class="ubadge t${t}"><span class="medal"><b>${BADGE_SYM[u] || '?'}</b></span><span class="bn">${U.name}</span><small>${U.sem}학기 · ${t ? TIER[t] : '아직'}</small></div>`; }).join('')}</div>
+        ${S.trait ? `<p class="trait-line">${NM()}의 특성: <b>${TRAIT_NAME[S.trait]}</b> (${AREA_NAME[S.trait]})</p>` : S.stage < 6 ? '<p class="trait-line">6단계가 되면 많이 맞힌 문제에 따라 특별한 무늬가 생겨요</p>' : ''}</div>` +
       `<div class="book-sec"><h4>같이 이겨 낸 문제 <small>반짝 조각 ${S.shards || 0}개</small></h4>${(S.win || []).length ? `<div class="win-list">${S.win.slice(0, 8).map(w => `<div class="win"><span class="win-u">${(Prob.UNITS[w.u] || { name: '' }).name}</span><span class="win-q">${w.q}</span><small>${w.how === 'review' ? '다시 만나 이김' : '다시 해서 맞힘'} · ${w.d}</small></div>`).join('')}</div>` : '<p class="sub">틀린 문제를 다시 풀어 맞히면 여기에 모여요</p>'}</div>` +
       `<div class="book-sec"><h4>함께한 기록</h4><div class="book-items"><span class="bi">함께한 날 ${S.days}일</span><span class="bi">맞힌 문제 ${S.correct}개</span><span class="bi">최고 연속 ${S.best}번</span><span class="bi">우정 ${S.flv}단계</span></div></div>`;
     $('book-body').querySelectorAll('.story-btn:not(.lock)').forEach(b => b.onclick = () => { Snd.tap(); playStory(+b.dataset.i); });
-    { const bb = $('book-body'), w = [...bb.querySelectorAll('.book-sec')].find(e => e.querySelector('h4') && e.querySelector('h4').textContent.startsWith('같이 이겨 낸')); if (w) bb.prepend(w); bb.scrollTop = 0; }
+    { const bb = $('book-body'), w = [...bb.querySelectorAll('.book-sec')].find(e => e.querySelector('h4') && e.querySelector('h4').textContent.startsWith('같이 이겨 낸')); if (w) bb.prepend(w); const bg = bb.querySelector('.badge-sec'); if (bg) bb.prepend(bg); bb.scrollTop = 0; }
     overlay('ov-book', true);
   }
   $('btn-book').onclick = () => { Snd.tap(); poked(); openBook(); };

@@ -165,6 +165,18 @@ const Art = (() => {
     if (lv > .55) s += `<g class="dustfx" fill="none" stroke="#A8957F" stroke-width="1.6" stroke-linecap="round">${[[-40, -6], [40, -12], [-34, -26]].map(([x, y], i) => `<path class="df d${i}" d="M${x} ${y} q3 -4 0 -8 q-3 -4 0 -8"/>`).join('')}</g>`;
     return `<g class="dirt">${s}</g>`;
   }
+  // 6단계부터 생기는 특성 무늬: 많이 맞힌 영역에 따라 (수와 연산=별, 도형=세모·네모·동그라미, 규칙과 자료=막대)
+  const TRAIT_AT = { cloud: [[-24, 14, -12], [26, 16, 14], [-6, 25, 0], [10, 23, 8], [-28, -2, -18], [29, 2, 18]], bunny: [[-8, 32, -10], [8, 27, 12], [1, 37, 0], [-19, 9, -15], [19, 9, 15], [-6, 22, 8]] };
+  function traitDeco(kind, trait) {
+    if (!trait) return '';
+    const P = TRAIT_AT[kind], C = ['#FFC24E', '#F28DB2', '#8FD3C0', '#9CC8FF', '#C9B8FF', '#FFB27A'];
+    const one = (x, y, r, i) => {
+      if (trait === 'num') return `<g transform="translate(${x} ${y}) rotate(${r}) scale(.48)"><polygon points="0,-10 2.9,-3.4 10,-3.1 4.6,1.6 6.4,8.6 0,4.8 -6.4,8.6 -4.6,1.6 -10,-3.1 -2.9,-3.4" fill="${C[i]}" opacity=".9"/></g>`;
+      if (trait === 'shape') return `<g transform="translate(${x} ${y}) rotate(${r}) scale(1.6)" fill="${C[i]}" opacity=".85">${i % 3 === 0 ? '<path d="M0 -3.4 L3.2 2.4 H-3.2Z"/>' : i % 3 === 1 ? '<rect x="-2.6" y="-2.6" width="5.2" height="5.2" rx=".8"/>' : '<circle r="2.8"/>'}</g>`;
+      return `<g transform="translate(${x} ${y}) rotate(${r}) scale(1.5)" fill="${C[i]}" opacity=".85"><rect x="-3.6" y="-1" width="1.8" height="4" rx=".6"/><rect x="-.9" y="-3" width="1.8" height="6" rx=".6"/><rect x="1.8" y="-2" width="1.8" height="5" rx=".6"/></g>`;
+    };
+    return `<g class="trait">${P.map(([x, y, r], i) => one(x, y, r, i)).join('')}</g>`;
+  }
   function cloud(stage, mood = 'idle', look = null) {
     if (stage <= 2) return wrap(eggC(stage, mood));
     const L = normLook(look); setTint('cloud', L.tint);
@@ -179,7 +191,7 @@ const Art = (() => {
     if (stage >= 10 && !L.wear.head) front += crown(4, -33, .95);
     if (stage >= 7) front += sparkle(-40, -20, .6) + sparkle(42, 14, .5);
     const ws = (ly) => wearSVG('cloud', L.wear, ly, L.col);
-    return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${back}${ws('back')}${cloudBody(mood)}${dirt('cloud', L.dirt)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
+    return wrap(`<g class="anim-float"><g transform="translate(0 ${50 - 30 * s}) scale(${s})">${back}${ws('back')}${cloudBody(mood)}${stage >= 6 ? traitDeco('cloud', L.trait) : ''}${dirt('cloud', L.dirt)}${ws('body')}${ws('neck')}<g transform="translate(0 0)">${ws('face')}</g>${front}${ws('head')}${ws('hand')}</g></g>`);
   }
 
   // ---------- 아기 토끼 ----------
@@ -232,7 +244,7 @@ const Art = (() => {
     if (stage >= 10 && !L.wear.head) extra += crown(0, -26, .8);
     if (stage >= 7) extra += sparkle(-30, -8, .55) + sparkle(30, 20, .5);
     const ws = (ly) => wearSVG('bunny', L.wear, ly, L.col);
-    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
+    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${stage >= 6 ? traitDeco('bunny', L.trait) : ''}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
     setTint('bunny', 'base'); return wrap(out);
   }
 
@@ -364,7 +376,7 @@ const Art = (() => {
   function normLook(look) {
     if (!look) return { wear: {}, tint: 'base' };
     if (typeof look === 'string') return { wear: W[look] ? { [W[look].slot]: look } : {}, tint: 'base' };
-    return { wear: look.wear || {}, tint: look.tint || 'base', dirt: look.dirt || 0, col: look.col || {} };
+    return { wear: look.wear || {}, tint: look.tint || 'base', dirt: look.dirt || 0, col: look.col || {}, trait: look.trait || null };
   }
   // 옷 하나만 따로 (옷장 칸 그림)
   function wearIcon(id, kind = 'bunny', col) {
