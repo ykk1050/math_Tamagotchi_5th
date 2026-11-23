@@ -186,12 +186,15 @@
     return t + [0, 5, 9][S.nest || 0];
   }
   const eggTempOk = () => S.temp == null || (S.temp >= 30 && S.temp <= 70);
+  // 자는 동안 기운이 1분에 차는 양: 그냥 3, 불 끄면 +1, 이불 덮으면 +2 (25에서 가득까지 12~25분)
+  const sleepRate = () => 3 + (S.light === false ? 1 : 0) + (S.covered ? 2 : 0);
+  function sleepEta() { return Math.max(1, Math.ceil((100 - S.needs.energy) / sleepRate())); }
   function tickNeeds() {
     const now = Date.now(), h = Math.min(48, (now - (S.needT || now)) / 3600000);
     const N = S.needs;
     N.full = clamp(N.full - 6 * h, 15, 100); N.clean = clamp(N.clean - 4 * h, 15, 100);
     N.mood = clamp(N.mood - 3 * h, 20, 100);
-    N.energy = S.asleep ? clamp(N.energy + ((S.light === false ? 16 : 9) + (S.covered ? 5 : 0)) * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
+    N.energy = S.asleep ? clamp(N.energy + sleepRate() * 60 * h, 0, 100) : clamp(N.energy - 4 * h, 10, 100); // 기운은 잘 때만 오른다
     if (S.stage <= 2) { N.full = N.clean = N.energy = 100; // 알은 먹거나 씻거나 자지 않는다. 대신 따뜻함이 바뀐다
       if (S.temp == null) S.temp = 50;
       if (!S.tempEv) { if (S.temp < 30) S.tempEv = 'cold'; else if (S.temp > 70) S.tempEv = 'hot'; else S.temp = 50; } // 옛 저장: 이미 춥거나 더우면 그 일로 바꾼다
@@ -200,7 +203,7 @@
   }
   // 기운이 25보다 낮으면 스르르 잠들고, 자는 동안 기운이 차서 가득 차면 깬다
   function syncSleep() {
-    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) { S.asleep = true; S.napEnd = 0; S.log.push({ e: 'sleep' }); }
+    if (!S.asleep && S.stage >= 3 && S.needs.energy < 25) { S.asleep = true; S.sleepAt = Date.now(); S.napEnd = 0; S.log.push({ e: 'sleep' }); }
     if (S.asleep && S.napEnd && Date.now() >= S.napEnd) { S.needs.energy = 100; S.napEnd = 0; }
     if (S.asleep && (S.needs.energy >= 100 || S.stage < 3)) { if (S.stage >= 3) ensureDream(); S.asleep = false; }
     const z = !!S.asleep; if (z === sleeping) return false; sleeping = z; return true;
@@ -598,10 +601,11 @@
   }
   function sleepSpot() {
     const wk = $('walker'); wk.querySelectorAll('.bedquilt').forEach(e => e.remove()); setTimeout(dreamTick, 900);
+    if (sleeping && S.stage >= 3 && !S.napEnd && S.sleepHint !== (S.sleepAt || 1)) { S.sleepHint = S.sleepAt || 1; setTimeout(() => toast(`기운이 다 차면 일어나요 (약 <b>${sleepEta()}분</b>). 불을 끄고 이불을 덮어 주면 더 빨리 차요`, 4200), 2600); }
     if (!sleeping || S.stage <= 2) { wk.classList.remove('inbed'); if (!sleeping) S.covered = false; return; }
     if ((S.roomId || 'main') !== 'main') { wk.style.left = '34%'; wk.style.bottom = ''; return; }
-    const bb = roomBox(236, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
-    wk.classList.add('fast', 'inbed'); wk.style.left = bb.cx + '%'; wk.style.bottom = (rh - bb.top - bb.height * .78) + 'px'; setTimeout(() => wk.classList.remove('fast'), 700);
+    const bb = roomBox(200, 380, 364, 505), rh = $('room').getBoundingClientRect().height; // 쿠션 침대 가운데, 매트리스 위
+    wk.classList.add('fast', 'inbed'); wk.style.left = bb.cx + '%'; wk.style.bottom = (rh - bb.top - bb.height * .62) + 'px'; setTimeout(() => wk.classList.remove('fast'), 700);
     const q = document.createElement('div'); q.className = 'bedquilt' + (S.covered ? ' on' : ''); q.innerHTML = QUILT.replace('<svg ', '<svg preserveAspectRatio="none" '); wk.appendChild(q);
     if (S.covered) { fitQuilt(q); setTimeout(() => fitQuilt(q), 760); return; }
     let drag = null;
@@ -615,10 +619,12 @@
     q.addEventListener('pointerup', up); q.addEventListener('pointercancel', up);
   }
   // 덮은 이불: 친구 몸 아래쪽 40%만 덮어서 자는 얼굴이 보이게
+  // 덮은 이불: 얼굴(눈·입) 바로 아래부터 침대 매트리스까지 덮는다. 날개·무지개 같은 장식 크기와 상관없이 얼굴이 보인다
   function fitQuilt(q) {
-    if (!q || !q.isConnected) return; const w = $('walker').getBoundingClientRect(), b = bodyRect($('pet'));
-    if (!b.width) return; const top = b.top + b.height * .58;
-    Object.assign(q.style, { left: (b.left - w.left - b.width * .2) + 'px', width: b.width * 1.4 + 'px', top: (top - w.top) + 'px', bottom: 'auto', height: (b.bottom - top + b.height * .22) + 'px' });
+    if (!q || !q.isConnected) return; const w = $('walker').getBoundingClientRect(), fe = $('pet').querySelector('.face');
+    const f = fe && fe.getBoundingClientRect(); if (!f || !f.width) return;
+    const top = f.bottom + f.height * .1, cx = f.left + f.width / 2, qw = f.width * 2.5, bot = w.bottom + w.height * .04;
+    Object.assign(q.style, { left: (cx - qw / 2 - w.left) + 'px', width: qw + 'px', top: (top - w.top) + 'px', bottom: 'auto', height: Math.max(20, bot - top) + 'px' });
   }
   function poked() { lastTouch = Date.now(); clearTimeout(idleT); idleT = setTimeout(idleTalk, 16000); }
   // 친구가 먼저 앞으로 다가와서 말을 건다
@@ -1202,7 +1208,7 @@
     if (!S.light) {
       if (sleeping || S.asleep) { speak('home', S.stage <= 2 ? '(알이 어둠 속에서 새근새근)' : '(불을 꺼 주니 더 푹 자요… 새근새근)', { silent: true }); return; }
       if (S.stage <= 2) { speak('home', night ? '(깜깜해지니 알이 새근새근 잠들어요)' : '(알이 깜짝! 낮인데 어두워졌어요)', { silent: true }); return; }
-      if (night && S.needs.energy < 70) { speak('home', talk ? pick(['불 끄니까 스르르 졸려… 잘 자!', '하암… 깜깜하니까 눈이 감겨. 잘 자!']) : '(하암… 스르르)'); setTimeout(() => { if (S.light === false) { S.asleep = true; S.napEnd = 0; save(); renderHome(); } }, 2200); return; }
+      if (night && S.needs.energy < 70) { speak('home', talk ? pick(['불 끄니까 스르르 졸려… 잘 자!', '하암… 깜깜하니까 눈이 감겨. 잘 자!']) : '(하암… 스르르)'); setTimeout(() => { if (S.light === false) { S.asleep = true; S.sleepAt = Date.now(); S.napEnd = 0; save(); renderHome(); } }, 2200); return; }
       speak('home', night ? (talk ? '아직 안 졸린데… 깜깜해서 아무것도 안 보여!' : '(두리번두리번)') : (talk ? (S.kind === 'cloud' ? '어? 낮인데 깜깜해! 깜짝 놀랐잖아.' : '깜짝이야! 낮인데 왜 불을 꺼?') : '(깜짝!)'));
     } else {
       if (sleeping || S.asleep) { if (!wakeFuss('light')) speak('home', '(알이 움찔… 눈부신가 봐요)', { silent: true }); return; }
@@ -2916,7 +2922,7 @@
   }
   function napInBed() {
     const night = isNight(), talk = level() === 'talk', now = Date.now();
-    S.asleep = true; S.covered = false; S.napT = now; S.napEnd = night ? 0 : now + 45000;
+    S.asleep = true; S.sleepAt = Date.now(); S.covered = false; S.napT = now; S.napEnd = night ? 0 : now + 45000;
     if (dayCap('care-nap', 2)) addFriend(3); S.log.push({ e: 'care', id: 'nap' }); fulfill('care', 'nap');
     if (S.sick) { S.sick.lv--; setTimeout(checkWell, 2800); }
     save(); syncSleep(); renderHome();

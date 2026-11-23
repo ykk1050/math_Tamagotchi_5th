@@ -143,27 +143,21 @@ const Scene = (() => {
       ${rugs.length ? '' : `<ellipse cx="520" cy="560" rx="250" ry="58" fill="${kind === 'bunny' ? '#FFE0EA' : '#E9E2FF'}"/><ellipse cx="520" cy="560" rx="200" ry="40" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="12 12" opacity=".8"/>`}
       ${rugs.map(draw).join('')}
       <g transform="translate(170 352) scale(.86)">
-        <ellipse cx="128" cy="176" rx="132" ry="10" fill="#000" opacity=".07"/>
-        <!-- 머리판: 둥근 아치, 하트 장식 -->
-        <path d="M2 172 V44 Q2 4 42 4 Q60 4 66 24 V172 Z" fill="${bedW}" stroke="${bedS}" stroke-width="4" stroke-linejoin="round"/>
-        <path d="M12 160 V48 Q12 16 40 16 Q52 16 56 30 V160 Z" fill="#fff" opacity=".45"/>
-        <path d="M34 52 c-6 -8 -16 -2 -12 6 l12 11 l12 -11 c4 -8 -6 -14 -12 -6z" fill="${bedC}" stroke="${bedS}" stroke-width="2.4"/>
-        <!-- 발판 -->
-        <path d="M232 172 V92 Q232 74 246 74 Q260 74 260 92 V172 Z" fill="${bedW}" stroke="${bedS}" stroke-width="4" stroke-linejoin="round"/>
-        <!-- 침대 틀과 다리 -->
-        <rect x="40" y="128" width="210" height="30" rx="10" fill="${bedW}" stroke="${bedS}" stroke-width="4"/>
-        <rect x="58" y="156" width="14" height="18" rx="5" fill="${bedS}" opacity=".75"/><rect x="214" y="156" width="14" height="18" rx="5" fill="${bedS}" opacity=".75"/>
-        <!-- 매트리스 -->
-        <rect x="56" y="98" width="182" height="38" rx="16" fill="#fff" stroke="${bedS}" stroke-width="3" stroke-opacity=".55"/>
-        <!-- 폭신한 베개 -->
-        <path d="M66 98 C60 82 70 70 88 72 C104 68 122 70 128 80 C134 92 126 104 108 104 C92 108 72 108 66 98 Z" fill="#fff" stroke="${bedS}" stroke-width="3" stroke-opacity=".7"/>
-        <path d="M80 84 q18 -6 36 0" stroke="${bedS}" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>
-        <!-- 이불: 위로 접힌 시트, 물결 자락이 옆으로 늘어진다 -->
-        <path d="M118 96 C140 84 196 82 236 92 C246 95 250 104 248 112 L250 150 Q240 158 230 150 Q220 158 210 150 Q200 158 190 150 Q180 158 170 150 Q160 158 150 150 Q140 158 130 150 Q122 156 116 148 Z" fill="${bedC}" stroke="${bedS}" stroke-width="3.4" stroke-linejoin="round"/>
-        <path d="M118 96 C122 104 122 140 116 148" stroke="${bedS}" stroke-width="3" fill="none" opacity=".5"/>
-        <path d="M112 98 C124 92 128 92 132 96 L130 146 Q122 152 114 146 Z" fill="#fff" stroke="${bedS}" stroke-width="3" stroke-linejoin="round"/>
-        ${[[150, 112], [180, 104], [212, 108], [166, 134], [198, 130], [230, 132]].map(([x, y], i) => i % 2 ? `<circle cx="${x}" cy="${y}" r="4.5" fill="#fff" opacity=".85"/>` : `<path d="M${x} ${y - 6} l1.8 4 4.4 .5 -3.3 3 .9 4.3 -3.8 -2.2 -3.8 2.2 .9 -4.3 -3.3 -3 4.4 -.5z" fill="#fff" opacity=".9"/>`).join('')}
-        <path d="M140 92 C170 86 206 86 232 92" stroke="#fff" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
+        <!-- 친구용 폭신 침대: 앞에서 본 둥근 쿠션 침대. 친구가 가운데 앉아 이불을 덮고 잔다 -->
+        <ellipse cx="130" cy="172" rx="126" ry="9" fill="#000" opacity=".07"/>
+        <path d="M34 132 V64 Q34 18 130 12 Q226 18 226 64 V132 Z" fill="${bedW}" stroke="${bedS}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M48 128 V68 Q48 32 130 26 Q212 32 212 68 V128 Z" fill="#fff" opacity=".45"/>
+        <path d="M130 44 c-7 -9 -18 -2 -13 7 l13 12 l13 -12 c5 -9 -6 -16 -13 -7z" fill="${bedC}" stroke="${bedS}" stroke-width="2.4"/>
+        ${[[70, 44], [190, 44], [96, 30], [164, 30]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.4" fill="${bedC}" opacity=".9"/>`).join('')}
+        <rect x="34" y="156" width="14" height="16" rx="5" fill="${bedS}" opacity=".75"/><rect x="212" y="156" width="14" height="16" rx="5" fill="${bedS}" opacity=".75"/>
+        <ellipse cx="130" cy="138" rx="124" ry="30" fill="${bedC}" stroke="${bedS}" stroke-width="4"/>
+        <path d="M14 138 Q130 178 246 138" stroke="#fff" stroke-width="3" fill="none" opacity=".55" stroke-dasharray="9 8"/>
+        <ellipse cx="130" cy="128" rx="98" ry="18" fill="#fff" stroke="${bedS}" stroke-width="3" stroke-opacity=".5"/>
+        <ellipse cx="130" cy="122" rx="84" ry="11" fill="${bedW}" opacity=".8"/>
+        <path d="M88 112 C84 98 98 92 112 96 Q130 90 148 96 C162 92 176 98 172 112 Q130 120 88 112Z" fill="#fff" stroke="${bedS}" stroke-width="3" stroke-opacity=".7"/>
+        <path d="M104 102 q26 -6 52 0" stroke="${bedS}" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>
+        <path d="M196 124 C214 120 232 124 238 134 L236 152 Q226 160 214 154 Q204 160 196 152 Z" fill="${bedC}" stroke="${bedS}" stroke-width="3" stroke-linejoin="round" opacity=".95"/>
+        <path d="M198 132 Q216 128 234 136" stroke="#fff" stroke-width="2.4" fill="none" opacity=".7" stroke-dasharray="5 5"/>
       </g>`;
     } else {
       // 다락방: 비스듬한 지붕, 동그란 창, 나무 기둥
