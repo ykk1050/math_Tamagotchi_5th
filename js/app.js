@@ -381,7 +381,7 @@
   $('mi-garden').innerHTML = `<svg viewBox="0 0 32 32"><path d="M16 26 v-10" stroke="#4FAA6C" stroke-width="2.6"/><path d="M16 17 c-8 0 -10 -6 -10 -9 c6 0 10 3 10 9 c0 -6 4 -9 10 -9 c0 3 -2 9 -10 9" fill="#9FDDB4" stroke="#4FAA6C" stroke-width="1.8"/><path d="M5 27 h22" stroke="#B98A6A" stroke-width="4" stroke-linecap="round"/></svg>`;
   $('mi-book').innerHTML = ICON.book; $('mi-closet').innerHTML = ICON.closet; $('mi-shop').innerHTML = ICON_SHOP; $('mi-diary').innerHTML = ICON.diary;
   const wishIcon = (w) => w.t === 'food' ? Scene.food(w.id) : w.t === 'place' ? ICON.walk.replace(/#fff/g, '#55C3A3') : ICON[w.id];
-  const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: S.stage <= 2 ? '따뜻하게 쓰다듬어 주길 바라요' : '쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', sing: '노래를 듣고 싶어 해요', warm: '따뜻한 담요를 바라요', cool: '시원한 바람을 바라요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
+  const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: '살살 쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', sing: '노래를 듣고 싶어 해요', warm: '따뜻한 담요를 바라요', cool: '시원한 바람을 바라요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
   const napName = () => (isNight() ? '밤잠 재우기' : '낮잠 재우기');
   const careName = (id) => (id === 'nap' ? napName() : CARE[id].name);
   const wishSay = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : w.id === 'nap' && isNight() ? '하암… 밤이 깊었어. 이제 자고 싶어' : CARE[w.id].wish;
@@ -469,7 +469,7 @@
     $('wish-count').innerHTML = `${done < S.wishes.length && S.wishes.length > 1 ? SC('+10 모두') + ' ' : ''}${done} / ${S.wishes.length}`;
     $('wish-list').innerHTML = S.wishes.map((w, i) => `<div class="wish ${w.done ? 'done' : ''}" data-i="${i}"><span class="wi">${wishIcon(w)}</span><span class="wt">${NM()}는 ${wishText(w)}<small>${w.t === 'food' ? '간식 만들기 → 먹이기' : w.t === 'place' ? '산책 가기' : w.id === 'pet' ? (S.stage <= 2 ? '알을 손가락으로 살살 문질러요' : '친구를 손가락으로 쓰다듬어요') : w.id === 'sing' ? '알 돌보기 → 노래 불러 주기' : '돌보기'}${w.done ? '' : ' ' + SC('+5')}</small></span><span class="wc">${w.done ? '✓' : ''}</span></div>`).join('');
     const w = S.wishes.find(x => !x.done);
-    $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
+    $('think').classList.toggle('peek', !!w && w.t === 'care' && w.id === 'pet'); $('think').innerHTML = w && !sleeping ? `<span class="ti">${wishIcon(w)}</span><span>${w.t === 'food' ? FOODS[w.id].name : w.t === 'place' ? PLACES[w.id].name : careName(w.id)}</span>` : '';
   }
   function renderCare() {
     const items = S.stage <= 2 ? [['warm', '담요 덮기'], ['cool', '부채질'], ['sing', '노래 불러 주기']] : [['feed', '먹이기'], ['bath', '목욕'], ['play', '놀이'], ['nap', '재우기']].concat(S.brushDue ? [['brush', '양치']] : [], S.sick ? [['sick', '감기 돌보기']] : []);
@@ -1090,13 +1090,26 @@
     wk.insertBefore(el, wk.firstChild); Snd.chime && Snd.chime();
     setTimeout(() => el.classList.add('out'), 3600); setTimeout(() => el.remove(), 4400);
   }
+  // 자는 친구를 건드리거나 깨우면 속상해한다: 기분이 내려가고 우정이 조금 준다(20초 안에 여러 번 건드려도 한 번만 셈)
+  let wakeAt = 0;
+  function wakeFuss(kind) {
+    if (S.stage <= 2 || !(sleeping || S.asleep)) return false;
+    const now = Date.now(), talk = level() === 'talk';
+    const say = { touch: ['으음… 자는데 왜 건드려…', '졸려… 깨우지 마…', '음냐… 나 자고 있었는데…'], light: ['으앙, 눈부셔! 자고 있었는데…', '으음… 불 켜면 잠이 깨잖아…'],
+      care: ['하암… 자고 있었는데 깨웠어…', '졸린데… 꼭 지금 해야 돼?'], out: ['하암… 자고 있었는데 나가자고? 아직 졸린데…', '졸린데… 꼭 지금 가야 돼?'] }[kind];
+    speak('home', talk ? pick(say) : '(잠에서 깨서 칭얼거려요)', { silent: !talk });
+    if (now - wakeAt < 20000) return true; wakeAt = now;
+    addNeed('mood', -4); renderNeeds();
+    if (dayCap('wake', 6)) { loseFriend(2); setTimeout(() => toast('자고 있는 친구를 깨웠어요. <b>우정이 조금 줄었어요</b>'), 500); }
+    save(); return true;
+  }
   function onTap(x, ev) {
     poked(); const now = Date.now();
     taps = taps.filter(t => now - t < 1800); taps.push(now);
     if (sulking) { Snd.ouch(); speak('home', L3('sulk'), { silent: true }); drawPet('pout'); if (taps.length >= 3) { taps = []; runAway(x); } return; }
+    if (sleeping) { if (now - lastPoke > 900 && !wakeFuss('touch')) speak('home', '(알이 꿈틀… 다시 새근새근)', { silent: true }); lastPoke = now; return; }
     if (taps.length >= 5 || (taps.length >= 3 && now - ouchAt < 4000)) { cry(x); return; }
     if (taps.length >= 3) { ouch(); return; }
-    if (sleeping) { if (now - lastPoke > 900) speak('home', level() === 'egg' ? '(알이 꿈틀… 다시 새근새근)' : '음냐… 오 분만 더…', { silent: true }); lastPoke = now; return; }
     if (now - lastPoke < 700) return; lastPoke = now;
     if (S.stage >= 3 && ev) touchZone(ev); else { react('happy', 'squish'); speak('home', line('poke')); heartAtPet(); }
     addNeed('mood', 3);
@@ -1104,18 +1117,20 @@
     renderNeeds(); save();
   }
   (() => {
-    const pet = $('pet'); let down = false, lx = 0, ly = 0, moved = 0, rub = 0, nextHeart = 220, rubLog = [], tiredT = 0, tiredSaid = 0, path = [], fl = 0;
-    pet.addEventListener('pointerdown', (e) => { down = true; lx = e.clientX; ly = e.clientY; moved = 0; path = [[e.clientX, e.clientY, Date.now()]]; fl = 0; try { pet.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    const pet = $('pet'); let down = false, cred = false, fussed = false, lx = 0, ly = 0, moved = 0, rub = 0, nextHeart = 220, rubLog = [], tiredT = 0, tiredSaid = 0, path = [], fl = 0;
+    pet.addEventListener('pointerdown', (e) => { down = true; cred = false; fussed = false; lx = e.clientX; ly = e.clientY; moved = 0; path = [[e.clientX, e.clientY, Date.now()]]; fl = 0; try { pet.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
     pet.addEventListener('pointermove', (e) => {
       if (!down) return; const d = Math.hypot(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY; moved += d; path.push([e.clientX, e.clientY, Date.now()]);
       if (moved < 15) return;
+      if (sleeping) { if (!fussed) { fussed = true; wakeFuss('touch'); } return; }
       rub += d; poked();
       if (rub - fl > 90) { fl = rub; Snd.fluff && Snd.fluff(); }
-      const now = Date.now();
-      if (!sulking && now < tiredT) { if (now - tiredSaid > 2500) { tiredSaid = now; speak('home', S.stage <= 2 ? '(알이 충분히 따뜻해졌어요. 조금 쉬게 해 줘요)' : level() === 'talk' ? pick(['간지러워! 이제 그만~', '털이 다 헝클어지겠어!']) : '(몸을 배배 꼬아요)', { silent: level() !== 'talk' }); }
+      const now = Date.now(), petWish = wished('care', 'pet');
+      if (petWish && !cred) tiredT = 0;
+      if (!sulking && now < tiredT) { if (now - tiredSaid > 2500) { tiredSaid = now; speak('home', S.stage <= 2 ? '(알이 기분 좋게 반짝여요. 이제 조금 쉬게 해 줘요)' : level() === 'talk' ? pick(['간지러워! 이제 그만~', '털이 다 헝클어지겠어!']) : '(몸을 배배 꼬아요)', { silent: level() !== 'talk' }); }
         rub = 0; nextHeart = 220; return; }
       rubLog.push([now, d]); rubLog = rubLog.filter(([t]) => now - t < 12000);
-      if (!sulking && rubLog.reduce((a, [, v]) => a + v, 0) > 2800) {
+      if (!sulking && !petWish && rubLog.reduce((a, [, v]) => a + v, 0) > 2800) {
         // 12초 안에 너무 많이 문지르면 싫어서 몸을 빼고, 20초 동안은 쓰다듬어도 좋아하지 않는다
         tiredT = now + 20000; tiredSaid = now; rubLog = []; rub = 0; nextHeart = 220;
         if (S.stage <= 2) { react('idle', 'wobble'); speak('home', '(알이 데굴 흔들려요. 조금 쉬게 해 줘요)', { silent: true }); }
@@ -1124,12 +1139,15 @@
       }
       if (rub > nextHeart) { nextHeart = rub + 220; heartAtPet(); Snd.heart(); if (!sulking && Date.now() - madeAt > 2500) { react('happy'); addNeed('mood', 2); renderNeeds(); } }
       if (sulking && rub > 900) { rub = 0; nextHeart = 220; makeUp(); }
+      if (!sulking && !cred && rub > 600 && Date.now() - madeAt > 2500) { cred = true; rubCredit(); }
     });
+    function rubCredit() { if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); } S.log.push({ e: 'care', id: 'pet' }); speak('home', line('poke')); if (fulfill('care', 'pet')) { renderWishes(); renderCare(); hud(); } save(); }
     const up = (e) => {
       if (!down) return; down = false;
       if (e && e.type === 'pointerup') { path.push([e.clientX, e.clientY, Date.now()]); const g = gestureOf(path); if (g && tryTrick(g)) { rub = 0; nextHeart = 220; return; } }
       if (moved < 15) { const r = $('room').getBoundingClientRect(), p = pet.getBoundingClientRect(); onTap((p.left + p.width / 2 - r.left) / r.width * 100, e); }
-      else if (!sulking && rub > 600 && Date.now() - madeAt > 2500) { rub = 0; nextHeart = 220; if (S.pokeToday < 10) { S.pokeToday++; addFriend(1); } S.log.push({ e: 'care', id: 'pet' }); speak('home', line('poke')); if (fulfill('care', 'pet')) { renderWishes(); renderCare(); hud(); } save(); }
+      else if (!sleeping && !sulking && !cred && rub > 600 && Date.now() - madeAt > 2500) { rub = 0; nextHeart = 220; rubCredit(); }
+      if (cred) { rub = 0; nextHeart = 220; }
     };
     pet.addEventListener('pointerup', up); pet.addEventListener('pointercancel', up);
     pet.addEventListener('click', (e) => e.preventDefault());
@@ -1176,7 +1194,7 @@
       if (night && S.needs.energy < 70) { speak('home', talk ? pick(['불 끄니까 스르르 졸려… 잘 자!', '하암… 깜깜하니까 눈이 감겨. 잘 자!']) : '(하암… 스르르)'); setTimeout(() => { if (S.light === false) { S.asleep = true; save(); renderHome(); } }, 2200); return; }
       speak('home', night ? (talk ? '아직 안 졸린데… 깜깜해서 아무것도 안 보여!' : '(두리번두리번)') : (talk ? (S.kind === 'cloud' ? '어? 낮인데 깜깜해! 깜짝 놀랐잖아.' : '깜짝이야! 낮인데 왜 불을 꺼?') : '(깜짝!)'));
     } else {
-      if (sleeping || S.asleep) { speak('home', S.stage <= 2 ? '(알이 움찔… 눈부신가 봐요)' : talk ? '으음… 눈부셔… (뒤척뒤척)' : '(눈부셔서 뒤척여요)', { silent: true }); petNo('sleepy'); return; }
+      if (sleeping || S.asleep) { if (!wakeFuss('light')) speak('home', '(알이 움찔… 눈부신가 봐요)', { silent: true }); return; }
       speak('home', S.stage <= 2 ? '(방이 환해졌어요)' : talk ? pick(['밝아졌다! 이제 잘 보여.', '불 켜니까 기분도 환해져!']) : '(반짝!)');
     }
   }
@@ -2661,7 +2679,7 @@
       const talk = level() === 'talk';
       speak('home', talk ? pick(['싫다고 했잖아… 자꾸 그러면 속상해.', '내 말 안 들어 주는 거야? 흥.', '아까 말했는데… 나 지금은 정말 싫어.']) : '(시무룩… 고개를 홱 돌려요)', { silent: !talk });
       petNo('upset'); addNeed('mood', -4);
-      if (dayCap('scold', 5)) { loseFriend(2); toast('싫다는 걸 자꾸 권해서 속상해해요. <b>우정이 조금 줄었어요</b>'); }
+      if (S.stage >= 3 && dayCap('scold', 5)) { loseFriend(2); toast('싫다는 걸 자꾸 권해서 속상해해요. <b>우정이 조금 줄었어요</b>'); }
     } else { speak('home', text, { silent: level() !== 'talk' }); petNo(kind || 'upset'); if (r.n === 2) setTimeout(() => toast('친구가 싫다고 해요. 자꾸 권하면 <b>속상해할 수 있어요</b>'), 900); }
     renderNeeds(); save();
   }
@@ -2678,6 +2696,7 @@
   // ---------- 알 돌보기: 담요·부채·노래 (방에서 바로) ----------
   function eggCare(id) {
     const t = S.temp == null ? 50 : S.temp, now = Date.now(), wk = $('walker');
+    if ((id === 'warm' && t >= 62 || id === 'cool' && t <= 38) && wished('care', 'pet') && !wished('care', id)) { rubHint(); return; }
     if (id === 'warm' && t >= 62 && !wished('care', id)) return refuse('egg-warm', '(알이 벌써 따끈따끈해요. 더 덮으면 더울 거예요)', 'awake');
     if (id === 'cool' && t <= 38 && !wished('care', id)) return refuse('egg-cool', '(알이 벌써 서늘해요. 부채질하면 추울 거예요)', 'awake');
     if (id === 'sing' && S.singT && now - S.singT < 5 * 60000 && !wished('care', id)) return refuse('egg-sing', '(알이 노래를 듣고 새근새근 자고 있어요. 조금 이따 불러 줘요)', 'sleepy');
@@ -2827,13 +2846,14 @@
   }
   // 쓰다듬기는 창을 따로 띄우지 않는다: 방에서 친구를 직접 문지르도록 손가락 모양으로 알려 준다
   function rubHint() {
+    if (sleeping && S.stage >= 3) { speak('home', '(새근새근 자고 있어요. 깨어나면 쓰다듬어 줘요)', { silent: true }); return; }
     const wk = $('walker'); wk.querySelectorAll('.rubhint').forEach(e => e.remove());
     const h = document.createElement('div'); h.className = 'rubhint'; h.innerHTML = Art.icon('hand'); wk.appendChild(h); setTimeout(() => h.remove(), 2600);
     speak('home', S.stage <= 2 ? '(손가락으로 알을 살살 문질러 주세요)' : level() === 'talk' ? '여기! 손가락으로 살살 쓰다듬어 줘~' : '(손가락으로 살살 쓰다듬어 주세요)', { silent: S.stage <= 2 || level() !== 'talk' });
   }
   function doCare(id) {
     if (id === 'pet') return rubHint();
-    if (id === 'brush') return brushPlay();
+    if (id === 'brush') { if (sleeping) wakeFuss('care'); return brushPlay(); }
     if (id === 'sick') return sickCare();
     if (S.stage <= 2) return eggCare(id);
     if (id !== 'feed') { const no = careNo(id); if (no) { refuse('care-' + id, no[1], no[0]); return; } }
@@ -2845,10 +2865,11 @@
         toast('배부르지만 <b>먹고 싶다던 간식</b>은 먹을 수 있어요');
       }
       if (!own.length) { speak('home', level() === 'talk' ? line('noFood') : line('idle')); toast('냉장고가 비었어요. <b>간식 만들기</b>로 만들어요!'); return; }
+      if (sleeping) wakeFuss('care');
       openPick('무엇을 먹여 줄까요?', '냉장고에 있는 간식이에요', own.map(k => ({ id: k, art: Scene.food(k), name: FOODS[k].name, small: `${S.foods[k]}개`, badge: wishBadge('food', k) || tasteBadge('food', k) })), (k) => runAct('feed', k));
       return;
     }
-    if (sleeping && id !== 'nap') { sleeping = false; S.asleep = false; S.needs.energy = Math.max(S.needs.energy, 30); }
+    if (sleeping && id !== 'nap') { if (id !== 'sick') wakeFuss('care'); sleeping = false; S.asleep = false; S.needs.energy = Math.max(S.needs.energy, 30); }
     runAct(id);
   }
   function wishBadge(t, id) { return S.wishes.some(w => !w.done && w.t === t && w.id === id) ? '<span class="badge wishb">바람</span>' : ''; }
@@ -3183,8 +3204,8 @@
   function openWalk() {
     openPick('어디로 산책 갈까요?', '한 걸음마다 문제를 풀며 걸어가요', Object.keys(PLACES).map(k => ({ id: k, art: Scene.path(k, 6, false, 2.65), name: PLACES[k].name, small: (S.known.place[k] ? '가 본 곳' : '처음 가 봐요') + (NEIGH[k] && NEIGH[k].gift[0] === 'candy' ? ' ' + SC('+' + NEIGH[k].gift[1] + ' 선물') : ''), badge: wishBadge('place', k) || tasteBadge('place', k) })), startWalk, true);
   }
-  $('btn-cook').onclick = () => { Snd.tap(); poked(); openCook(); };
-  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (S.sick && S.stage >= 3) { refuse('walk', level() === 'talk' ? '콜록콜록… 감기 때문에 오늘은 집에서 쉬고 싶어.' : '(콜록콜록…)', 'blue'); return; } if (S.needs.energy < 25 && S.stage >= 3) { refuse('walk', level() === 'talk' ? '너무 졸려서 산책 못 가겠어… 먼저 재워 줘.' : '(하암…)', 'sleepy'); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } if (walkPrep()) return; openWalk(); };
+  $('btn-cook').onclick = () => { Snd.tap(); poked(); if (sleeping) wakeFuss('out'); openCook(); };
+  $('btn-walk').onclick = () => { Snd.tap(); poked(); if (sleeping && S.stage >= 3) { wakeFuss('out'); if (S.needs.energy < 25) return; } if (S.sick && S.stage >= 3) { refuse('walk', level() === 'talk' ? '콜록콜록… 감기 때문에 오늘은 집에서 쉬고 싶어.' : '(콜록콜록…)', 'blue'); return; } if (S.needs.energy < 25 && S.stage >= 3) { refuse('walk', level() === 'talk' ? '너무 졸려서 산책 못 가겠어… 먼저 재워 줘.' : '(하암…)', 'sleepy'); toast(`너무 졸려 해요. 먼저 <b>${isNight() ? '재워' : '낮잠을 재워'}</b> 줄까요?`); return; } if (walkPrep()) return; openWalk(); };
 
   const ADDS = ['drop', 'pour', 'crack', 'top'];
   function startCook(id) {
@@ -3253,8 +3274,9 @@
     p.classList.toggle('egg', S.stage <= 2); p.classList.toggle('pram', pram);
   }
   // 알 산책용 유모차 (바퀴는 걸을 때 굴러간다)
-  const PRAM_BACK = '<svg viewBox="0 0 160 156"><path d="M30 86 Q30 28 86 24 L86 86Z" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="3" stroke-linejoin="round"/><path d="M40 80 Q42 40 80 34" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/><path d="M44 30 L48 86 M62 25 L64 86" stroke="#B39AF0" stroke-width="2"/><path d="M128 84 L146 44 L156 44" stroke="#8C99AB" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const PRAM_FRONT = '<svg viewBox="0 0 160 156"><path d="M22 84 H138 Q136 120 100 124 H60 Q24 120 22 84Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="3"/><path d="M28 94 H132" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/><path d="M80 104 c-5 -5 -9 -1 -5 3 l5 5 5 -5 c4 -4 0 -8 -5 -3z" fill="#fff"/><path d="M48 124 L44 132 M112 124 L116 132" stroke="#8C99AB" stroke-width="4" stroke-linecap="round"/>' + [44, 116].map(x => `<g class="wheel" style="transform-origin:${x}px 140px"><circle cx="${x}" cy="140" r="13" fill="#fff" stroke="#6E7A8C" stroke-width="4"/><path d="M${x - 9} 140 H${x + 9} M${x} 131 V149" stroke="#AEB9C8" stroke-width="2.4"/><circle cx="${x}" cy="140" r="3" fill="#6E7A8C"/></g>`).join('') + '</svg>';
+  const PRAM_BACK = '<svg viewBox="0 0 160 156"><path d="M24 86 Q22 28 84 22 L100 26 Q66 44 58 86Z" fill="#9C86D8"/><path d="M128 84 L146 44 L156 44" stroke="#8C99AB" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // 앞 겹: 덮개(알 위쪽을 감싼다) + 바구니
+  const PRAM_FRONT = '<svg viewBox="0 0 160 156"><path d="M18 88 Q14 20 82 16 Q94 16 102 22 Q66 40 58 88Z" fill="#C9B8FF" stroke="#8F7BE0" stroke-width="3" stroke-linejoin="round"/><path d="M28 84 Q26 36 76 22 M42 86 Q42 46 90 20" stroke="#B39AF0" stroke-width="2.2" fill="none"/><path d="M102 22 Q66 40 58 88" stroke="#fff" stroke-width="2.4" fill="none" opacity=".7"/><path d="M22 84 H138 Q136 120 100 124 H60 Q24 120 22 84Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="3"/><path d="M28 94 H132" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/><path d="M80 104 c-5 -5 -9 -1 -5 3 l5 5 5 -5 c4 -4 0 -8 -5 -3z" fill="#fff"/><path d="M48 124 L44 132 M112 124 L116 132" stroke="#8C99AB" stroke-width="4" stroke-linecap="round"/>' + [44, 116].map(x => `<g class="wheel" style="transform-origin:${x}px 140px"><circle cx="${x}" cy="140" r="13" fill="#fff" stroke="#6E7A8C" stroke-width="4"/><path d="M${x - 9} 140 H${x + 9} M${x} 131 V149" stroke="#AEB9C8" stroke-width="2.4"/><circle cx="${x}" cy="140" r="3" fill="#6E7A8C"/></g>`).join('') + '</svg>';
   function placeOutPet(i, instant) {
     // 친구는 제자리에서 걷고, 풍경 세 겹이 서로 다른 속도로 뒤로 지나간다
     const p = Math.max(0, Math.min(1, i / (OUT.n - 1)));

@@ -962,7 +962,7 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 .opet.pram::after{display:none}
 .opet.pram .pram-b,.opet.pram .pram-f{position:absolute;inset:0;pointer-events:none}
 .opet.pram .pram-b{z-index:0}.opet.pram .pram-f{z-index:2}
-.opet.pram .pram-egg{position:absolute;left:19%;top:5%;width:62%;height:76%;z-index:1}
+.opet.pram .pram-egg{position:absolute;left:25%;top:15%;width:60%;height:66%;z-index:1}
 .opet.pram .pram-egg svg{width:100%;height:100%}
 .opet.pram.walking svg{animation:none}
 .opet.pram.walking .pram-egg svg{animation:walkbob .3s ease-in-out 4}
@@ -1146,3 +1146,6 @@ body.lowfx .dreamb{animation:none}
 
 .prepcard.mecard,.prepcard.hscard{top:4%;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .prepcard.mecard.show,.prepcard.hscard.show{opacity:1;pointer-events:auto}
+/* 쓰다듬기 바람 생각풍선은 잠깐씩만 떴다 사라진다 */
+.think.peek{animation:thinkpeek 26s ease infinite}
+@keyframes thinkpeek{0%{opacity:0;visibility:visible}3%,22%{opacity:1;visibility:visible}26%{opacity:0;visibility:hidden}100%{opacity:0;visibility:hidden}}
