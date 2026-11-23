@@ -1014,10 +1014,10 @@ body.lowfx .pet-svg .ear,body.lowfx .pet-svg .tail,body.lowfx .pet-svg .arm-r,bo
 #act-pet{z-index:1}
 /* 침대에서 자기 */
 .walker.inbed .pet svg{transform:rotate(-6deg) scale(.95)}
-.walker .bedquilt{position:absolute;z-index:3;left:78%;bottom:6%;width:46%;transform-origin:50% 50%;touch-action:none;cursor:grab;filter:drop-shadow(0 4px 4px rgba(0,0,0,.15));animation:propwig 1.4s ease-in-out infinite}
-.walker .bedquilt svg{width:100%;height:auto;display:block;pointer-events:none}
+.walker .bedquilt{position:absolute;z-index:3;left:62%;bottom:-6%;width:44%;height:24%;transform-origin:50% 50%;touch-action:none;cursor:grab;filter:drop-shadow(0 4px 4px rgba(0,0,0,.15));animation:propwig 1.4s ease-in-out infinite}
+.walker .bedquilt svg{width:100%;height:100%;display:block;pointer-events:none}
 .walker .bedquilt.held{animation:none;cursor:grabbing}
-.walker .bedquilt.on{left:-6%;width:112%;bottom:-4%;animation:none;pointer-events:none}
+.walker .bedquilt.on{left:-4%;width:108%;bottom:-6%;height:42%;animation:none;pointer-events:none}
 /* 감기: 볼이 빨갛고 콧물 */
 .walker.sick .pet svg{filter:saturate(.9)}
 .walker.sick::after{content:"";position:absolute;left:52%;top:52%;width:7px;height:11px;border-radius:50% 50% 50% 50%/40% 40% 60% 60%;background:#BFE3FF;border:1.5px solid #7FB0EA;animation:drip 2.6s ease-in infinite;z-index:4;pointer-events:none}

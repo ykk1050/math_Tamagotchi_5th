@@ -525,7 +525,7 @@
   function walkPrep() {
     if (S.stage < 3) return false;
     const mo = new Date().getMonth() + 1, cold = S.weather === 'snow' || mo === 12 || mo <= 2;
-    const need = S.weather === 'rain' && S.wear.hand !== 'umbrella' ? 'umbrella' : cold && S.wear.neck !== 'scarf' ? 'scarf' : null;
+    const W0 = S.wear || {}, need = S.weather === 'rain' && W0.hand !== 'umbrella' ? 'umbrella' : cold && W0.neck !== 'scarf' ? 'scarf' : null;
     if (!need) { S.walkBare = null; return false; }
     const I = ITEMS[need], own = S.items.includes(need), talk = level() === 'talk';
     comeSay(() => speak('home', need === 'umbrella' ? (talk ? '밖에 비 와! 우산 챙겨 줄래?' : '(창밖 비를 가리켜요)') : (talk ? '밖이 추워! 목도리 해 줄래?' : '(오들오들…)')));
@@ -544,9 +544,9 @@
     const wk = $('walker'); wk.querySelectorAll('.bedquilt').forEach(e => e.remove());
     if (!sleeping || S.stage <= 2) { wk.classList.remove('inbed'); if (!sleeping) S.covered = false; return; }
     if ((S.roomId || 'main') !== 'main') { wk.style.left = '34%'; wk.style.bottom = ''; return; }
-    const bb = roomBox(170, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
-    wk.classList.add('fast', 'inbed'); wk.style.left = bb.cx + '%'; wk.style.bottom = (rh - bb.top - bb.height * .5) + 'px'; setTimeout(() => wk.classList.remove('fast'), 700);
-    const q = document.createElement('div'); q.className = 'bedquilt' + (S.covered ? ' on' : ''); q.innerHTML = QUILT; wk.appendChild(q);
+    const bb = roomBox(236, 380, 390, 505), rh = $('room').getBoundingClientRect().height;
+    wk.classList.add('fast', 'inbed'); wk.style.left = bb.cx + '%'; wk.style.bottom = (rh - bb.top - bb.height * .78) + 'px'; setTimeout(() => wk.classList.remove('fast'), 700);
+    const q = document.createElement('div'); q.className = 'bedquilt' + (S.covered ? ' on' : ''); q.innerHTML = QUILT.replace('<svg ', '<svg preserveAspectRatio="none" '); wk.appendChild(q);
     if (S.covered) return;
     let drag = null;
     q.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; q.classList.add('held'); try { q.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); e.stopPropagation(); });
