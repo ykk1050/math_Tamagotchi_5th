@@ -2167,7 +2167,7 @@
   // 산책길 이웃: 장소마다 사는 동물이 이야기 속 수학 부탁을 한다
   // =====================================================================
   const NEIGH = {
-    garden: { id: 'squirrel', name: '다람쥐 토리', gift: ['honey', 1], hi: '안녕! 나는 꽃밭에 사는 다람쥐 토리야. 부탁 하나만 들어줄래?', thx: '고마워! 덕분에 겨울 준비 끝! 이건 꽃밭에서 모은 꿀이야.', miss: '괜찮아, 같이 생각해 줘서 고마워!' },
+    garden: { id: 'squirrel', name: '다람쥐 토리', gift: ['honey', 1], hi: '안녕! 나는 꽃밭에 사는 다람쥐 토리야. 부탁 하나만 들어줄래?', thx: '고마워! 덕분에 셈이 딱 맞았어. 이건 꽃밭에서 모은 꿀이야.', miss: '괜찮아, 같이 생각해 줘서 고마워!' },
     beach: { id: 'penguin', name: '펭귄 펭이', gift: ['candy', 5], hi: '어서 와! 나는 바닷가 펭귄 펭이야. 이것 좀 도와줄래?', thx: '우와, 정답이야! 바닷가에서 주운 별사탕 줄게!', miss: '헤헤, 괜찮아. 다음에 또 같이 풀자!' },
     berry: { id: 'hedgehog', name: '고슴도치 도치', gift: ['berry', 2], hi: '반가워! 나는 딸기밭 주인 고슴도치 도치야. 계산 좀 도와줄래?', thx: '고마워! 내 딸기 두 개 가져가!', miss: '괜찮아! 도와주러 와 준 것만으로도 기뻐.' },
     hill: { id: 'owl', name: '부엉이 박사', gift: ['candy', 5], hi: '부엉~ 별빛 언덕에 온 걸 환영하네. 내 수수께끼를 풀어 보겠나?', thx: '훌륭하군! 별사탕을 선물로 주겠네.', miss: '부엉, 괜찮네. 틀리면서 배우는 법이지.' }
@@ -2206,7 +2206,7 @@
       else if (mood === 'chew' || mood === 'full') mouth = `<path d="M${x - w} ${y} q${w * .5} ${w * .7} ${w} 0 q${w * .5} ${w * .7} ${w} 0" ${sw}/>`;
       else if (mood === 'tickle') mouth = `<path d="M${x - w} ${y - w * .2} Q${x} ${y + w * 1.4} ${x + w} ${y - w * .2} Z" fill="#E26A97"/>`;
     }
-    return eyes + mouth;
+    return `<g class="nbeyes">${eyes}</g>` + mouth;
   }
   const NB_SVG = {
     squirrel: (F) => `<svg viewBox="0 0 100 100"><path d="M70 78 C96 70 96 30 76 22 C62 16 54 30 64 38 C74 46 70 60 60 64" fill="#D9A276" stroke="#A8724C" stroke-width="3" stroke-linejoin="round"/><ellipse cx="44" cy="70" rx="20" ry="18" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><ellipse cx="44" cy="74" rx="11" ry="10" fill="#FFF1DE"/><circle cx="42" cy="44" r="20" fill="#E3B48A" stroke="#A8724C" stroke-width="3"/><path d="M28 30 l-2 -12 l10 8z M54 28 l4 -12 l4 14z" fill="#E3B48A" stroke="#A8724C" stroke-width="2.6" stroke-linejoin="round"/><path d="M28 37 q3 -9 12 -11" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".75"/>${F}<ellipse cx="42.5" cy="51" rx="3" ry="2.2" fill="#8C5A3C"/><ellipse cx="29" cy="52" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="56" cy="52" rx="6" ry="3.8" fill="url(#cn-blush)"/><ellipse cx="44" cy="70" rx="6" ry="5" fill="#C98A3D"/><path d="M40 66 h8" stroke="#8C5A3C" stroke-width="2"/></svg>`,
@@ -2485,41 +2485,90 @@
   // =====================================================================
   // 산책 끝: 이웃이 왼쪽에서 걸어와 인사하고 이야기하다가, 오른쪽 문제 칸에 부탁을 낸다
   // =====================================================================
+  // 대화 한 줄: N(글) = 이웃, F(종류, 문장, 짧은 말, 뜻) = 친구. 친구는 자란 만큼 말한다
+  //  5단계~ 문장 / 4단계 짧은 말 / 3단계 옹알이 + (뜻) / 알 몸짓. 어느 단계에서도 앞뒤 말이 이어져야 한다
+  const N_ = (t) => ({ who: 'N', t }), F_ = (k, t, w, m) => ({ who: 'F', k, t, w, m: m || w });
+  const EGG_TALK = { hi: '(알이 반가워서 콩콩 흔들려요)', ask: '(알이 궁금한지 갸우뚱해요)', yes: '(알이 좋다고 통통 흔들려요)', thx: '(알이 고마워서 반짝여요)', sad: '(알이 아쉬운지 살짝 움찔해요)', bye: '(알이 잘 가라고 살랑 흔들려요)' };
+  const YES = F_('yes', '좋아, 어디 보자!', '응! 볼래!', '응!'), YES_OWL = F_('yes', '네! 풀어 볼게요!', '네! 해 볼래요!', '네!');
   const NB_CHAT = {
-    squirrel: { first: [['N', '어? 안녕! 나는 꽃밭에 사는 다람쥐 토리야.'], ['F', '안녕, 토리! 꽃밭 정말 예쁘다.'], ['N', '겨울 준비로 도토리를 모으는 중인데, 셈이 너무 어려워…'], ['F', '우리가 도와줄게!']],
-      again: [['N', '또 왔구나! 반가워!'], ['F', '토리, 도토리는 많이 모았어?'], ['N', '응! 그런데 또 궁금한 게 생겼어.']] },
-    penguin: { first: [['N', '뒤뚱뒤뚱~ 안녕! 나는 바닷가에 사는 펭귄 펭이야.'], ['F', '안녕, 펭이! 바다 냄새가 좋다.'], ['N', '물고기를 잡았는데 무게를 계산하다가 헷갈렸어.'], ['F', '같이 생각해 볼래?']],
-      again: [['N', '어서 와! 오늘 바다 엄청 반짝이지?'], ['F', '응! 펭이도 잘 지냈어?'], ['N', '응! 그런데 또 셈할 게 생겼어.']] },
-    hedgehog: { first: [['N', '앗, 손님이다! 나는 딸기밭 주인 고슴도치 도치야.'], ['F', '안녕, 도치! 딸기가 정말 많다.'], ['N', '딸기밭을 넓히려는데 계산이 막혔어. 가시는 안 찌를게!'], ['F', '헤헤, 우리가 도와줄게.']],
-      again: [['N', '또 놀러 왔구나! 딸기 하나 먹을래?'], ['F', '고마워, 도치!'], ['N', '그 대신 이번에도 하나만 도와줘.']] },
-    owl: { first: [['N', '부엉~ 별빛 언덕에 손님이 오다니. 나는 부엉이 박사라네.'], ['F', '안녕하세요, 박사님! 별이 정말 많아요.'], ['N', '허허, 별을 세다 보면 재미있는 수수께끼가 많지.'], ['F', '저희도 들려주세요!']],
-      again: [['N', '부엉, 또 왔구먼. 반갑네.'], ['F', '박사님, 오늘도 별을 세셨어요?'], ['N', '물론이지. 그래서 오늘의 수수께끼가 있다네.']] }
+    squirrel: {
+      first: [N_('어? 안녕! 나는 꽃밭에 사는 다람쥐 토리야.'), F_('hi', '안녕, 토리! 꽃밭 정말 예쁘다.', '안녕, 토리! 꽃 예뻐!', '안녕, 토리!'), N_('꽃구경 왔구나! 나는 겨울에 먹을 도토리를 모으다가 셈이 막혔어…'), F_('yes', '우리가 도와줄게! 같이 세어 보자.', '내가 도와줄게!', '도와줄게!'), N_('정말? 고마워! 그럼 이 문제 좀 봐 줄래?'), YES],
+      again: [
+        [N_('또 왔구나! 기다리고 있었어.'), F_('ask', '토리, 도토리는 많이 모았어?', '토리! 도토리 많아?', '도토리 많아?'), N_('도토리를 볼이 빵빵해질 만큼 모았어! 그런데 셈이 헷갈려. 도와줄래?'), YES],
+        [N_('쉿! 방금 도토리를 어디에 묻었는지 까먹었어.'), F_('ask', '앗, 같이 찾아 줄까?', '찾아 줄까?'), N_('헤헤, 도토리는 냄새로 찾으면 돼! 대신 셈 문제를 도와줄래?'), YES],
+        [N_('안녕! 오늘은 바람에 도토리가 잔뜩 떨어졌어.'), F_('hi', '우와, 신났겠다!', '우와! 좋겠다!', '우와, 좋겠다!'), N_('응! 그래서 셈할 게 또 생겼어. 같이 해 줄래?'), YES]
+      ],
+      ok: F_('thx', '우와, 꿀이다! 고마워, 토리!', '꿀이다! 고마워!', '고마워!'), no: F_('sad', '아깝다. 다음엔 꼭 맞힐게!', '다음엔 꼭!'),
+      bye: [N_('응, 또 놀러 와! 안녕~'), F_('bye', '안녕, 토리! 또 올게!', '안녕, 토리!', '안녕!')]
+    },
+    penguin: {
+      first: [N_('뒤뚱뒤뚱~ 안녕! 나는 바닷가에 사는 펭귄 펭이야.'), F_('hi', '안녕, 펭이! 바다 냄새가 좋다.', '안녕, 펭이! 바다다!', '안녕, 펭이!'), N_('바다 좋지? 그런데 나, 계산하다가 헷갈려서 뒤뚱거리고 있었어.'), F_('yes', '그럼 우리랑 같이 생각해 보자!', '같이 하자!'), N_('정말? 그럼 이 문제야. 잘 들어 봐!'), YES],
+      again: [
+        [N_('어서 와! 오늘 바다가 엄청 반짝이지?'), F_('hi', '응, 예쁘다! 펭이는 잘 지냈어?', '응! 펭이, 잘 있었어?', '응! 잘 있었어?'), N_('잘 지냈지! 그런데 또 셈할 게 생겼어. 도와줄래?'), YES],
+        [N_('방금 파도 위에서 미끄럼을 탔어. 슝~!'), F_('ask', '재밌겠다! 안 다쳤어?', '슝! 안 아파?', '안 아파?'), N_('배로 타면 하나도 안 아파! 그런데 이 문제는 어려워. 같이 풀래?'), YES],
+        [N_('오늘은 친구들이랑 잔치를 할 거야.'), F_('ask', '우와, 무슨 잔치야?', '잔치? 무슨 잔치?', '무슨 잔치?'), N_('물고기 잔치! 준비하다 보니 셈할 게 있어. 도와줄래?'), YES]
+      ],
+      ok: F_('thx', '별사탕이다! 고마워, 펭이!', '별사탕! 고마워!', '고마워!'), no: F_('sad', '응! 다음엔 꼭 맞힐게!', '응! 다음엔 꼭!', '다음엔 꼭!'),
+      bye: [N_('그래, 다음에 또 만나! 뒤뚱뒤뚱~'), F_('bye', '잘 가, 펭이! 미끄러지지 마!', '잘 가, 펭이!', '잘 가!')]
+    },
+    hedgehog: {
+      first: [N_('앗, 손님이다! 나는 딸기밭 주인 고슴도치 도치야.'), F_('hi', '안녕, 도치! 딸기가 정말 많다.', '안녕, 도치! 딸기 많다!', '안녕, 도치!'), N_('이 딸기는 내가 다 키웠어! 그런데 딸기 계산이 막혀서 끙끙대고 있었어.'), F_('yes', '우리가 도와줄게!', '내가 도와줄게!', '도와줄게!'), N_('와, 고마워! 가시는 꼭 눕히고 있을게. 이 문제야.'), YES],
+      again: [
+        [N_('또 놀러 왔구나! 딸기 하나 먹을래?'), F_('thx', '고마워, 도치! 냠냠, 달콤해!', '고마워! 냠냠, 달다!', '고마워! 냠냠!'), N_('헤헤, 천만에! 그럼 나도 하나 부탁할게. 이 문제 좀 도와줄래?'), YES],
+        [N_('킁킁, 이 냄새는… 역시 너였구나!'), F_('ask', '내 냄새를 알아? 신기하다!', '내 냄새 알아? 우와!', '내 냄새 알아?'), N_('그럼! 고슴도치는 냄새를 잘 맡거든. 그런데 셈은 어려워. 도와줄래?'), YES],
+        [N_('휴, 방금 깜짝 놀라서 몸을 동그랗게 말았어.'), F_('sad', '앗, 우리 때문에 놀랐어? 미안해!', '나 때문에? 미안!', '미안해!'), N_('괜찮아, 너라서 안심했어! 온 김에 이 문제도 같이 봐 줄래?'), YES]
+      ],
+      ok: F_('thx', '딸기다! 고마워, 도치!', '딸기다! 고마워!', '고마워!'), no: F_('sad', '고마워. 다음엔 꼭 도와줄게!', '다음엔 꼭!'),
+      bye: [N_('또 놀러 와! 딸기 익혀 놓을게.'), F_('bye', '응, 또 올게! 안녕, 도치!', '응! 안녕, 도치!', '응! 안녕!')]
+    },
+    owl: {
+      first: [N_('부엉~ 별빛 언덕에 손님이 오다니. 나는 부엉이 박사라네.'), F_('hi', '안녕하세요, 박사님! 별이 정말 많아요.', '안녕하세요! 별 많아요!', '안녕하세요!'), N_('허허, 별을 보다 보면 재미있는 수수께끼가 떠오르지.'), F_('yes', '저희도 들려주세요!', '들려주세요!'), N_('좋네. 그럼 내 수수께끼를 풀어 보겠나?'), YES_OWL],
+      again: [
+        [N_('부엉, 또 왔구먼. 반갑네.'), F_('ask', '박사님, 오늘도 별을 세셨어요?', '박사님, 별 셌어요?', '별 셌어요?'), N_('오늘도 별을 열심히 세었다네. 세다 보니 수수께끼가 떠올랐지. 풀어 보겠나?'), YES_OWL],
+        [N_('허허, 안경을 닦고 보니 자네였구먼.'), F_('hi', '박사님, 안경이 멋있어요!', '안경 멋져요!'), N_('고맙네. 이 안경을 쓰면 수수께끼가 잘 떠오르지. 하나 풀어 보겠나?'), YES_OWL],
+        [N_('쉿, 저기 별똥별이 지나갔다네.'), F_('ask', '우와! 소원 비셨어요?', '우와! 소원 빌었어요?', '소원 빌었어요?'), N_('자네가 놀러 오기를 빌었더니 정말 왔구먼! 내 수수께끼를 풀어 보겠나?'), YES_OWL]
+      ],
+      ok: F_('thx', '고맙습니다, 박사님! 별사탕이다!', '별사탕! 고맙습니다!', '고맙습니다!'), no: F_('sad', '네, 다음엔 꼭 맞힐게요!', '네! 다음엔 꼭이요!', '다음엔 꼭이요!'),
+      bye: [N_('그럼 또 놀러 오게나. 부엉~'), F_('bye', '안녕히 계세요, 박사님!', '안녕히 계세요!')]
+    }
   };
-  const ASK = { squirrel: '내가 내는 문제 풀어 볼래?', penguin: '내가 내는 문제, 같이 풀어 볼래?', hedgehog: '내 문제 한번 풀어 볼래?', owl: '내 수수께끼를 풀어 보겠나?' };
+  function friendSay(L) {
+    const lv = level(), nm = `<b class="spk me">${S.name}</b> `;
+    if (lv === 'egg') return EGG_TALK[L.k];
+    if (lv === 'babble') return nm + pick(LINES[S.kind].babble[L.k === 'sad' ? 'no' : 'ok'].filter(t => !t.includes('('))) + ` <small class="mean">(${L.m})</small>`;
+    return nm + (lv === 'word' ? L.w : L.t);
+  }
   let nbs = null; // 이웃 만남 진행 상태
   function neighborScene(done) {
     const N = NEIGH[OUT.id]; if (!N) { done(); return; }
     if (!S.nb) S.nb = {};
-    const met = (S.nb[N.id] || 0) > 0;
-    const lines = (met ? NB_CHAT[N.id].again : NB_CHAT[N.id].first).concat([['N', ASK[N.id]]]);
+    const met = (S.nb[N.id] || 0) > 0, C = NB_CHAT[N.id];
+    // 만날 때마다 다른 이야기: 차례대로 돌아간다
+    S.nbTalk = S.nbTalk || {}; const k = (S.nbTalk[N.id] || 0) % C.again.length; if (met) S.nbTalk[N.id] = k + 1;
+    const lines = met ? C.again[k] : C.first;
     const el = $('nbw'); el.innerHTML = NB_ART[N.id]; el.dataset.id = N.id; el.className = 'nbw in'; el.style.display = '';
+    $('qcard').classList.remove('retry', 'review'); // 앞 문제의 '한 번 더' 표시를 지운다
     // 대화 중에는 문제 칸에 이웃 이름표
     $('qtag').textContent = `${N.name}${met ? '' : ' · 처음 만났어요'}`; $('qtag').classList.remove('s1');
     $('qfig').innerHTML = `<div class="nb-portrait">${NB_ART[N.id]}</div>`; $('qtext').innerHTML = '<span class="nb-wait">이야기하는 중… 화면을 누르면 다음 말로 넘어가요</span>'; $('qtext').classList.remove('long'); $('choices').innerHTML = '';
-    nbs = { N, lines, i: -1, done, phase: 'walk' };
-    Snd.babble(2, 'bunny');
-    setTimeout(() => { el.classList.remove('in'); el.classList.add('here'); nbs.phase = 'talk'; nextNbLine(); }, 1500);
+    nbs = { N, lines, i: -1, done, phase: 'walk', end: nbAsk };
+    Snd.babble(2, 'bunny'); $('stage').classList.add('meeting');
+    setTimeout(() => { if (!nbs || nbs.phase !== 'walk') return; el.classList.remove('in'); el.classList.add('here'); nbs.phase = 'talk'; drawOutPet('idle'); nextNbLine(); }, 1500);
   }
+  // 한 줄씩 주고받는다. 말하는 쪽은 폴짝, 듣는 쪽은 고개를 끄덕인다
   function nextNbLine() {
     if (!nbs || nbs.phase !== 'talk') return;
     nbs.i++;
-    if (nbs.i >= nbs.lines.length) { nbs.phase = 'ask'; nbAsk(); return; }
-    const [who, t] = nbs.lines[nbs.i];
-    if (who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${t}`, { silent: true, who: 'N' }); Snd.babble(2, 'bunny'); }
-    else { speak('out', level() === 'talk' ? t : line('poke')); bounce($('opet')); }
-    clearTimeout(nbs.t); nbs.t = setTimeout(nextNbLine, 2600);
+    if (nbs.i >= nbs.lines.length) { nbs.phase = 'ask'; nbs.end(); return; }
+    const L = nbs.lines[nbs.i], me = $('opet'), nb = $('nbw');
+    (L.who === 'N' ? nb : me).classList.remove('nodding');
+    if (L.who === 'N') { speak('out', `<b class="spk">${nbs.N.name}</b> ${L.t}`, { silent: true, who: 'N' }); Snd.babble(2, 'bunny'); nod(me); }
+    else { speak('out', friendSay(L)); bounce(me); nod(nb); }
+    if (L.bye) nb.classList.add('bye');
+    clearTimeout(nbs.t); nbs.t = setTimeout(nextNbLine, L.ms || 2600);
   }
   function bounce(el) { el.classList.remove('talk'); void el.offsetWidth; el.classList.add('talk'); }
+  function nod(el) { el.classList.remove('nodding'); void el.offsetWidth; el.classList.add('nodding'); setTimeout(() => el.classList.remove('nodding'), 1300); }
   $('stage').addEventListener('click', () => { if (nbs && nbs.phase === 'talk') { clearTimeout(nbs.t); nextNbLine(); } });
   function nbAsk() {
     const N = nbs.N; nq = Prob.story(N.id); nPlace = OUT.id;
@@ -2546,10 +2595,11 @@
       btn.classList.add('no'); all.forEach(b => { if (b.innerHTML === nq.ans) b.classList.add('ok'); else if (b !== btn) b.classList.add('dim'); }); st.w++;
       Snd.no(); msg = `${N.miss}<br><small style="font-size:.8em;color:#7A6283">정답은 ${nq.ans}</small>`;
     }
-    speak('out', `<b class="spk">${N.name}</b> ${msg}`, { silent: true, who: 'N' }); save(); hud();
-    // 인사하고 왼쪽으로 걸어 나간다
-    setTimeout(() => { speak('out', `<b class="spk">${N.name}</b> ${pick(['또 놀러 와! 안녕~', '고마웠어! 다음에 또 만나!', '잘 가! 조심히 가!'])}`, { silent: true, who: 'N' }); $('nbw').classList.add('bye'); }, 3200);
-    setTimeout(() => { $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; const d = nbs.done; nbs = null; d(); }, 5000);
+    save(); hud();
+    // 이웃 말 → 친구 대답 → 작별 인사를 주고받고, 이웃이 왼쪽으로 걸어 나간다
+    const C = NB_CHAT[N.id], fin = () => { $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; $('stage').classList.remove('meeting'); const d = nbs.done; nbs = null; d(); };
+    Object.assign(nbs, { lines: [Object.assign(N_(msg), { ms: 3400 }), ok ? C.ok : C.no, C.bye[0], Object.assign({}, C.bye[1], { bye: true, ms: 1900 })], i: -1, phase: 'talk', end: fin });
+    nextNbLine();
   }
 
   // =====================================================================
@@ -3421,7 +3471,7 @@
   }
   function startWalk(id) { OUT = { type: 'walk', id, step: 0, n: 6, res: [], finds: [] }; beginOut(); }
   function beginOut() {
-    $('nbw').style.display = 'none'; nbs = null;
+    $('nbw').style.display = 'none'; $('stage').classList.remove('meeting'); if (nbs) clearTimeout(nbs.t); nbs = null;
     if (editing) { editing = false; $('room').classList.remove('editing'); document.querySelector('.home').classList.remove('editing'); $('edit-layer').innerHTML = ''; $('edit-bar').innerHTML = ''; }
     stopBall(); clearTimeout(wanderT); clearTimeout(idleT); if (sulking) { sulking = false; clearTimeout(sulkT); $('walker').classList.remove('sulk'); }
     show('scr-out'); S.combo = 0;
@@ -3630,7 +3680,7 @@
     }
     save();
   }
-  function backHome(then) {
+  function backHome(then) { if (nbs) { clearTimeout(nbs.t); nbs = null; $('nbw').style.display = 'none'; $('nbw').className = 'nbw'; } $('stage').classList.remove('meeting');
     enterHome('out');
     setTimeout(() => {
       if (canGrow()) levelUp(then);

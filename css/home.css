@@ -1227,3 +1227,13 @@ body.lowfx .walker.egg-cold .pet svg,body.lowfx .walker.egg-hot .pet svg{animati
 @media (max-width:560px){.bc-top{max-width:calc(100% - 28px);top:64px}.bc-hint{font-size:14px}.bc-say{left:14px;transform:none;font-size:15px}.room.toyplay .egghint{left:8px;transform:none;max-width:calc(100% - 136px);white-space:normal;font-size:14px;border-radius:18px;padding:8px 12px}.tkeep{flex-direction:column;gap:8px}}
 /* 놀이 중에는 겹치는 버튼·상태 막대를 잠깐 숨긴다 */
 .room.toyplay .needs,.room.toyplay .deco-btn,.room.toyplay .ball,.room.toyplay .room-btn,.room.toyplay .lightsw{visibility:hidden}
+
+/* ===== 이웃과 대화: 서로 마주 보고, 듣는 쪽은 고개를 끄덕인다 ===== */
+.spk.me{color:#D9558A}
+.mean{font-size:.78em;color:#8A7594}
+.stage.meeting .opet .look{animation:none;transform:translateX(-2.6px)}
+.stage.meeting .opet .eyes{animation:none}
+.stage.meeting .nbw.here .nbeyes{transform:translateX(1.7px)}
+.stage.meeting .nbw.here .nbflip .nbeyes{transform:none}
+.stage.meeting .nodding svg{animation:nbnod .55s ease-in-out 2;transform-origin:50% 100%}
+@keyframes nbnod{0%,100%{transform:none}50%{transform:rotate(0) scale(1.02,.95)}}
