@@ -40,6 +40,11 @@ const Snd = (() => {
     } catch (e) {}
   }
   const S = {
+    brush() { noise(.08, .07, 3000 + Math.random() * 900, 0, 1.6); },
+    squirt() { noise(.35, .06, 900, 0, 1.2, true); tone(420, .25, 'sine', .08, .05, 620); },
+    gargle() { for (let i = 0; i < 9; i++) tone(300 + (i % 2) * 90 + Math.random() * 40, .12, 'sine', .12, i * .15, 360); },
+    spit() { noise(.22, .1, 1300, 0, .8); tone(500, .12, 'sine', .08, 0, 240); },
+    wind() { noise(.42, .07, 620 + Math.random() * 200, 0, .7, true); },
     fluff() { noise(.11, .05, 2400 + Math.random() * 900, 0, .8); },
     boing() { tone(250, .12, 'sine', .2, 0, 520); tone(520, .24, 'sine', .14, .09, 280); },
     boop() { tone(1150, .07, 'sine', .18, 0, 1750); },

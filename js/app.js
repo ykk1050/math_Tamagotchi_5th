@@ -555,31 +555,97 @@
     cup.addEventListener('pointerup', up); cup.addEventListener('pointercancel', up);
     setTimeout(() => { if (cup.isConnected) { cup.remove(); hint.remove(); } }, 25000);
   }
-  // ================= 4. 양치하기: 간식 먹은 뒤 칫솔로 쓱쓱 =================
+  // ================= 4. 양치하기: 얼굴을 크게 보며 치약 짜기 → 이 닦기 → 헹구기 =================
   function brushPlay() {
-    if (!S.brushDue) return; const room = $('room'), E = eggBox(), talk = level() === 'talk';
-    const br = document.createElement('div'); br.className = 'dragprop brush';
-    br.innerHTML = '<svg viewBox="0 0 80 30"><rect x="2" y="12" width="56" height="8" rx="4" fill="#9CC8FF" stroke="#5D8FD0" stroke-width="2"/><rect x="56" y="8" width="20" height="14" rx="3" fill="#fff" stroke="#5D8FD0" stroke-width="2"/><path d="M59 8 v-6 M63 8 v-6 M67 8 v-6 M71 8 v-6" stroke="#8FE0C9" stroke-width="2.4" stroke-linecap="round"/></svg>';
-    const w = E.w * .7; Object.assign(br.style, { width: w + 'px', height: w * .38 + 'px', left: (E.x + E.w * .3) + 'px', top: (E.y + E.h * .05) + 'px' }); room.appendChild(br);
-    const hint = eggHint('칫솔을 잡고 입 앞에서 쓱쓱 문질러 주세요');
-    const bar = document.createElement('div'); bar.className = 'eggmeter'; bar.innerHTML = '<i></i>'; room.appendChild(bar);
-    Object.assign(bar.style, { left: (E.x - E.w * .4) + 'px', top: (E.y + E.h * .55) + 'px', width: E.w * .8 + 'px' });
-    let drag = null, lx = 0, dist = 0, lastFoam = 0; const NEED = 1400; drawPet('happy');
-    br.addEventListener('pointerdown', (e) => { const [x, y] = roomPt(e); drag = { dx: x - br.offsetLeft, dy: y - br.offsetTop }; lx = x; br.classList.add('held'); try { br.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
-    br.addEventListener('pointermove', (e) => {
-      if (!drag) return; const [x, y] = roomPt(e); br.style.left = (x - drag.dx) + 'px'; br.style.top = (y - drag.dy) + 'px';
-      const p = $('pet').getBoundingClientRect(), r = room.getBoundingClientRect(), mx = p.left - r.left + p.width / 2, my = p.top - r.top + p.height * .5;
-      const tipX = br.offsetLeft + br.offsetWidth * .85, tipY = br.offsetTop + br.offsetHeight * .4;
-      if (Math.abs(tipX - mx) < p.width * .35 && Math.abs(tipY - my) < p.height * .25) {
-        dist += Math.abs(x - lx); bar.firstChild.style.width = Math.min(100, dist / NEED * 100) + '%';
-        const now = Date.now(); if (now - lastFoam > 220) { lastFoam = now; const f = document.createElement('i'); f.className = 'foam'; Object.assign(f.style, { left: (mx + (Math.random() - .5) * p.width * .3) + 'px', top: (my + (Math.random() - .5) * 14) + 'px' }); room.appendChild(f); setTimeout(() => f.remove(), 900); Snd.tap(); }
-        if (dist >= NEED) { br.remove(); hint.remove(); bar.remove(); S.brushDue = 0; addNeed('clean', 6); addNeed('mood', 4); save(); renderNeeds(); renderCare();
-          Snd.combo(); react('happy', 'hop'); petFx('shine', $('pet')); speak('home', talk ? pick(['이가 반짝반짝! 상쾌해~', '치카치카 끝! 이가 뽀득뽀득해!']) : '(이가 반짝반짝!)'); }
-      }
-      lx = x;
+    if (!S.brushDue || S.stage < 3 || toyOn || editing || hiding) return;
+    if (sulking) { speak('home', L3('sulk'), { silent: true }); return; }
+    if (sleeping) { sleeping = false; S.asleep = false; S.needs.energy = Math.max(S.needs.energy, 30); renderHome(); }
+    poked(); toyOn = 'brush'; const tok = ++toySeq; clearTimeout(wanderT); objBusy = Date.now() + 36e5; $('bubble').classList.add('hide');
+    const talk = level() === 'talk', TOP = 4, ALL = 8;
+    const tooth = (i) => {
+      const up = i < TOP, k = up ? i : i - TOP, w = up ? 46 : 31, x = up ? 27 + k * 46.5 : 57 + k * 31.5, y = up ? 13 : 70, h = up ? 40 : 32;
+      const d = up ? `M${x} ${y} h${w} v${h - 12} q0 12 -12 12 h${-(w - 24)} q-12 0 -12 -12z` : `M${x} ${y + h} v${-(h - 10)} q0 -10 10 -10 h${w - 20} q10 0 10 10 v${h - 10}z`;
+      const spots = [[.3, .4, 6], [.66, .62, 7], [.5, .25, 4.5], [.22, .74, 4]].map(([a, b, r]) => `<ellipse cx="${x + w * a}" cy="${y + h * b}" rx="${r * w / 46}" ry="${r * .75 * w / 46}" fill="${['#A9713F', '#C08A4A', '#8F5D34', '#C9A04E'][(i + Math.round(r)) % 4]}"/>`).join('');
+      const foam = [[.2, .3], [.5, .2], [.8, .35], [.3, .7], [.65, .65], [.5, .48]].map(([a, b], j) => `<circle cx="${x + w * a}" cy="${y + h * b}" r="${(5 + j % 3 * 1.6) * w / 46}" fill="#fff" stroke="#CFE6FF" stroke-width="1"/>`).join('');
+      return `<g class="tooth" data-i="${i}"><path class="tb" d="${d}" fill="#fff" stroke="#E6CFD8" stroke-width="2"/><path class="yel" d="${d}" fill="#F3DC8E" opacity=".75"/><g class="bdirt">${spots}</g><g class="bfo" opacity="0">${foam}</g><path class="ring" d="${d}" fill="none"/></g>`;
+    };
+    const order = [...Array(ALL).keys()];
+    const card = mk('bcard', `<div class="bc-face"></div>
+      <svg class="bc-mouth" viewBox="0 0 240 120" aria-hidden="true"><path d="M8 12 Q120 -4 232 12 Q238 66 190 104 Q120 128 50 104 Q2 66 8 12Z" fill="#B23A62" stroke="#8E2A4C" stroke-width="4"/><path d="M62 98 Q120 58 178 98 Q120 124 62 98Z" fill="#F28DB2"/>${order.map(tooth).join('')}</svg>
+      <div class="bc-top"><span class="bc-dots"><i></i><i></i><i></i></span><b class="bc-hint"></b></div>
+      <div class="bc-say"></div>
+      <button class="bc-tube" aria-label="치약"><svg viewBox="0 0 120 60"><path d="M8 8 L14 52 L84 44 V16Z" fill="#8FE0C9" stroke="#4FB79A" stroke-width="3" stroke-linejoin="round"/><path d="M6 6 h8 l4 48 h-8z" fill="#D9F5EC" stroke="#4FB79A" stroke-width="2.4"/><rect x="84" y="20" width="18" height="20" rx="4" fill="#fff" stroke="#4FB79A" stroke-width="3"/><path d="M36 22 c-6 -6 -14 1 -6 8 l7 7 7 -7 c8 -7 0 -14 -8 -8z" fill="#fff"/></svg><span>치약</span></button>
+      <button class="bc-cup" aria-label="물컵"><svg viewBox="0 0 60 70"><path d="M10 8 H50 L45 64 H15Z" fill="#EAF6FF" stroke="#5D8FD0" stroke-width="3" stroke-linejoin="round"/><path d="M12.4 26 H47.6 L44 62 H16Z" fill="#9CD0FF"/><path d="M14 26 q8 -6 16 0 t16 0" stroke="#fff" stroke-width="3" fill="none"/></svg><span>물컵</span></button>
+      <div class="bc-brush"><svg viewBox="0 0 230 70"><rect x="56" y="24" width="170" height="17" rx="8.5" fill="#9CC8FF" stroke="#5D8FD0" stroke-width="3"/><rect x="4" y="20" width="62" height="17" rx="8" fill="#fff" stroke="#5D8FD0" stroke-width="3"/>${[0, 1, 2, 3, 4, 5].map(i => `<rect x="${9 + i * 9}" y="36" width="7" height="22" rx="2.4" fill="${i % 2 ? '#8FE0C9' : '#BDEFE0'}" stroke="#4FB79A" stroke-width="1.4"/>`).join('')}<path class="paste" d="M8 60 q6 -10 14 0 q8 -10 16 0 q8 -10 18 -2 q4 8 -6 9 H16 q-12 -1 -8 -7z" fill="#fff" stroke="#8FE0C9" stroke-width="2.4"/></svg></div>
+      <button class="btn small bc-quit">그만할래요</button>`);
+    const q = (s) => card.querySelector(s), face = q('.bc-face'), mouth = q('.bc-mouth'), brush = q('.bc-brush'), teeth = [...card.querySelectorAll('.tooth')], clean = Array(ALL).fill(0);
+    let step = 0, alive = true, unit = 1, held = false, lx = 0, ly = 0, sndT = 0, sayT = 0, saidHalf = false;
+    const C = () => card.getBoundingClientRect();
+    const say = (t, f) => { const b = q('.bc-say'); clearTimeout(sayT); b.textContent = talk ? t : f; b.classList.add('on'); sayT = setTimeout(() => b.classList.remove('on'), 2400); if (talk) Snd.babble(1, S.kind); };
+    const draw = (mood) => { face.innerHTML = Art.draw(S.kind, S.stage, mood, showAcc()); };
+    // 얼굴(볼 두 개 사이 = 31칸)을 재서 얼굴이 카드에 꽉 차게 놓고, 입을 얼굴 위에 맞춘다
+    const blush = () => { const e = face.querySelectorAll('.face ellipse'), a = e[0].getBoundingClientRect(), b = e[1].getBoundingClientRect(), c = C(); return { x: (a.left + a.width / 2 + b.left + b.width / 2) / 2 - c.left, y: a.top + a.height / 2 - c.top, u: Math.abs(b.left + b.width / 2 - a.left - a.width / 2) / 31 }; };
+    const setBrush = (x, y) => { brush.style.transform = `translate(${x - brush.offsetWidth * .15}px, ${y - brush.offsetHeight * .82}px)`; };
+    const layout = () => {
+      const c = C(); face.style.cssText = `width:${c.height}px;left:0;top:0`; let b = blush(); unit = Math.min(c.height * .0148, c.width * .0112);
+      face.style.width = c.height * unit / b.u + 'px'; b = blush();
+      face.style.left = (c.width / 2 - b.x) + 'px'; face.style.top = (c.height * .5 - b.y) + 'px'; b = blush(); unit = b.u;
+      Object.assign(mouth.style, { left: (b.x - 15 * unit) + 'px', top: (b.y - 3.6 * unit) + 'px', width: 30 * unit + 'px', height: 15 * unit + 'px' });
+      brush.style.width = Math.max(120, 25 * unit) + 'px';
+    };
+    const HINT = ['치약을 톡 눌러서 칫솔에 짜 주세요', '', '물컵을 톡 눌러서 입을 헹궈 주세요'];
+    const left = () => clean.findIndex(v => v < 1);
+    const next = () => {
+      const n = left(); teeth.forEach((t, i) => t.classList.toggle('next', i === n));
+      q('.bc-hint').textContent = `${n < TOP ? '윗니' : '아랫니'}를 쓱쓱 닦아요! (${clean.filter(v => v >= 1).length}/${ALL})`;
+    };
+    const go = (n) => {
+      step = n; card.dataset.step = n; [...q('.bc-dots').children].forEach((d, i) => { d.className = i < n ? 'done' : i === n ? 'on' : ''; });
+      draw(n === 1 ? 'chomp' : 'happy'); if (n === 0 || n === 2) q('.bc-hint').textContent = HINT[n];
+      if (n === 1) { next(); say('아~ 깨끗하게 닦아 줘!', '(입을 아~ 크게 벌려요)'); }
+    };
+    const paint = (i) => { const v = clean[i], t = teeth[i]; t.querySelector('.bdirt').setAttribute('opacity', Math.max(0, 1 - v)); t.querySelector('.yel').setAttribute('opacity', Math.max(0, .75 * (1 - v))); t.querySelector('.bfo').setAttribute('opacity', Math.min(.95, v * 1.3)); };
+    const close = (ok) => {
+      if (!alive) return; alive = false; clearInterval(watch); clearTimeout(sayT); card.remove(); window.removeEventListener('resize', layout);
+      if (tok === toySeq) { toyOn = null; toyAbort = null; toySeq++; } objBusy = Date.now() + 2500; startWander(); lastTouch = Date.now();
+      if (!ok) return;
+      Snd.combo(); react('happy', 'hop'); petFx('shine', $('pet')); speak('home', talk ? pick(['이가 반짝반짝! 상쾌해~', '치카치카 끝! 이가 뽀득뽀득해!']) : '(이가 반짝반짝!)');
+    };
+    toyAbort = () => close(false);
+    const watch = setInterval(() => { if (!homeOn()) close(false); }, 400);
+    window.addEventListener('resize', layout);
+    q('.bc-quit').onclick = () => { Snd.tap(); close(step === 3); };
+    q('.bc-tube').onclick = () => { if (step !== 0 || card.classList.contains('squeeze')) return; Snd.squirt(); card.classList.add('squeeze', 'pasted'); say('치약이다! 냄새 좋다~', '(킁킁, 치약 냄새를 맡아요)'); setTimeout(() => { if (alive) go(1); }, 1100); };
+    q('.bc-cup').onclick = () => {
+      if (step !== 2 || card.classList.contains('rinse')) return; card.classList.add('rinse'); q('.bc-hint').textContent = '오글오글오글… 퉤!'; draw('chew'); Snd.gargle(); say('오글오글오글~', '(오글오글오글~)');
+      setTimeout(() => { if (!alive) return; draw('sip'); Snd.spit(); const c = C(); for (let i = 0; i < 9; i++) { const d = document.createElement('i'); d.className = 'bc-drop'; Object.assign(d.style, { left: c.width / 2 + 'px', top: c.height * .55 + 'px' }); d.style.setProperty('--dx', R(-70, 70) + 'px'); d.style.setProperty('--dy', R(70, 150) + 'px'); card.appendChild(d); setTimeout(() => d.remove(), 800); } }, 1500);
+      setTimeout(() => {
+        if (!alive) return; go(3); draw('chomp'); card.classList.add('shine'); teeth.forEach(t => { t.querySelector('.bfo').setAttribute('opacity', 0); t.classList.remove('next'); }); q('.bc-hint').textContent = '이가 반짝반짝해졌어요!';
+        S.brushDue = 0; addNeed('clean', 6); addNeed('mood', 4); save(); renderNeeds(); renderCare(); Snd.chime(); sparks(card, 16, C().width / 2, C().height * .55); say('봐 봐, 이~ 반짝반짝!', '(이~ 하고 웃어요)');
+        setTimeout(() => close(true), 2200);
+      }, 2300);
+    };
+    // 손가락이 칫솔 솔이 된다: 카드 어디를 눌러도 칫솔이 따라온다
+    card.addEventListener('pointerdown', (e) => {
+      if (step !== 1 || e.target.closest('button')) return; e.preventDefault(); try { card.setPointerCapture(e.pointerId); } catch (x) {}
+      held = true; const c = C(); lx = e.clientX - c.left; ly = e.clientY - c.top; setBrush(lx, ly); poked();
     });
-    const up = () => { drag = null; br.classList.remove('held'); }; br.addEventListener('pointerup', up); br.addEventListener('pointercancel', up);
-    setTimeout(() => { if (br.isConnected) { br.remove(); hint.remove(); bar.remove(); } }, 30000);
+    card.addEventListener('pointermove', (e) => {
+      if (!held || step !== 1) return; const c = C(), x = e.clientX - c.left, y = e.clientY - c.top, d = Math.hypot(x - lx, y - ly); lx = x; ly = y; setBrush(x, y);
+      if (d < .5) return; let hit = false;
+      teeth.forEach((t, i) => {
+        if (clean[i] >= 1) return; const r = t.querySelector('.tb').getBoundingClientRect(), px = Math.max(r.width * .3, 8);
+        if (e.clientX < r.left - px || e.clientX > r.right + px || e.clientY < r.top - px * .8 || e.clientY > r.bottom + px * .8) return;
+        hit = true; clean[i] = Math.min(1, clean[i] + d / (r.width * 4.2)); paint(i);
+        if (clean[i] >= 1) { Snd.heart(); t.classList.add('ok'); setTimeout(() => t.classList.remove('ok'), 600); if (left() >= 0) next(); }
+      });
+      if (hit) { const now = Date.now(); if (now - sndT > 120) { sndT = now; Snd.brush(); const f = document.createElement('i'); f.className = 'bc-foam'; Object.assign(f.style, { left: (x + R(-18, 18)) + 'px', top: (y + R(-10, 10)) + 'px' }); card.appendChild(f); setTimeout(() => f.remove(), 900); } }
+      if (!saidHalf && clean.slice(0, TOP).every(v => v >= 1)) { saidHalf = true; say('윗니 끝! 간질간질해~', '(간질간질해서 웃어요)'); }
+      if (left() < 0) { held = false; step = 1.5; Snd.combo(); setTimeout(() => { if (alive) go(2); }, 700); }
+    });
+    const up = () => { held = false; }; card.addEventListener('pointerup', up); card.addEventListener('pointercancel', up);
+    draw('happy'); layout(); go(0); setBrush(C().width * .12, C().height * .8); teeth.forEach((t, i) => paint(i));
+    say('이 닦자! 나 준비됐어.', '(이 닦을 준비를 해요)');
   }
   function walkPrep() {
     if (S.stage < 3) return false;
@@ -1493,9 +1559,9 @@
   const TOY_LINE = {
     feather: { go: ['깃털이다! 잡아 볼 거야!', '살랑살랑~ 기다려, 잡는다!'], end: ['헥헥, 재밌었다! 또 하자!', '깃털 잡기 최고야!'] },
     bubbles: { go: ['비눗방울이다! 내가 다 터뜨릴 거야!', '방울방울~ 예쁘다!'], end: ['톡톡! 방울 터뜨리기 재밌어!', '무지개 방울이었어. 또 불어 줘!'] },
-    plane: { go: ['종이비행기 날리는 거야? 두근두근!', '멀리멀리 날려 줘!'], end: ['내가 물어 왔어! 또 날려 줘!', '비행기 찾았다! 잘했지?'] },
-    yarn: { go: ['털실 공이다! 데굴데굴~', '굴려 줘, 굴려 줘!'], end: ['털실 다 감았어! 영차영차.', '털실 공이랑 노는 거 재밌어!'] },
-    blocks: { go: ['블록 쌓기 하자! 높이높이!', '내가 옆에서 볼게. 차곡차곡 쌓아 줘!'], end: ['와르르! 하하, 또 쌓자!', '무너뜨리는 게 제일 재밌어!'] }
+    plane: { go: ['종이비행기 날리는 거야? 두근두근!', '후~ 불면 더 높이 난대!'], end: ['후~ 바람 재밌다! 또 날리자!', '비행기가 둥실둥실! 최고야!'] },
+    yarn: { go: ['털실이다! 무슨 그림 그릴 거야?', '실로 그림 그려 줘!'], end: ['털실 다 감았어! 영차영차.', '털실 공이랑 노는 거 재밌어!'] },
+    blocks: { go: ['블록 쌓기 하자! 너 한 번, 나 한 번!', '번갈아 쌓자! 네가 먼저 해.'], end: ['와르르! 하하, 또 쌓자!', '무너뜨리는 게 제일 재밌어!'] }
   };
   const TL = (id, k) => level() === 'talk' ? pick(TOY_LINE[id][k]) : L3('care');
   const rr = () => $('room').getBoundingClientRect();
@@ -1520,7 +1586,7 @@
   }
   function toyEnd(tok, ln) {
     if (tok !== toySeq || !toyOn) return;
-    toyOn = null; toyAbort = null; toySeq++;
+    toyOn = null; toyAbort = null; toySeq++; $('room').classList.remove('toyplay');
     const wk = $('walker'); wk.style.transitionDuration = ''; $('pet').classList.remove('walking');
     $('room-bg').innerHTML = roomSVG();
     objBusy = Date.now() + 2500; startWander(); lastTouch = Date.now();
@@ -1612,155 +1678,221 @@
     if (S.bubN < 5) { S.bubN++; S.candy++; hud(); toast('방울 5개를 터뜨렸어요! <b>별사탕 +1</b>'); }
   }
 
-  // ---- 3. 종이비행기: 끌어서 날리면 친구가 쫓아가 물어 온다 ----
+  // ---- 3. 종이비행기: 날린 뒤 화면을 톡톡 눌러 바람을 후~ 불어 띄우고, 공중의 별을 모은다 ----
   const PLANE = `<svg viewBox="0 0 100 60" aria-hidden="true"><path d="M98 30 L4 6 L30 30 Z" fill="#fff" stroke="#7FB0EA" stroke-width="2.6" stroke-linejoin="round"/><path d="M98 30 L30 30 L18 54 Z" fill="#E3EEFF" stroke="#7FB0EA" stroke-width="2.6" stroke-linejoin="round"/><path d="M60 22 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z" fill="#FFD36E"/></svg>`;
   function planePlay(tok, e, el, b) {
-    $('room-bg').innerHTML = roomSVG('plane');
-    const pl = mk('tplane', PLANE), st = { x: 0, y: 0, vx: 0, vy: 0, a: 0, dir: 1 }, hist = [];
+    $('room-bg').innerHTML = roomSVG('plane'); $('room').classList.add('toyplay');
+    const N = 6, pl = mk('tplane', PLANE), st = { x: 0, y: 0, vy: 0, a: 0, dir: 1 }, hist = [], stars = [];
     const set = () => { const w = pl.offsetWidth; pl.style.transform = `translate(${st.x - w / 2}px, ${st.y - w * .3}px) scaleX(${st.dir}) rotate(${st.a}deg)`; };
-    const move = (ev) => { const r = rr(); st.x = ev.clientX - r.left; st.y = Math.min(ev.clientY - r.top, r.height * .88); hist.push([st.x, st.y, performance.now()]); if (hist.length > 6) hist.shift(); set(); };
+    const move = (ev) => { const r = rr(); st.x = ev.clientX - r.left; st.y = Math.min(ev.clientY - r.top, r.height * .8); hist.push([st.x, st.y, performance.now()]); if (hist.length > 6) hist.shift(); set(); };
     move(e); speak('home', TL('plane', 'go'));
-    let alive = true;
-    toyAbort = () => { alive = false; pl.remove(); toyEnd(tok); };
+    let alive = true, got = 0, sky = null, hint = null;
+    const clean = () => { alive = false; pl.remove(); if (sky) sky.remove(); if (hint) hint.remove(); stars.forEach(s => s.el.remove()); };
+    toyAbort = () => { clean(); toyEnd(tok); };
     listen(el, move, () => {
-      const a = hist[0], z = hist[hist.length - 1], dt = Math.max(16, z[2] - a[2]) / 1000, r = rr();
-      st.vx = (z[0] - a[0]) / dt; st.vy = (z[1] - a[1]) / dt; const sp = Math.hypot(st.vx, st.vy);
-      if (sp > 1700) { st.vx *= 1700 / sp; st.vy *= 1700 / sp; }
-      if (sp < 160) { st.vx = (st.x < r.width / 2 ? 1 : -1) * 650; st.vy = -160; }
-      const x0 = st.x; let last = performance.now(); Snd.tap();
+      if (!alive) return;
+      const r = rr(), z = hist[hist.length - 1], a = hist[0], vx = (z[0] - a[0]) / Math.max(16, z[2] - a[2]) * 1000;
+      st.dir = Math.abs(vx) > 80 ? (vx < 0 ? -1 : 1) : st.x < r.width / 2 ? 1 : -1; st.vy = -260; Snd.wind();
+      sky = mk('tsky', `<div class="tscore"><b>0</b> / ${N}</div>`); hint = eggHint('화면을 톡톡! 바람을 후~ 불어서 별을 모아요');
+      for (let i = 0; i < N; i++) { const d = mk('tstar', `<svg viewBox="-12 -12 24 24">${Art.star(0, 0, 1)}</svg>`), s = { el: d, x: r.width * (.12 + .76 * (i + .5) / N), y: r.height * (.18 + Math.random() * .36) }; d.style.left = s.x + 'px'; d.style.top = s.y + 'px'; stars.push(s); }
+      sky.addEventListener('pointerdown', (ev) => {
+        if (!alive) return; ev.preventDefault(); poked(); const c = rr();
+        st.vy = Math.max(-300, st.vy - 250); Snd.wind(); if (hint) { hint.remove(); hint = null; }
+        const p = mk('tpuff', '<svg viewBox="0 0 60 60"><path d="M8 34 q10 -10 20 0 t22 -2 M14 46 q8 -7 16 0 t16 -2 M18 20 q8 -8 15 0 t13 -2" stroke="#9CC8FF" stroke-width="4" fill="none" stroke-linecap="round"/></svg>'); p.style.left = (ev.clientX - c.left) + 'px'; p.style.top = (ev.clientY - c.top) + 'px'; setTimeout(() => p.remove(), 600);
+        const w = mk('tpuff up', '<svg viewBox="0 0 60 60"><path d="M16 50 V22 M30 54 V14 M44 50 V22" stroke="#BFDCFF" stroke-width="4" fill="none" stroke-linecap="round"/></svg>'); w.style.left = st.x + 'px'; w.style.top = (st.y + 34) + 'px'; setTimeout(() => w.remove(), 500);
+      });
+      let last = performance.now(), chaseT = 0, hopT = 0; const t0 = last;
       const step = (t) => {
         if (!alive) return; if (!homeOn()) { toyAbort && toyAbort(); return; }
-        const d = Math.min(.033, (t - last) / 1000); last = t; const R0 = rr(), floor = R0.height * .9;
-        st.vy += (430 - Math.min(300, Math.abs(st.vx) * .32)) * d; st.vx *= Math.pow(.62, d);
-        st.x += st.vx * d; st.y += st.vy * d;
-        if (st.x < 24) { st.x = 24; st.vx = Math.abs(st.vx) * .4; } if (st.x > R0.width - 24) { st.x = R0.width - 24; st.vx = -Math.abs(st.vx) * .4; }
-        if (st.y < 12) { st.y = 12; st.vy = Math.abs(st.vy) * .3; }
-        st.dir = st.vx < 0 ? -1 : 1; st.a = clamp(Math.atan2(st.vy, Math.abs(st.vx)) * 180 / Math.PI * .7, -30, 40);
-        if (st.y >= floor) { st.y = floor; st.a = 0; set(); return landed(Math.abs(st.x - x0)); }
+        const d = Math.min(.033, (t - last) / 1000); last = t; const R0 = rr(), floor = R0.height * .9, tired = t - t0 > 30000 || got === N;
+        st.vy = Math.min(tired ? 230 : 190, st.vy + (tired ? 320 : 230) * d); st.x += st.dir * R0.width * .2 * d; st.y += st.vy * d;
+        if (st.x < 34) { st.x = 34; st.dir = 1; } if (st.x > R0.width - 34) { st.x = R0.width - 34; st.dir = -1; }
+        if (st.y < 26) { st.y = 26; st.vy = Math.max(0, st.vy); }
+        st.a = clamp(st.vy / 9, -24, 24);
+        stars.forEach(s => {
+          if (s.got || Math.hypot(s.x - st.x, s.y - st.y) > pl.offsetWidth * .62) return;
+          s.got = true; got++; s.el.classList.add('get'); setTimeout(() => s.el.remove(), 450); Snd.note(523 * Math.pow(2, [0, 2, 4, 7, 9, 12][got - 1] / 12)); sky.querySelector('b').textContent = got; if (t - hopT > 500) { hopT = t; petHop(); }
+          if (got === N) speak('home', level() === 'talk' ? '별을 다 모았다! 우와아!' : L3('care')); else if (got === 3) speak('home', level() === 'talk' ? pick(['후~ 후~ 잘한다!', '벌써 별이 3개야!']) : L3('care'), { silent: true });
+        });
+        if (t - chaseT > 260) { chaseT = t; chase(st.x); }
+        if (st.y >= floor) { st.y = floor; st.a = 0; set(); return landed(); }
         set(); requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
     });
-    const landed = (dist) => {
-      Snd.pop(); const r = rr(), m = (dist / r.width * 4).toFixed(1);
-      if (level() === 'talk') speak('home', `우와, ${m} m나 날아갔어! 내가 가져올게!`);
+    const landed = () => {
+      Snd.pop(); petHop(); if (hint) { hint.remove(); hint = null; } if (got === N) { Snd.combo(); sparks($('room'), 16, st.x, rr().height * .6); }
       setTimeout(() => {
         if (!alive || tok !== toySeq) return;
-        goTo(clamp(st.x / r.width * 100, 10, 88), () => {
-          if (!alive || tok !== toySeq) return;
-          petHop(); Snd.pop();
-          const carry = () => { if (!alive) return; const pb = petBox(); st.x = pb.x + pb.w * .22 * st.dir; st.y = pb.top + pb.h * .42; st.a = -8; set(); pl._raf = requestAnimationFrame(carry); };
-          carry();
-          setTimeout(() => goTo(clamp((b.left + b.width / 2) / rr().width * 100, 10, 88), () => {
-            alive = false; cancelAnimationFrame(pl._raf); pl.classList.add('away'); setTimeout(() => pl.remove(), 300);
-            toyEnd(tok, TL('plane', 'end'));
-          }, true), 400);
-        }, true);
+        // 비행기는 바람을 타고 스스로 제자리로 돌아간다
+        pl.style.transition = 'transform .9s ease-in-out'; st.x = b.left + b.width / 2; st.y = b.top + b.height * .5; set();
+        setTimeout(() => { if (!alive || tok !== toySeq) return; clean(); toyEnd(tok, level() === 'talk' ? (got === N ? '별 6개를 다 모았어! 바람 최고야!' : got ? `별을 ${got}개 모았어! 또 날리자!` : '슝~ 다음엔 후~ 불어서 별을 모으자!') : TL('plane', 'end')); }, 950);
       }, 700);
     };
   }
 
-  // ---- 4. 털실 공: 굴리면 실이 풀리고, 친구가 공을 굴려 오며 실을 감는다 ----
+  // ---- 4. 털실: 손가락으로 방에 실 그림을 그리면 모양을 알아맞히고, 친구가 쫓아다니며 실을 감는다 ----
+  // 그린 선을 꺾이는 점만 남겨 줄인다(라머-더글러스-포이커)
+  function simplify(P, eps) {
+    if (P.length < 3) return P.slice(); const [ax, ay] = P[0], [bx, by] = P[P.length - 1], L = Math.hypot(bx - ax, by - ay); let m = 0, k = 0;
+    for (let i = 1; i < P.length - 1; i++) { const d = L < 1 ? Math.hypot(P[i][0] - ax, P[i][1] - ay) : Math.abs((bx - ax) * (ay - P[i][1]) - (ax - P[i][0]) * (by - ay)) / L; if (d > m) { m = d; k = i; } }
+    return m <= eps ? [P[0], P[P.length - 1]] : simplify(P.slice(0, k + 1), eps).slice(0, -1).concat(simplify(P.slice(k), eps));
+  }
+  function yarnShape(P, len) {
+    const xs = P.map(p => p[0]), ys = P.map(p => p[1]), diag = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)), A = P[0], Z = P[P.length - 1];
+    if (Math.hypot(A[0] - Z[0], A[1] - Z[1]) > len * .18 || len < 200) return simplify(P, diag * .05).length <= 2 ? 'line' : 'wave';
+    if (len > diag * 5.2) return 'wave'; // 여러 번 겹친 낙서
+    let V = simplify(P, diag * .07).slice(0, -1);
+    V = V.filter((v, i) => { const a = V[(i + V.length - 1) % V.length], c = V[(i + 1) % V.length]; let t = Math.abs(Math.atan2(v[1] - a[1], v[0] - a[0]) - Math.atan2(c[1] - v[1], c[0] - v[0])); if (t > Math.PI) t = 2 * Math.PI - t; return t > .42; });
+    return V.length <= 3 ? 'tri' : V.length === 4 ? 'sq' : V.length === 5 ? 'penta' : 'circle';
+  }
   function yarnPlay(tok, e, el, b) {
-    $('room-bg').innerHTML = roomSVG('yarn');
-    const r0 = rr(), ys = Math.max(38, Math.min(60, r0.width * .045));
+    $('room-bg').innerHTML = roomSVG('yarn'); $('room').classList.add('toyplay');
+    const ys = Math.max(38, Math.min(60, rr().width * .045));
     const yb = mk('tyarn', `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#F7A0C1" stroke="#E5679A" stroke-width="2"/><path d="M5 14 q15 6 30 -2 M3 22 q17 8 34 -2 M9 32 q12 3 22 -6 M15 3 q-5 17 4 34" stroke="#E5679A" stroke-width="1.7" fill="none"/></svg>`);
     yb.style.width = yb.style.height = ys + 'px';
-    const th = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); th.setAttribute('class', 'tthread'); th.innerHTML = '<path d=""/>'; $('room').appendChild(th);
-    const floorTop = () => rr().height * .93 - ys;
-    const st = { x: clamp(b.left + b.width / 2 - ys / 2, 0, r0.width - ys), rot: 0, vx: 0 }, sx = st.x + ys / 2, hist = [];
-    const draw = () => {
-      yb.style.transform = `translate(${st.x}px, ${floorTop()}px) rotate(${st.rot}deg)`;
-      const cx = st.x + ys / 2, fy = floorTop() + ys * .9;
-      th.firstChild.setAttribute('d', Math.abs(cx - sx) < 2 ? '' : `M${sx} ${fy} C${(sx * 2 + cx) / 3} ${fy + 5} ${(sx + cx * 2) / 3} ${fy - 4} ${cx} ${fy}`);
-    };
-    draw(); speak('home', TL('yarn', 'go'));
-    let alive = true;
-    const clean = () => { alive = false; yb.remove(); th.remove(); };
+    const th = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); th.setAttribute('class', 'tthread draw'); th.innerHTML = '<path d=""/>'; $('room').appendChild(th);
+    let alive = true, P = [], rot = 0, pad = null, idle = null, hint = eggHint('손가락으로 방에 실 그림을 그려 보세요');
+    const at = (x, y) => { yb.style.transform = `translate(${x - ys / 2}px, ${y - ys / 2}px) rotate(${rot}deg)`; };
+    const line = (Q) => th.firstChild.setAttribute('d', Q.length < 2 ? '' : 'M' + Q.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L'));
+    const clean = () => { alive = false; clearTimeout(idle); clearInterval(watch); yb.remove(); th.remove(); if (pad) pad.remove(); if (hint) hint.remove(); };
     toyAbort = () => { clean(); toyEnd(tok); };
-    const move = (ev) => { const r = rr(), nx = clamp(ev.clientX - r.left - ys / 2, 0, r.width - ys); st.rot += (nx - st.x) / (Math.PI * ys) * 360; st.x = nx; hist.push([ev.clientX, performance.now()]); if (hist.length > 6) hist.shift(); draw(); };
-    listen(el, move, () => {
-      const r = rr(); if (hist.length > 1) { const a = hist[0], z = hist[hist.length - 1]; st.vx = (z[0] - a[0]) / Math.max(16, z[1] - a[1]) * 1000; }
-      if (Math.abs(st.vx) < 160) st.vx = (st.x + ys / 2 < r.width / 2 ? 1 : -1) * 750;
-      st.vx = clamp(st.vx, -1500, 1500);
-      let last = performance.now();
-      const roll = (t) => {
-        if (!alive) return; if (!homeOn()) { toyAbort && toyAbort(); return; }
-        const d = Math.min(.033, (t - last) / 1000); last = t; const R0 = rr();
-        st.vx *= Math.pow(.35, d); st.x += st.vx * d; st.rot += st.vx * d / (Math.PI * ys) * 360;
-        if (st.x < 0) { st.x = 0; st.vx = Math.abs(st.vx) * .5; Snd.pop(); } if (st.x > R0.width - ys) { st.x = R0.width - ys; st.vx = -Math.abs(st.vx) * .5; Snd.pop(); }
-        draw();
-        if (Math.abs(st.vx) < 18) return stopped();
-        requestAnimationFrame(roll);
-      };
-      requestAnimationFrame(roll);
-    });
-    const stopped = () => {
-      const r = rr(), cm = Math.round(Math.abs(st.x + ys / 2 - sx) / r.width * 400 / 10) * 10;
-      speak('home', level() === 'talk' ? (cm > 0 ? `털실이 ${cm} cm나 풀렸어! 내가 감아 올게.` : '데굴… 하나도 안 굴러갔네? 헤헤.') : L3('care'));
+    const watch = setInterval(() => { if (alive && !homeOn()) toyAbort && toyAbort(); }, 400);
+    const add = (ev) => { if (!alive) return; const r = rr(), x = clamp(ev.clientX - r.left, ys / 2, r.width - ys / 2), y = clamp(ev.clientY - r.top, ys / 2, r.height - ys / 2), l = P[P.length - 1]; if (l && Math.hypot(x - l[0], y - l[1]) < 5) return; if (l) rot += (x - l[0]) * 1.6; P.push([x, y]); at(x, y); line(P); if (P.length % 6 === 0) Snd.fluff(); if (P.length % 10 === 0) chase(x); };
+    const L = () => P.reduce((a, p, i) => a + (i ? Math.hypot(p[0] - P[i - 1][0], p[1] - P[i - 1][1]) : 0), 0);
+    const done = () => {
+      if (!alive) return; const len = L(); clearTimeout(idle);
+      if (len < 90) { // 너무 짧으면 방 아무 데서나 다시 그릴 수 있게
+        P = []; line(P); if (hint) { hint.classList.remove('pulse'); void hint.offsetWidth; hint.classList.add('pulse'); }
+        idle = setTimeout(() => { if (alive) { clean(); toyEnd(tok); } }, 12000);
+        if (!pad) { pad = mk('tsky', ''); pad.addEventListener('pointerdown', (ev) => { ev.preventDefault(); clearTimeout(idle); try { pad.setPointerCapture(ev.pointerId); } catch (x) {} P = []; add(ev); listen(pad, add, done); }); }
+        return;
+      }
+      if (pad) { pad.remove(); pad = null; } if (hint) { hint.remove(); hint = null; }
+      const k = yarnShape(P, len), cm = Math.max(10, Math.round(len / rr().width * 40) * 10), talk = level() === 'talk';
+      const T = { tri: '세모다! 꼭짓점이 3개!', sq: '네모다! 꼭짓점이 4개!', penta: '오각형이다! 꼭짓점이 5개!', circle: '동그라미다! 동글동글~', line: `쭉 뻗은 줄이다! ${cm} cm쯤 돼!`, wave: `꼬불꼬불 길이다! ${cm} cm쯤 돼!` }[k];
+      th.dataset.shape = k; petHop(); Snd.ok(); speak('home', talk ? T + ' 내가 돌돌 감을게!' : L3('care'));
       setTimeout(() => {
-        if (!alive || tok !== toySeq) return;
-        const dir = st.x + ys / 2 > sx ? 1 : -1;
-        goTo(clamp((st.x + ys / 2 - dir * ys * .9) / r.width * 100, 10, 88), () => {
-          if (!alive || tok !== toySeq) return;
-          // 친구 앞에서 공을 밀며 돌아온다: 실이 줄어든다
-          const push = () => { if (!alive) return; const pb = petBox(), nx = clamp(pb.x - ys / 2 - dir * pb.w * .4, 0, rr().width - ys); st.rot += (nx - st.x) / (Math.PI * ys) * 360; st.x = nx; draw(); yb._raf = requestAnimationFrame(push); };
-          push();
-          goTo(clamp((sx + dir * ys) / rr().width * 100, 10, 88), () => { cancelAnimationFrame(yb._raf); clean(); toyEnd(tok, TL('yarn', 'end')); }, false);
-        }, true);
-      }, 900);
+        if (!alive || tok !== toySeq) return; const D = clamp(len / .7, 1400, 4200), seg = [0]; for (let i = 1; i < P.length; i++) seg.push(seg[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+        const t0 = performance.now(); let chaseT = 0, hopT = 0;
+        // 실 끝에서 처음까지 공이 실을 감으며 돌아오고, 친구가 공을 쫓아다닌다
+        const wind = (t) => {
+          if (!alive) return; const f = clamp((t - t0) / D, 0, 1), want = seg[seg.length - 1] * (1 - f); let i = seg.findIndex(s => s >= want); if (i < 1) i = 1;
+          const g = clamp((want - seg[i - 1]) / Math.max(1, seg[i] - seg[i - 1]), 0, 1), x = P[i - 1][0] + (P[i][0] - P[i - 1][0]) * g, y = P[i - 1][1] + (P[i][1] - P[i - 1][1]) * g;
+          line(P.slice(0, i).concat([[x, y]])); rot -= 9; at(x, y);
+          if (t - chaseT > 160) { chaseT = t; chase(x); } const pb = petBox(); if (Math.abs(pb.x - x) < pb.w * .4 && t - hopT > 800) { hopT = t; petHop(); Snd.pop(); }
+          if (f < 1) requestAnimationFrame(wind); else { line([]); setTimeout(() => { if (!alive || tok !== toySeq) return; clean(); toyEnd(tok, TL('yarn', 'end')); }, 350); }
+        };
+        requestAnimationFrame(wind);
+      }, 1700);
     };
+    add(e); speak('home', TL('yarn', 'go')); listen(el, add, done);
   }
 
-  // ---- 5. 블록 쌓기: 블록을 끌어다 쌓으면 친구가 세어 주고, 다 쌓으면 와르르 ----
+  // ---- 5. 블록 쌓기: 나 한 번, 친구 한 번 번갈아 쌓는다. 어디에 쌓아도 되고, 다 쌓으면 친구가 넘어뜨려도 되는지 묻는다 ----
   function blockPlay(tok, e, el, b) {
-    const r = rr(), u = clamp(r.width * .05, 34, 58), floor = r.height * .93;
-    const SPEC = [[1, 1, '#F7A0C1'], [2, 1, '#8FE0C9'], [1, 1, '#9EC2F2'], [1, 2, '#FFB9A6'], [2, 1, '#C9B8FF'], [1, 1, '#FFD36E']];
-    const toyRight = b.left + b.width / 2 > r.width / 2, baseX = r.width * (toyRight ? .3 : .68);
-    const lay = mk('tblocks', `<div class="tmat" style="left:${baseX - u * 1.5}px;top:${floor - 5}px;width:${u * 3}px"></div><button class="btn small tdone">그만할래요</button>`);
-    speak('home', TL('blocks', 'go')); goTo(clamp((baseX + (toyRight ? -1 : 1) * u * 2.6) / r.width * 100, 10, 88), null, true);
-    let stackTop = floor, alive = true; const stack = [];
-    const trayW = SPEC.reduce((t, q) => t + q[0] * u + 8, 0), trayX0 = toyRight ? r.width - trayW - 70 : 16;
-    const blocks = SPEC.map(([w, h, c], i) => {
-      const d = document.createElement('div'); d.className = 'tblk'; d.style.width = w * u + 'px'; d.style.height = h * u + 'px'; d.style.background = c; lay.appendChild(d);
-      const B = { el: d, cube: w === h, w: w * u, h: h * u, hx: 0, hy: 0, x: 0, y: 0 };
-      B.hx = trayX0 + SPEC.slice(0, i).reduce((s, q) => s + q[0] * u + 8, 0); B.hy = floor - B.h; B.x = B.hx; B.y = B.hy;
-      return B;
+    $('room-bg').innerHTML = roomSVG('blocks'); $('room').classList.add('toyplay');
+    const r = rr(), small = r.width < 520, n = small ? 6 : 8, u = clamp(Math.min(r.width * .055, r.height * .085), 34, 58), floor = r.height * .93, talk = level() === 'talk', gap = 8;
+    const COL = ['#F7A0C1', '#8FE0C9', '#9EC2F2', '#FFB9A6', '#C9B8FF', '#FFD36E', '#A8DDF5', '#F9C0D9'];
+    const right = b.left + b.width / 2 > r.width / 2, per = n / 2, tw = Math.max(...[0, 1].map(row => { let w = gap; for (let i = row * per; i < (row + 1) * per; i++) w += (i % 2 ? 1 : 2) * u + gap; return w; }));
+    const tx = right ? r.width - tw - 10 : 10, th = u * 2 + gap * 3, zone = right ? [8, tx - 8] : [tx + tw + 8, r.width - 8];
+    const lay = mk('tblocks', `<div class="ttray" style="left:${tx}px;top:${floor - th}px;width:${tw}px;height:${th}px"><i></i></div><div class="tghost"></div><button class="btn small tdone">그만할래요</button>`);
+    const hint = eggHint(''), ghost = lay.querySelector('.tghost'); let alive = true, turn = 'busy', topB = null; const set = [];
+    const blocks = [...Array(n)].map((_, i) => {
+      const wide = i % 2 === 0, d = document.createElement('div'); d.className = 'tblk' + (wide ? '' : ' cube'); Object.assign(d.style, { width: (wide ? 2 : 1) * u + 'px', height: u + 'px', background: COL[i] }); lay.appendChild(d);
+      return { el: d, cube: !wide, w: (wide ? 2 : 1) * u, h: u, x: 0, y: 0, rot: 0, lv: 0 };
     });
-    const put = (B) => { B.el.style.transform = `translate(${B.x}px, ${B.y}px) rotate(${B.rot || 0}deg)`; };
+    [0, 1].forEach(row => { let x = tx + gap; blocks.slice(row * per, (row + 1) * per).forEach(B => { B.hx = B.x = x; B.hy = B.y = floor - gap - u - row * (u + gap); x += B.w + gap; }); });
+    const put = (B) => { B.el.style.transform = `translate(${B.x}px, ${B.y}px) rotate(${B.rot}deg)`; };
+    const fly = (B, x, y, rot = 0) => { B.el.classList.add('anim'); B.x = x; B.y = y; B.rot = rot; put(B); };
     blocks.forEach(put);
-    const close = (ln) => { if (!alive) return; alive = false; lay.classList.add('away'); setTimeout(() => lay.remove(), 300); toyEnd(tok, ln); };
-    toyAbort = () => { alive = false; lay.remove(); toyEnd(tok); };
-    lay.querySelector('.tdone').onclick = () => { Snd.tap(); close(stack.length ? TL('blocks', 'end') : null); };
-    blocks.forEach(B => {
-      B.el.addEventListener('pointerdown', (ev) => {
-        if (B.stacked || !alive) return; ev.preventDefault(); try { B.el.setPointerCapture(ev.pointerId); } catch (x) {}
-        const R0 = rr(), ox = ev.clientX - R0.left - B.x, oy = ev.clientY - R0.top - B.y; B.el.classList.remove('anim'); B.el.classList.add('held'); poked();
-        const mv = (m) => { const R1 = rr(); B.x = m.clientX - R1.left - ox; B.y = m.clientY - R1.top - oy; put(B); };
-        listen(B.el, mv, () => {
-          B.el.classList.remove('held'); B.el.classList.add('anim');
-          const cx = B.x + B.w / 2;
-          if (Math.abs(cx - baseX) < u * 1.8 && B.y + B.h < stackTop + u) {
-            B.stacked = true; B.x = baseX - B.w / 2 + R(-4, 4); B.y = stackTop - B.h; stackTop = B.y; stack.push(B); put(B); B.el.classList.add('stacked');
-            Snd.pop(); petHop();
-            if (stack.length < blocks.length) speak('home', level() === 'talk' ? pick([`${stack.length}층!`, `${stack.length}층이야! 더 높이!`, '차곡차곡~']) : L3('care'), { silent: true });
-            else allDone();
-          } else { B.x = B.hx; B.y = B.hy; put(B); }
+    const tray = () => blocks.filter(B => !B.on), wait = (ms, f) => setTimeout(() => { if (alive && tok === toySeq) f(); }, ms);
+    const ext = () => { hint.remove(); clearInterval(watch); $('room').querySelectorAll('.askfall').forEach(x => x.remove()); };
+    const close = (ln) => { if (!alive) return; alive = false; ext(); lay.classList.add('away'); setTimeout(() => lay.remove(), 300); toyEnd(tok, ln); };
+    toyAbort = () => { alive = false; ext(); lay.remove(); toyEnd(tok); };
+    const watch = setInterval(() => { if (alive && !homeOn()) toyAbort && toyAbort(); }, 400);
+    lay.querySelector('.tdone').onclick = () => { Snd.tap(); close(set.length ? (talk ? '재밌었다! 또 쌓자!' : L3('care')) : null); };
+    // 이 블록을 x에 놓으면 어디에 얹히나: 아래에 겹치는 블록 중 가장 높은 것, 없으면 바닥
+    const land = (B, x) => {
+      const un = set.filter(q => q.x < x + B.w - 3 && q.x + q.w > x + 3), y = un.length ? Math.min(...un.map(q => q.y)) : floor, sup = un.filter(q => Math.abs(q.y - y) < 2), cx = x + B.w / 2;
+      return { y: y - B.h, sup, lv: sup.length ? Math.max(...sup.map(q => q.lv)) + 1 : 1, ok: !sup.length || (cx >= Math.min(...sup.map(q => q.x)) && cx <= Math.max(...sup.map(q => q.x + q.w))) };
+    };
+    const settle = (B, x, p) => {
+      B.on = true; B.lv = p.lv; B.el.classList.add('stacked'); fly(B, x, p.y); set.push(B); topB = B; Snd.pop();
+      wait(320, () => set.forEach(q => { q.el.classList.remove('wob'); void q.el.offsetWidth; q.el.classList.add('wob'); }));
+    };
+    // 친구가 설 자리: 탑 옆 (자리가 넓은 쪽)
+    const side = () => { const cx = topB ? topB.x + topB.w / 2 : (zone[0] + zone[1]) / 2, w = petBox().w, s = cx - zone[0] > zone[1] - cx ? -1 : 1; return clamp((cx + s * (u + w * .62)) / rr().width * 100, 8, 92); };
+    const walk = (pct, f) => { if (goTo(pct, () => { if (alive && tok === toySeq) f(); }, true) === false) f(); };
+    const full = () => !tray().length || (topB && topB.y < u * 1.6);
+    const myTurn = () => { if (full()) return allDone(); turn = 'me'; lay.classList.add('mine'); hint.textContent = '내 차례! 블록을 끌어서 쌓고 싶은 곳에 놓아요'; };
+    const petTurn = () => {
+      if (full()) return allDone(); turn = 'pet'; lay.classList.remove('mine'); hint.textContent = `${NM()} 차례예요. 잘 쌓는지 봐 주세요`;
+      const T = tray(), B = T[Math.floor(Math.random() * T.length)];
+      walk(clamp((B.x + B.w / 2) / rr().width * 100, 8, 92), () => {
+        petHop(); Snd.pop(); let on = true;
+        const carry = () => { if (!on || !alive) return; const pb = petBox(); B.el.classList.remove('anim'); B.x = pb.x - B.w / 2; B.y = pb.top - B.h * .55; put(B); requestAnimationFrame(carry); };
+        wait(250, () => {
+          carry(); walk(side(), () => {
+            on = false; const x = clamp(topB.x + topB.w / 2 - B.w / 2 + R(-10, 10) * u / 70, zone[0], zone[1] - B.w), p = land(B, x);
+            fly(B, x, p.y - u * .9); wait(330, () => { settle(B, x, p); petHop(); speak('home', talk ? pick([`영차! ${B.lv}층!`, `나도 쌓았다! ${B.lv}층이야!`, '살살… 됐다! 네 차례!']) : L3('care'), { silent: true }); wait(800, myTurn); });
+          });
         });
       });
-    });
-    const allDone = () => {
-      const c = stack.filter(B => B.cube).length, n = stack.length - c;
-      speak('home', level() === 'talk' ? `정육면체 ${c}개, 직육면체 ${n}개로 쌓았어! 우와, 높다~` : L3('care')); Snd.combo(); sparks($('room'), 12, baseX, stackTop);
-      setTimeout(() => {
-        if (!alive || tok !== toySeq) return;
-        goTo(clamp((baseX + (toyRight ? -1 : 1) * u * 1.4) / rr().width * 100, 10, 88), () => {
-          if (!alive) return; petHop();
-          stack.forEach((B, i) => { B.el.classList.remove('anim'); B.el.classList.add('fall'); B.x += (toyRight ? 1 : -1) * R(20, 90) * (1 + i * .5); B.y = floor - B.h; B.rot = R(-90, 90); setTimeout(() => put(B), i * 60); setTimeout(() => Snd.pop(), 300 + i * 90); });
-          setTimeout(() => close(TL('blocks', 'end')), 1700);
-        }, true);
-      }, 2200);
     };
+    blocks.forEach(B => B.el.addEventListener('pointerdown', (ev) => {
+      if (!alive || B.on) return; if (turn !== 'me') { hint.classList.remove('pulse'); void hint.offsetWidth; hint.classList.add('pulse'); return; }
+      ev.preventDefault(); try { B.el.setPointerCapture(ev.pointerId); } catch (x) {}
+      const R0 = rr(), ox = ev.clientX - R0.left - B.x, oy = ev.clientY - R0.top - B.y; B.el.classList.remove('anim'); B.el.classList.add('held'); poked(); turn = 'hold';
+      const inZone = () => { const c = B.x + B.w / 2; return c > zone[0] && c < zone[1]; };
+      const spot = () => clamp(B.x, zone[0], zone[1] - B.w);
+      const mv = (m) => { const c = rr(); B.x = m.clientX - c.left - ox; B.y = m.clientY - c.top - oy; put(B); const z = inZone(); ghost.style.opacity = z ? 1 : 0; if (z) { const x = spot(), p = land(B, x); Object.assign(ghost.style, { transform: `translate(${x}px, ${p.y}px)`, width: B.w + 'px', height: B.h + 'px' }); ghost.classList.toggle('bad', !p.ok); } };
+      listen(B.el, mv, () => {
+        B.el.classList.remove('held'); ghost.style.opacity = 0; if (!alive) return;
+        if (!inZone()) { fly(B, B.hx, B.hy); turn = 'me'; return; }
+        const x = spot(), p = land(B, x); turn = 'busy'; lay.classList.remove('mine');
+        if (p.ok) { settle(B, x, p); speak('home', talk ? pick([`${B.lv}층! 이제 내 차례야!`, '차곡차곡~ 나도 할래!', '좋아, 나도 쌓을게!']) : L3('care'), { silent: true }); wait(700, petTurn); return; }
+        // 끝에 너무 걸쳐 놓으면 기우뚱하다 떨어져서 상자로 돌아온다
+        const s = x + B.w / 2 < Math.min(...p.sup.map(q => q.x)) ? -1 : 1; fly(B, x, p.y);
+        wait(320, () => { fly(B, clamp(x + s * u, 0, rr().width - B.w), floor - B.h, s * 90); Snd.boing(); speak('home', talk ? pick(['앗, 떨어졌다! 괜찮아, 다시!', '기우뚱! 가운데에 놓아 볼까?']) : '(앗! 하고 놀라요)', { silent: true }); wait(800, () => { fly(B, B.hx, B.hy); myTurn(); }); });
+      });
+    }));
+    const allDone = () => {
+      turn = 'end'; lay.classList.remove('mine'); hint.remove(); const H = Math.max(...set.map(q => q.lv)), c = set.filter(q => q.cube).length;
+      Snd.combo(); sparks($('room'), 14, topB.x + topB.w / 2, Math.max(40, topB.y)); petHop(); speak('home', talk ? `우와, ${H}층 탑이다! 정육면체 ${c}개, 직육면체 ${set.length - c}개로 쌓았어!` : L3('care'));
+      wait(2600, ask);
+    };
+    const ask = () => {
+      speak('home', talk ? '있잖아… 이거 넘어뜨려도 돼?' : '(넘어뜨려도 되는지 탑을 빤히 바라봐요)');
+      const k = mk('prepcard askfall', `<b>탑을 넘어뜨려도 될까요?</b><div><button class="btn primary small" data-k="y">응, 와르르!</button><button class="btn small" data-k="n">아니, 더 볼래</button></div>`);
+      k.querySelectorAll('[data-k]').forEach(q => q.onclick = () => { Snd.tap(); k.remove(); if (q.dataset.k === 'y') knock(); else keep(); });
+    };
+    const keep = () => {
+      speak('home', talk ? '알았어! 우리가 쌓은 탑, 더 구경하자.' : '(고개를 끄덕이고 탑을 구경해요)');
+      const box = document.createElement('div'); box.className = 'tkeep'; box.innerHTML = '<button class="btn primary small" data-k="y">이제 넘어뜨리기</button><button class="btn small" data-k="t">정리하기</button>'; lay.querySelector('.tdone').remove(); lay.appendChild(box);
+      box.querySelector('[data-k="y"]').onclick = () => { Snd.tap(); box.remove(); knock(); };
+      box.querySelector('[data-k="t"]').onclick = () => { Snd.tap(); box.remove(); tidy(); };
+      wait(90000, () => { if (box.isConnected) { box.remove(); tidy(); } });
+    };
+    const tidy = () => { [...set].reverse().forEach((B, i) => wait(i * 160, () => { fly(B, B.hx, B.hy); Snd.tap(); })); wait(set.length * 160 + 500, () => close(talk ? '차곡차곡 정리 끝! 또 쌓자!' : L3('care'))); };
+    const knock = () => {
+      const tcx = topB.x + topB.w / 2, pb = petBox(), s = pb.x < tcx ? 1 : -1, back = clamp((tcx - s * (u * 3 + pb.w * .5)) / rr().width * 100, 6, 94), dn = lay.querySelector('.tdone');
+      if (dn) dn.remove(); speak('home', talk ? '간다~ 하나, 둘, 셋!' : '(두 발을 동동 굴러요)', { silent: !talk });
+      walk(back, () => wait(500, () => walk(clamp((tcx - s * u * .6) / rr().width * 100, 6, 94), () => {
+        petHop(); Snd.boing(); let last = performance.now(); const t0 = last;
+        set.forEach(B => { B.el.classList.remove('anim', 'wob'); B.vx = s * (60 + B.lv * 55 + R(0, 120)); B.vy = -R(40, 190); B.vr = s * R(90, 360); B.hit = 0; });
+        const fall = (t) => {
+          if (!alive) return; const d = clamp((t - last) / 1000, 0, .033); last = t; const W = rr().width;
+          set.forEach(B => {
+            if (B.rest) return; B.vy += 1900 * d; B.x += B.vx * d; B.y += B.vy * d; B.rot += B.vr * d; if (B.x < 0) { B.x = 0; B.vx *= -.4; } if (B.x > W - B.w) { B.x = W - B.w; B.vx *= -.4; }
+            if (B.y > floor - B.h) { B.y = floor - B.h; if (B.hit < 2 && B.vy > 160) { B.hit++; B.vy *= -.32; B.vx *= .55; B.vr *= .4; Snd.pop(); } else { B.rest = true; B.rot = Math.round(B.rot / 180) * 180; B.el.classList.add('anim'); } } put(B);
+          });
+          if (t - t0 < 2600 && set.some(B => !B.rest)) requestAnimationFrame(fall);
+        };
+        requestAnimationFrame(fall); speak('home', talk ? '와르르르!!' : L3('care'), { silent: true }); wait(2600, () => close(TL('blocks', 'end')));
+      })));
+    };
+    speak('home', TL('blocks', 'go')); hint.textContent = '나 한 번, 친구 한 번! 번갈아 쌓아요'; walk(side(), () => wait(500, myTurn));
   }
 
   // ---------- 책장: 책 속 수수께끼 (문제 1개씩, 계속 읽을 수 있다) ----------
