@@ -392,7 +392,15 @@
   const wishText = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어 해요` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어 해요` : { pet: '살살 쓰다듬어 주길 바라요', bath: '씻고 싶어 해요', play: '같이 놀고 싶어 해요', sing: '노래를 듣고 싶어 해요', warm: '따뜻한 담요를 바라요', cool: '시원한 바람을 바라요', nap: isNight() ? '이제 자고 싶어 해요' : '낮잠을 자고 싶어 해요' }[w.id];
   const napName = () => (isNight() ? '밤잠 재우기' : '낮잠 재우기');
   const careName = (id) => (id === 'nap' ? napName() : CARE[id].name);
-  const wishSay = (w) => w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : w.id === 'nap' && isNight() ? '하암… 밤이 깊었어. 이제 자고 싶어' : CARE[w.id].wish;
+  // 바람을 자란 만큼 말한다: 문장 / 짧은 말 / 옹알이 + (뜻) / 알 몸짓
+  const babbleSay = (mean, sad) => pick(LINES[S.kind].babble[sad ? 'no' : 'ok'].filter(t => !t.includes('('))) + ` <small class="mean">(${mean})</small>`;
+  const wishSay = (w) => {
+    const lv = level(), short = w.t === 'food' ? `${FOODS[w.id].name}! 먹고 싶어!` : w.t === 'place' ? `${PLACES[w.id].name}! 가고 싶어!` : { pet: '쓰담쓰담 해 줘!', bath: '씻고 싶어!', play: '놀자! 같이 놀자!', nap: '졸려… 잘래.' }[w.id] || '이거 해 줘!';
+    if (lv === 'egg') return { pet: '(알이 손길을 기다려요. 손가락으로 살살 문질러 주세요)', sing: '(알이 노래를 듣고 싶은지 살랑 흔들려요)', warm: '(알이 추운지 오들오들 떨어요)', cool: '(알이 더운지 땀을 뻘뻘 흘려요)' }[w.id] || '(알이 무언가 바라는 것 같아요)';
+    if (lv === 'babble') return babbleSay(short);
+    if (lv === 'word') return short;
+    return w.t === 'food' ? `${obj(FOODS[w.id].name)} 먹고 싶어…` : w.t === 'place' ? `${PLACES[w.id].name}에 가 보고 싶어!` : w.id === 'nap' && isNight() ? '하암… 밤이 깊었어. 이제 자고 싶어' : CARE[w.id].wish;
+  };
 
   function enterHome(mode) {
     const away0 = S.last ? (Date.now() - S.last) / 86400000 : 0; // 마지막으로 본 뒤 지난 날 (아래에서 last가 바뀌기 전에 잰다)
@@ -487,10 +495,10 @@
     $('care-row').innerHTML = items.map(([k, n]) => `<button class="care ${want[k] ? 'want' : ''} ${S.stage <= 2 && (k === 'warm' || k === 'cool') && !want[k] ? 'rest' : ''}" data-care="${k}">${k === 'play' ? SC('+6') : ''}<span class="ci">${ICON[k]}</span>${n}</button>`).join('');
     $('care-row').querySelectorAll('.care').forEach(b => b.onclick = () => { Snd.tap(); poked(); doCare(b.dataset.care); });
   }
-  $('think').onclick = () => { const w = S.wishes.find(x => !x.done); if (!w) return; Snd.tap(); speak('home', level() === 'talk' ? wishSay(w) : line('idle')); react('idle', 'squish'); };
+  $('think').onclick = () => { const w = S.wishes.find(x => !x.done); if (!w) return; Snd.tap(); poked(); react('idle', 'squish'); speak('home', wishSay(w)); };
   $('wish-list').onclick = (e) => {
     const el = e.target.closest('.wish'); if (!el) return; const w = S.wishes[+el.dataset.i]; if (w.done) return; Snd.tap();
-    if (w.t === 'food') S.foods[w.id] ? doCare('feed') : openCook(); else if (w.t === 'place') openWalk(); else doCare(w.id);
+    if (w.t === 'food') { if (S.foods[w.id]) doCare('feed'); else $('btn-cook').click(); } else if (w.t === 'place') $('btn-walk').click(); else doCare(w.id);
   };
 
   function startWander() {
@@ -1183,7 +1191,7 @@
     speak('home', talk ? pick(say) : '(잠에서 깨서 칭얼거려요)', { silent: !talk });
     if (now - wakeAt < 20000) return true; wakeAt = now;
     addNeed('mood', -4); renderNeeds();
-    if (dayCap('wake', 6)) { loseFriend(2); setTimeout(() => toast('자고 있는 친구를 깨웠어요. <b>우정이 조금 줄었어요</b>'), 500); }
+    if (dayCap('wake', 6)) { const down = loseFriend(2); setTimeout(() => toast(`자고 있는 친구를 깨웠어요. <b>${down ? '우정이 조금 줄었어요' : '친구가 속상해해요'}</b>`), 500); }
     save(); return true;
   }
   function onTap(x, ev) {
@@ -2535,7 +2543,7 @@
   function friendSay(L) {
     const lv = level(), nm = `<b class="spk me">${S.name}</b> `;
     if (lv === 'egg') return EGG_TALK[L.k];
-    if (lv === 'babble') return nm + pick(LINES[S.kind].babble[L.k === 'sad' ? 'no' : 'ok'].filter(t => !t.includes('('))) + ` <small class="mean">(${L.m})</small>`;
+    if (lv === 'babble') return nm + babbleSay(L.m, L.k === 'sad');
     return nm + (lv === 'word' ? L.w : L.t);
   }
   let nbs = null; // 이웃 만남 진행 상태
@@ -2754,7 +2762,7 @@
 
   // ---------- 돌보기 (같이 하기) ----------
   // 거절: 싫다고 했는데 90초 안에 같은 걸 또 권하면, 세 번째부터 속상해하고 우정이 조금 준다
-  function loseFriend(v) { S.fxp = Math.max(FRIEND_XP[S.flv] || 0, S.fxp - v); hud(); }
+  function loseFriend(v) { const f = S.fxp; S.fxp = Math.min(f, Math.max(FRIEND_XP[S.flv] || 0, f - v)); hud(); return S.fxp < f; } // 우정 단계 아래로는 안 내려간다. 실제로 줄었는지 알려 준다
   // 거절 모습: 표정(art) + 몸짓(css) + 둘레 효과
   const NO_FX = {
     dizzy: { mood: 'dizzy', cls: 'act-dizzy', fx: 'orbit' },   // 눈이 뱅글뱅글
@@ -2879,7 +2887,7 @@
       const talk = level() === 'talk';
       speak('home', talk ? pick(['싫다고 했잖아… 자꾸 그러면 속상해.', '내 말 안 들어 주는 거야? 흥.', '아까 말했는데… 나 지금은 정말 싫어.']) : '(시무룩… 고개를 홱 돌려요)', { silent: !talk });
       petNo('upset'); addNeed('mood', -4);
-      if (S.stage >= 3 && dayCap('scold', 5)) { loseFriend(2); toast('싫다는 걸 자꾸 권해서 속상해해요. <b>우정이 조금 줄었어요</b>'); }
+      if (S.stage >= 3 && dayCap('scold', 5)) { const down = loseFriend(2); toast(`싫다는 걸 자꾸 권해서 속상해해요.${down ? ' <b>우정이 조금 줄었어요</b>' : ''}`); }
     } else { speak('home', text, { silent: level() !== 'talk' }); petNo(kind || 'upset'); if (r.n === 2) setTimeout(() => toast('친구가 싫다고 해요. 자꾸 권하면 <b>속상해할 수 있어요</b>'), 900); }
     renderNeeds(); save();
   }
@@ -3093,7 +3101,7 @@
         if (!own.length) { refuse('feed', level() === 'talk' ? pick(['배불러… 이따 먹을래.', '배가 빵빵해! 조금 있다가 먹을게.']) : '(배를 통통)', 'full'); return; }
         toast('배부르지만 <b>먹고 싶다던 간식</b>은 먹을 수 있어요');
       }
-      if (!own.length) { speak('home', level() === 'talk' ? line('noFood') : line('idle')); toast('냉장고가 비었어요. <b>간식 만들기</b>로 만들어요!'); return; }
+      if (!own.length) { speak('home', level() === 'talk' ? line('noFood') : level() === 'word' ? pick(['간식 없어… 만들자!', '냉장고 텅텅! 만들러 가자!']) : babbleSay('간식이 없어. 만들러 가자!', true)); toast('냉장고가 비었어요. <b>간식 만들기</b>로 만들어요!'); return; }
       if (sleeping) wakeFuss('care');
       openPick('무엇을 먹여 줄까요?', '냉장고에 있는 간식이에요', own.map(k => ({ id: k, art: Scene.food(k), name: FOODS[k].name, small: `${S.foods[k]}개`, badge: wishBadge('food', k) || tasteBadge('food', k) })), (k) => runAct('feed', k));
       return;
