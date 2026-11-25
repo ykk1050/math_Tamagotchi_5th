@@ -239,7 +239,7 @@ const Art = (() => {
     const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2;
     const ty = 60 - 44 * s;
     // 머리 장식을 해도 자라며 얻은 표시(리본·네잎클로버·달)는 보이게: 겹치는 것만 자리를 옮긴다
-    const hd = L.wear.head, hTop = hd && hd !== 'flower' && hd !== 'bow' && hd !== 'earmuff';
+    const hd = L.wear.head, hTop = hd && hd !== 'flower' && hd !== 'bow';
     let extra = stage >= 5 && hd !== 'bow' ? ribbon : '', back = '';
     if (stage >= 10) back += `<circle cy="4" r="48" fill="url(#cn-glow)"/>`;
     if (stage >= 8 && L.wear.back !== 'wings') back += `<g opacity=".95"><path d="M-12 18 C-30 4 -40 14 -34 24 C-30 30 -20 28 -12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/><path d="M12 18 C30 4 40 14 34 24 C30 30 20 28 12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/></g>`;
@@ -249,7 +249,7 @@ const Art = (() => {
     if (stage >= 10 && !L.wear.head) extra += crown(0, -26, .8);
     if (stage >= 7) extra += sparkle(-30, -8, .55) + sparkle(30, 20, .5);
     const ws = (ly) => wearSVG('bunny', L.wear, ly, L.col);
-    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${stage >= 6 ? traitDeco('bunny', L.trait) : ''}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${extra}${ws('head')}${ws('hand')}</g></g>`;
+    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${stage >= 6 ? traitDeco('bunny', L.trait) : ''}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${hTop && hd !== 'earmuff' ? ws('head') + extra : extra + ws('head')}${ws('hand')}</g></g>`;
     setTint('bunny', 'base'); return wrap(out);
   }
 

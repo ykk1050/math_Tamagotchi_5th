@@ -1151,8 +1151,11 @@ body.lowfx .dreamb{animation:none}
 @keyframes thinkpeek{0%{opacity:0;visibility:visible}3%,22%{opacity:1;visibility:visible}26%{opacity:0;visibility:hidden}100%{opacity:0;visibility:hidden}}
 /* 알이 춥거나 더울 때: 가끔 바들바들 / 축 처짐 */
 .care.rest{opacity:.55}
-.walker.egg-cold .pet svg{animation:eggcold 2.6s linear infinite}
+.walker.egg-cold .pet:not([class*="act-"]) svg{animation:eggcold 2.6s linear infinite}
 @keyframes eggcold{0%,4%,8%,12%,16%,20%,24%{transform:translateX(0)}2%,10%,18%{transform:translateX(-2.5px)}6%,14%,22%{transform:translateX(2.5px)}25%,100%{transform:none}}
-.walker.egg-hot .pet svg{animation:egghot 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.walker.egg-hot .pet:not([class*="act-"]) svg{animation:egghot 2.6s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes egghot{0%,100%{transform:none}50%{transform:scale(1.04,.93) translateY(3px)}}
 body.lowfx .walker.egg-cold .pet svg,body.lowfx .walker.egg-hot .pet svg{animation:none}
+
+/* 도치: 집에 놀러 오면 오른쪽에 서므로 왼쪽(친구 쪽)을 본다 */
+.visitor .nbflip{transform:none}
