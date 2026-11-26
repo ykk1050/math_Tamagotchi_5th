@@ -40,7 +40,7 @@ const Snd = (() => {
     } catch (e) {}
   }
   // 친구마다 목소리 높이 (구름 낮고 둥글게, 고양이 높게)
-  const VOICE = { cloud: [620, 780, .84, 620], bunny: [820, 980, 1, 760], puppy: [700, 880, .92, 680], kitty: [900, 1060, 1.06, 820] };
+  const VOICE = { cloud: [620, 780, .84, 620], bunny: [820, 980, 1, 760], puppy: [700, 880, .92, 680], kitty: [900, 1060, 1.06, 820], dragon: [760, 920, .96, 700] };
   const vc = (k) => VOICE[k] || VOICE.cloud;
   const S = {
     brush() { noise(.08, .07, 3000 + Math.random() * 900, 0, 1.6); },

@@ -69,7 +69,8 @@ const Scene = (() => {
     cloud: { wall: ['#F4F0FF', '#E9E2FF', '#DCD3FB'], bed: ['#D9CCFF', '#8F7BE0', '#EFE9FF'], rug: '#E9E2FF' },
     bunny: { wall: ['#FFF1F5', '#FFE4EE', '#FBD3E1'], bed: ['#FFC7D9', '#E5679A', '#FFE9D6'], rug: '#FFE0EA' },
     puppy: { wall: ['#FFF8EC', '#FFF0D9', '#F5DDB8'], bed: ['#FFD9A8', '#D9984F', '#FFF3E2'], rug: '#FFE9C8' },
-    kitty: { wall: ['#F1FAF6', '#E2F4EC', '#C9EADA'], bed: ['#B8E6D2', '#4FAE88', '#EEFAF4'], rug: '#DDF3E8' }
+    kitty: { wall: ['#F1FAF6', '#E2F4EC', '#C9EADA'], bed: ['#B8E6D2', '#4FAE88', '#EEFAF4'], rug: '#DDF3E8' },
+    dragon: { wall: ['#EFF7FF', '#DDEEFF', '#C2DDF8'], bed: ['#B9D8F7', '#4F86C9', '#EEF6FF'], rug: '#DCEBFB' }
   };
   const kcol = (kind) => KCOL[kind] || KCOL.cloud;
   function wallDefs(style, kind) {
