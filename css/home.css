@@ -1240,3 +1240,67 @@ body.lowfx .walker.egg-cold .pet svg,body.lowfx .walker.egg-hot .pet svg{animati
 
 /* 강아지 귀는 위에 붙어 아래로 늘어진다: 위쪽을 축으로 흔든다 */
 .pet-svg .ear.hang{transform-origin:50% 6%}
+
+/* ===== 말랑 스위치 5개: 예비 동작 · 스쿼시&스트레치 · 부피 유지(가로 ≈ 1/세로) · 꼭대기 멈칫+떨어질수록 빠르게 · 착지 뒤 출렁임 =====
+   --sq: 움직임 폭. 효과 줄이기·동작 줄이기 설정이면 0.3배 */
+:root{--sq:1}
+body.lowfx{--sq:.3}
+@media (prefers-reduced-motion:reduce){:root{--sq:.3}}
+/* 바닥(발)을 축으로 찌그러지고 늘어난다 */
+.pet.hop svg,.opet.hop svg,.wd-pet.hop svg,.pet.squish svg,.act-boing svg,.walker .pet.walking svg,.opet.walking svg,.walker .pet.tr-jump svg{transform-origin:50% 94%}
+/* 점프: 꾹 → 쭉 솟음(감속) → 꼭대기 멈칫 → 빨라지며 떨어짐 → 납작 착지(옆으로 퍼짐) → 출렁출렁 */
+.pet.hop svg,.opet.hop svg,.wd-pet.hop svg,.walker .pet.hop svg{animation:hop .62s linear 2}
+@keyframes hop{
+  0%{transform:translateY(0) scale(1,1);animation-timing-function:ease-out}
+  14%{transform:translateY(0) scale(calc(1 + .14 * var(--sq)),calc(1 - .12 * var(--sq)));animation-timing-function:cubic-bezier(.2,.8,.4,1)}
+  38%{transform:translateY(calc(-30px * var(--sq))) scale(calc(1 - .09 * var(--sq)),calc(1 + .1 * var(--sq)));animation-timing-function:ease-out}
+  48%{transform:translateY(calc(-34px * var(--sq))) scale(1,1);animation-timing-function:linear}
+  54%{transform:translateY(calc(-33px * var(--sq))) scale(1,1);animation-timing-function:cubic-bezier(.55,0,.9,.4)}
+  70%{transform:translateY(0) scale(calc(1 + .17 * var(--sq)),calc(1 - .145 * var(--sq)));animation-timing-function:ease-out}
+  80%{transform:translateY(0) scale(calc(1 - .07 * var(--sq)),calc(1 + .075 * var(--sq)));animation-timing-function:ease-in-out}
+  90%{transform:translateY(0) scale(calc(1 + .03 * var(--sq)),calc(1 - .03 * var(--sq)))}
+  100%{transform:translateY(0) scale(1,1)}}
+/* 톡 눌렀을 때: 납작(옆으로 퍼짐) → 반대로 쭉 → 작게 출렁 */
+.pet.squish svg,.walker .pet.squish svg{animation:squish .5s linear}
+@keyframes squish{
+  0%{transform:scale(1,1);animation-timing-function:ease-out}
+  28%{transform:scale(calc(1 + .13 * var(--sq)),calc(1 - .115 * var(--sq)));animation-timing-function:ease-in-out}
+  52%{transform:scale(calc(1 - .075 * var(--sq)),calc(1 + .08 * var(--sq)));animation-timing-function:ease-in-out}
+  72%{transform:scale(calc(1 + .035 * var(--sq)),calc(1 - .034 * var(--sq)))}
+  86%{transform:scale(calc(1 - .012 * var(--sq)),calc(1 + .012 * var(--sq)))}
+  100%{transform:scale(1,1)}}
+/* 신나서 통통: 작은 점프를 같은 원칙으로 */
+@keyframes pboing{
+  0%{transform:translateY(0) scale(1,1);animation-timing-function:ease-out}
+  18%{transform:translateY(0) scale(calc(1 + .1 * var(--sq)),calc(1 - .09 * var(--sq)));animation-timing-function:ease-out}
+  42%{transform:translateY(calc(-16px * var(--sq))) scale(calc(1 - .05 * var(--sq)),calc(1 + .055 * var(--sq)));animation-timing-function:cubic-bezier(.55,0,.9,.4)}
+  66%{transform:translateY(0) scale(calc(1 + .11 * var(--sq)),calc(1 - .1 * var(--sq)));animation-timing-function:ease-out}
+  82%{transform:translateY(0) scale(calc(1 - .04 * var(--sq)),calc(1 + .04 * var(--sq)))}
+  100%{transform:translateY(0) scale(1,1)}}
+/* 걷기: 디딜 때 납작, 뜰 때 살짝 길쭉 */
+@keyframes walkbob{
+  0%,100%{transform:translateY(0) scale(calc(1 + .05 * var(--sq)),calc(1 - .045 * var(--sq)));animation-timing-function:ease-out}
+  50%{transform:translateY(calc(-10px * var(--sq))) scale(calc(1 - .03 * var(--sq)),calc(1 + .03 * var(--sq)));animation-timing-function:ease-in}}
+/* 재주 점프: 크게 꾹 → 쭉 → 꼭대기 멈칫 → 납작 착지 → 출렁 */
+@keyframes trjump{
+  0%{transform:none;animation-timing-function:ease-out}
+  16%{transform:scale(calc(1 + .16 * var(--sq)),calc(1 - .14 * var(--sq)));animation-timing-function:cubic-bezier(.2,.8,.4,1)}
+  40%{transform:translateY(calc(-56% * var(--sq))) scale(calc(1 - .08 * var(--sq)),calc(1 + .09 * var(--sq)));animation-timing-function:ease-out}
+  50%,56%{transform:translateY(calc(-62% * var(--sq))) scale(1,1);animation-timing-function:cubic-bezier(.55,0,.9,.4)}
+  72%{transform:translateY(0) scale(calc(1 + .17 * var(--sq)),calc(1 - .145 * var(--sq)));animation-timing-function:ease-out}
+  84%{transform:scale(calc(1 - .06 * var(--sq)),calc(1 + .065 * var(--sq)))}
+  93%{transform:scale(calc(1 + .02 * var(--sq)),calc(1 - .02 * var(--sq)))}
+  100%{transform:none}}
+/* 숨쉬기(토끼·강아지·고양이·용): 들이쉬면 살짝 길쭉, 내쉬면 퍼지고 끝에서 작게 출렁 */
+@keyframes breathe{
+  0%,100%{transform:scale(1,1);animation-timing-function:ease-in-out}
+  42%{transform:scale(calc(1 - .018 * var(--sq)),calc(1 + .02 * var(--sq)));animation-timing-function:ease-in-out}
+  74%{transform:scale(calc(1 + .026 * var(--sq)),calc(1 - .025 * var(--sq)));animation-timing-function:ease-out}
+  86%{transform:scale(calc(1 - .006 * var(--sq)),calc(1 + .006 * var(--sq)))}}
+/* 구름 둥실: 오를 때 길쭉(감속), 꼭대기 멈칫, 내려와 바닥에서 납작했다 출렁 */
+.anim-float{transform-box:fill-box;transform-origin:50% 100%}
+@keyframes float{
+  0%,100%{transform:translateY(0) scale(calc(1 + .03 * var(--sq)),calc(1 - .028 * var(--sq)));animation-timing-function:ease-out}
+  38%,50%{transform:translateY(calc(-10px * var(--sq))) scale(calc(1 - .015 * var(--sq)),calc(1 + .016 * var(--sq)));animation-timing-function:ease-in}
+  88%{transform:translateY(0) scale(calc(1 + .04 * var(--sq)),calc(1 - .037 * var(--sq)));animation-timing-function:ease-out}
+  94%{transform:translateY(0) scale(calc(1 - .01 * var(--sq)),calc(1 + .01 * var(--sq)))}}
