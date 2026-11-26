@@ -64,8 +64,16 @@ const Scene = (() => {
     dots: { name: '물방울 벽지' }, stripe: { name: '줄무늬 벽지' }, star: { name: '별 벽지' }, heart: { name: '하트 벽지' }, sky: { name: '하늘 벽지' }
   };
   const FLOORS = { wood: { name: '나무 바닥' }, check: { name: '체크 타일' }, mint: { name: '민트 카펫' }, night: { name: '별밤 바닥' } };
+  // 친구마다 방 색: 벽(3), 침대·커튼(바탕, 테두리, 밝은 색), 러그
+  const KCOL = {
+    cloud: { wall: ['#F4F0FF', '#E9E2FF', '#DCD3FB'], bed: ['#D9CCFF', '#8F7BE0', '#EFE9FF'], rug: '#E9E2FF' },
+    bunny: { wall: ['#FFF1F5', '#FFE4EE', '#FBD3E1'], bed: ['#FFC7D9', '#E5679A', '#FFE9D6'], rug: '#FFE0EA' },
+    puppy: { wall: ['#FFF8EC', '#FFF0D9', '#F5DDB8'], bed: ['#FFD9A8', '#D9984F', '#FFF3E2'], rug: '#FFE9C8' },
+    kitty: { wall: ['#F1FAF6', '#E2F4EC', '#C9EADA'], bed: ['#B8E6D2', '#4FAE88', '#EEFAF4'], rug: '#DDF3E8' }
+  };
+  const kcol = (kind) => KCOL[kind] || KCOL.cloud;
   function wallDefs(style, kind) {
-    const w = kind === 'bunny' ? ['#FFF1F5', '#FFE4EE', '#FBD3E1'] : ['#F4F0FF', '#E9E2FF', '#DCD3FB'];
+    const w = kcol(kind).wall;
     const pat = {
       dots: `<circle cx="11" cy="11" r="3.4" fill="${w[2]}"/><circle cx="34" cy="34" r="3.4" fill="${w[2]}"/>`,
       stripe: `<rect width="23" height="46" fill="${w[2]}" opacity=".55"/>`,
@@ -111,7 +119,7 @@ const Scene = (() => {
   function room(o) {
     const kind = o.kind, night = o.night, weather = o.weather || 'sun', attic = o.roomId === 'attic';
     const sky = night ? ['#4E4A8C', '#8E7CC4'] : ['#BFE3FF', '#EAF6FF'];
-    const bedC = kind === 'bunny' ? '#FFC7D9' : '#D9CCFF', bedS = kind === 'bunny' ? '#E5679A' : '#8F7BE0', bedW = kind === 'bunny' ? '#FFE9D6' : '#EFE9FF';
+    const [bedC, bedS, bedW] = kcol(kind).bed;
     const place = o.place || {};
     const ids = Object.keys(place).filter(k => k !== o.hide && DECOR[k] !== undefined);
     const rugs = ids.filter(k => layerOf(k) === 'rug'), walls = ids.filter(k => layerOf(k) === 'wall'), floors = ids.filter(k => layerOf(k) === 'floor').sort((a, b) => place[a][1] - place[b][1]);
@@ -140,7 +148,7 @@ const Scene = (() => {
       <rect x="210" y="205" width="230" height="14" rx="7" fill="#F2D3B6"/>
       <g transform="translate(230 150)"><rect width="22" height="55" rx="4" fill="#C9B8FF"/><rect x="26" y="8" width="18" height="47" rx="4" fill="#FFC7D9"/><rect x="48" y="2" width="20" height="53" rx="4" fill="#9FDDB4"/></g>
       ${place.lamp ? '' : `<circle cx="380" cy="190" r="14" fill="#FFE59A" opacity=".8"/>`}
-      ${rugs.length ? '' : `<ellipse cx="520" cy="560" rx="250" ry="58" fill="${kind === 'bunny' ? '#FFE0EA' : '#E9E2FF'}"/><ellipse cx="520" cy="560" rx="200" ry="40" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="12 12" opacity=".8"/>`}
+      ${rugs.length ? '' : `<ellipse cx="520" cy="560" rx="250" ry="58" fill="${kcol(kind).rug}"/><ellipse cx="520" cy="560" rx="200" ry="40" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="12 12" opacity=".8"/>`}
       ${rugs.map(draw).join('')}
       <g transform="translate(170 352) scale(.86)">
         <!-- 친구용 폭신 침대: 앞에서 본 둥근 쿠션 침대. 친구가 가운데 앉아 이불을 덮고 잔다 -->
@@ -326,5 +334,5 @@ const Scene = (() => {
     if (id === 'rug') return svg('-250 -70 500 70', `<ellipse cx="0" cy="-32" rx="250" ry="58" fill="#FFC7D9" stroke="#E5679A" stroke-width="5"/><ellipse cx="0" cy="-32" rx="190" ry="40" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="14 12"/>`, 'none');
     return svg('0 0 64 64', DECOR[id] || '', 'none');
   }
-  return { food, item, need, room, kitchen, path, pathNodes, ball, itemBox, itemAlone, clampPos, walkScene, WALK_F, sewroom, layerOf, DEF_POS, WALLS, FLOORS, swatch };
+  return { kcol, food, item, need, room, kitchen, path, pathNodes, ball, itemBox, itemAlone, clampPos, walkScene, WALK_F, sewroom, layerOf, DEF_POS, WALLS, FLOORS, swatch };
 })();

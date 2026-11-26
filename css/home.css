@@ -1237,3 +1237,6 @@ body.lowfx .walker.egg-cold .pet svg,body.lowfx .walker.egg-hot .pet svg{animati
 .stage.meeting .nbw.here .nbflip .nbeyes{transform:none}
 .stage.meeting .nodding svg{animation:nbnod .55s ease-in-out 2;transform-origin:50% 100%}
 @keyframes nbnod{0%,100%{transform:none}50%{transform:rotate(0) scale(1.02,.95)}}
+
+/* 강아지 귀는 위에 붙어 아래로 늘어진다: 위쪽을 축으로 흔든다 */
+.pet-svg .ear.hang{transform-origin:50% 6%}

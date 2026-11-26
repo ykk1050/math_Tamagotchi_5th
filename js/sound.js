@@ -39,6 +39,9 @@ const Snd = (() => {
       s.connect(bf); bf.connect(g); g.connect(master); s.start(t); s.stop(t + d + .05);
     } catch (e) {}
   }
+  // 친구마다 목소리 높이 (구름 낮고 둥글게, 고양이 높게)
+  const VOICE = { cloud: [620, 780, .84, 620], bunny: [820, 980, 1, 760], puppy: [700, 880, .92, 680], kitty: [900, 1060, 1.06, 820] };
+  const vc = (k) => VOICE[k] || VOICE.cloud;
   const S = {
     brush() { noise(.08, .07, 3000 + Math.random() * 900, 0, 1.6); },
     squirt() { noise(.35, .06, 900, 0, 1.2, true); tone(420, .25, 'sine', .08, .05, 620); },
@@ -48,9 +51,9 @@ const Snd = (() => {
     fluff() { noise(.11, .05, 2400 + Math.random() * 900, 0, .8); },
     boing() { tone(250, .12, 'sine', .2, 0, 520); tone(520, .24, 'sine', .14, .09, 280); },
     boop() { tone(1150, .07, 'sine', .18, 0, 1750); },
-    giggle(kind = 'cloud') { const b = kind === 'bunny' ? 980 : 780; [0, .11, .22, .33, .44].forEach((t, i) => tone(b + (i % 2 ? 90 : 0) - i * 25, .08, 'sine', .12, t, b * 1.18)); },
+    giggle(kind = 'cloud') { const b = vc(kind)[1]; [0, .11, .22, .33, .44].forEach((t, i) => tone(b + (i % 2 ? 90 : 0) - i * 25, .08, 'sine', .12, t, b * 1.18)); },
     flap() { [0, .08, .16, .24].forEach(t => noise(.06, .07, 1700, t, 1.2)); },
-    hum(kind = 'cloud') { const k = kind === 'bunny' ? 1 : .84; [523, 587, 659, 587, 523, 659, 784].forEach((f, i) => tone(f * k, .3, 'triangle', .07, i * .26)); },
+    hum(kind = 'cloud') { const k = vc(kind)[2]; [523, 587, 659, 587, 523, 659, 784].forEach((f, i) => tone(f * k, .3, 'triangle', .07, i * .26)); },
     breath() { noise(1.2, .022, 520, 0, .6, true); noise(1.4, .016, 380, 1.5, .6, true); },
     tap() { tone(880, .08, 'sine', .15); },
     piano() { const sc = [523, 587, 659, 784, 880, 1047]; let t = 0; for (let i = 0; i < 7; i++) { tone(sc[Math.floor(Math.random() * sc.length)], .32, 'triangle', .2, t); t += .2 + (i % 3 === 2 ? .12 : 0); } },
@@ -68,14 +71,14 @@ const Snd = (() => {
     heart() { tone(1175, .1, 'sine', .12); tone(1568, .16, 'sine', .1, .07); },
     level() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .3, 'triangle', .2, i * .1)); tone(2093, .7, 'sine', .15, .65); },
     babble(n = 2, kind = 'cloud') {
-      const base = kind === 'bunny' ? 820 : 620;
+      const base = vc(kind)[0];
       for (let i = 0; i < n; i++) { const f = base + Math.random() * 260; tone(f, .09, 'sine', .14, i * .13, f * 1.25); }
     },
     sip() { tone(520, .22, 'sine', .12, 0, 760); },
     ouch() { tone(900, .12, 'triangle', .22, 0, 520); },
     cry(kind = 'cloud') {
       // 으앙~ : 떨리며 내려가는 소리 세 번
-      const base = kind === 'bunny' ? 760 : 620;
+      const base = vc(kind)[3];
       [0, .42, .84].forEach((t, i) => { tone(base - i * 40, .38, 'sine', .16, t, base * .62 - i * 40); tone(base * 1.01 - i * 40, .38, 'triangle', .06, t + .02, base * .6); });
     },
     lullaby() { [659, 587, 523, 587, 659, 659, 659, 0, 587, 587, 587, 0, 659, 784, 784].forEach((f, i) => f && tone(f, .38, 'sine', .12, i * .32)); }

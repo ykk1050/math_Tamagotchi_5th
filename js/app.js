@@ -25,14 +25,28 @@
   // ---------- 친구 정보 ----------
   const MAX_STAGE = 10;
   const STAGE_XP = [0, 0, 5, 15, 35, 70, 115, 170, 235, 310, 400];
-  const STAGE_NAME = { cloud: ['', '별빛 알', '톡톡 알', '솜뭉치', '몽글 구름', '새싹 날개', '무지개 구름', '금빛 날개 구름', '달빛 구름', '오로라 구름', '하늘 수호 구름'], bunny: ['', '딸기 알', '톡톡 알', '솜털 아기', '깡총 토끼', '리본 토끼', '클로버 토끼', '달님 토끼', '요정 날개 토끼', '별꼬리 토끼', '별나라 수호 토끼'] };
-  const NAMES = { cloud: ['몽실', '구름이', '솜이', '포근이', '뭉게'], bunny: ['콩이', '딸기', '보리', '말랑이', '토토'] };
+  const STAGE_NAME = { cloud: ['', '별빛 알', '톡톡 알', '솜뭉치', '몽글 구름', '새싹 날개', '무지개 구름', '금빛 날개 구름', '달빛 구름', '오로라 구름', '하늘 수호 구름'], bunny: ['', '딸기 알', '톡톡 알', '솜털 아기', '깡총 토끼', '리본 토끼', '클로버 토끼', '달님 토끼', '요정 날개 토끼', '별꼬리 토끼', '별나라 수호 토끼'],
+    puppy: ['', '점박이 알', '톡톡 알', '꼬물 강아지', '멍멍 강아지', '뼈다귀 강아지', '발도장 강아지', '달빛 강아지', '날개 강아지', '별꼬리 강아지', '별나라 수호 강아지'],
+    kitty: ['', '줄무늬 알', '톡톡 알', '꼬물 고양이', '야옹 고양이', '물고기 핀 고양이', '하트 고양이', '달빛 고양이', '날개 고양이', '별꼬리 고양이', '별나라 수호 고양이'] };
+  const NAMES = { cloud: ['몽실', '구름이', '솜이', '포근이', '뭉게'], bunny: ['콩이', '딸기', '보리', '말랑이', '토토'], puppy: ['뭉치', '초코', '두부', '콩떡', '댕댕이'], kitty: ['나비', '치즈', '모모', '냥냥이', '레오'] };
   const LV_MSG = {
     cloud: ['', '', '알에 금이 갔어요! 누군가 빼꼼 내다봐요.', '알에서 나왔어요! 첫마디는 "몽!"', '"좋아!" 처음으로 말을 했어요.', '"나 날개가 생겼어! 이제 하고 싶은 말 다 할 수 있어!"',
       '"내 뒤에 무지개가 떴어! 비 온 뒤처럼 마음이 반짝반짝해."', '"날개가 금빛으로 바뀌었어! 이제 더 높이 날 수 있어."', '"머리 위에 달님이 내려앉았어. 밤에도 무섭지 않아."', '"오로라 꼬리가 생겼어! 하늘에서 제일 예쁜 색이야."', '"하늘 수호 구름이 됐어! 이 왕관은 너랑 같이 받은 거야."'],
     bunny: ['', '', '알에 금이 가고 발이 쏙 나왔어요!', '알에서 나왔어요! 첫마디는 "콩!"', '"깡총!" 귀가 쭉 자랐어요.', '"리본 예쁘지? 나 이제 말 잘해!"',
-      '"네잎클로버를 찾았어! 행운이 우리한테 올 거야."', '"이마에 달 모양이 생겼어. 나 진짜 달토끼 같지?"', '"등에 작은 날개가 생겼어! 깡총 뛰면 둥실 떠."', '"꼬리가 별처럼 반짝여! 어두워도 길을 찾을 수 있어."', '"별나라 수호 토끼가 됐어! 왕관은 너랑 나랑 같이 쓴 거야."']
+      '"네잎클로버를 찾았어! 행운이 우리한테 올 거야."', '"이마에 달 모양이 생겼어. 나 진짜 달토끼 같지?"', '"등에 작은 날개가 생겼어! 깡총 뛰면 둥실 떠."', '"꼬리가 별처럼 반짝여! 어두워도 길을 찾을 수 있어."', '"별나라 수호 토끼가 됐어! 왕관은 너랑 나랑 같이 쓴 거야."'],
+    puppy: ['', '', '알에 금이 가고 늘어진 귀가 쏙 나왔어요!', '알에서 나왔어요! 첫마디는 "멍!"', '"멍멍!" 귀가 길어졌어요.', '"뼈다귀 머리핀 어때? 나 이제 말 잘해!"',
+      '"귀에 발도장이 생겼어! 우리 우정 도장이야."', '"이마에 달 모양이 생겼어. 밤 산책도 하나도 안 무서워!"', '"등에 작은 날개가 생겼어! 꼬리를 흔들면 둥실 떠."', '"꼬리 끝이 별처럼 반짝여! 어디서든 너를 찾아갈 수 있어."', '"별나라 수호 강아지가 됐어! 이 왕관은 너랑 같이 받은 거야."'],
+    kitty: ['', '', '알에 금이 가고 뾰족한 귀가 쏙 나왔어요!', '알에서 나왔어요! 첫마디는 "냥!"', '"야옹!" 귀가 쫑긋 자랐어요.', '"물고기 머리핀 예쁘지? 나 이제 말 잘해!"',
+      '"하트 무늬가 생겼어. 너를 좋아하는 마음이 보이는 거야."', '"이마에 달 모양이 생겼어. 밤에도 눈이 반짝반짝!"', '"등에 작은 날개가 생겼어! 사뿐사뿐 날 수 있어."', '"꼬리 끝이 별처럼 반짝여! 꼬리로 별을 그릴 수 있어."', '"별나라 수호 고양이가 됐어! 왕관은 너랑 나랑 같이 쓴 거야."']
   };
+  // 친구마다 다른 한마디 (구름·토끼는 원래 말 그대로)
+  const KX = {
+    cloud: { egg: '별빛 알', party: '내 생일을 챙겨 줘서 고마워… 구름 위로 날아갈 것 같아!', balloon: '풍선이 둥실둥실! 나랑 닮았다!', bath: '뽀송뽀송! 하얀 구름으로 돌아왔어!' },
+    bunny: { egg: '딸기 알', party: '내 생일을 기억해 줬구나! 오늘이 세상에서 제일 행복한 날이야! 깡총!', balloon: '와아, 풍선이다! 진짜 파티 같아! 깡총!', bath: '뽀송뽀송! 털이 보들보들해졌어!' },
+    puppy: { egg: '점박이 알', party: '내 생일을 기억해 줬구나! 꼬리가 멈추질 않아! 멍멍!', balloon: '와아, 풍선이다! 물고 뛰어다니고 싶어! 멍!', bath: '뽀송뽀송! 부르르 털었더니 보들보들해졌어!' },
+    kitty: { egg: '줄무늬 알', party: '내 생일을 기억해 줬구나… 골골골, 너무 행복해!', balloon: '풍선이다! 냥냥 펀치 하고 싶다!', bath: '휴, 물은 무서웠지만… 뽀송뽀송해졌어!' }
+  };
+  const kx = (k) => (KX[S.kind] || KX.cloud)[k];
   const level = () => (S.stage <= 2 ? 'egg' : S.stage === 3 ? 'babble' : S.stage === 4 ? 'word' : 'talk');
   const bat = (w) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0; };
   const NM = () => S.name + (bat(S.name) ? '이' : ''); // 몽실 → 몽실이, 콩이 → 콩이
@@ -310,12 +324,12 @@
   // =====================================================================
   // 시작 · 알 고르기 · 이름
   // =====================================================================
-  $('title-eggs').innerHTML = `<div>${Art.draw('cloud', 1, 'idle')}</div><div>${Art.draw('bunny', 1, 'idle')}</div>`;
+  $('title-eggs').innerHTML = Art.KINDS.map(k => `<div>${Art.draw(k, 1, 'idle')}</div>`).join('');
   $('btn-start').textContent = S.kind ? '이어하기' : '시작하기';
   $('btn-start').onclick = () => { Snd.unlock(); Snd.tap(); if (S.kind && S.name) enterHome('back'); else openChoose(); };
   let choice = null, nameSel = null;
   function openChoose() {
-    $('egg-cloud').innerHTML = Art.draw('cloud', 1, 'idle'); $('egg-bunny').innerHTML = Art.draw('bunny', 1, 'idle');
+    Art.KINDS.forEach(k => { $('egg-' + k).innerHTML = Art.draw(k, 1, 'idle'); });
     choice = null; $('btn-pick').disabled = true; document.querySelectorAll('.egg-card').forEach(c => c.classList.remove('sel')); show('scr-choose');
   }
   document.querySelectorAll('.egg-card').forEach(card => card.onclick = () => {
@@ -416,7 +430,7 @@
     clearInterval(enterHome.iv); enterHome.iv = setInterval(() => { tickNeeds(); renderNeeds(); if (S.stage <= 2 && Math.random() < .2) tempEvent(); if (syncSleep() && $('scr-home').classList.contains('on') && !sulking && !toyOn && !editing && !hiding && !document.querySelector('.overlay.on')) renderHome(); }, 60000);
     setTimeout(() => {
       const lv = level();
-      if (mode === 'new') { speak('home', S.kind === 'bunny' ? '(딸기 알이 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)' : '(별빛 알이 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)'); return; }
+      if (mode === 'new') { speak('home', `(${kx('egg')}${Prob.jo(kx('egg'), '이').slice(kx('egg').length)} 둥지에 쏙 들어갔어요. 바람을 들어주고 나들이에서 문제를 풀면 알이 자라요!)`); return; }
       if (mode === 'out') { speak('home', line('welcome')); return; }
       if (sleeping) { speak('home', lv === 'talk' ? 'Zzz… 음냐… (기운이 없어서 자고 있어요)' : '(새근새근…)', { silent: true }); return; }
       if (lv !== 'talk') { speak('home', line('idle')); return; }
@@ -897,8 +911,8 @@
     const r = svg.getBoundingClientRect(), k = Math.min(r.width / 160, r.height / 156); if (!k) return 'head';
     const vx = (cx - (r.left + (r.width - 160 * k) / 2)) / k - 80, vy = (cy - (r.top + (r.height - 156 * k) / 2)) / k - 92;
     const F = Art.frame(S.kind, S.stage), lx = Math.abs(vx / F.s), ly = (vy - F.ty) / F.s;
-    if (S.kind === 'bunny') {
-      if (ly < -20) return 'ear';
+    if (S.kind !== 'cloud') {
+      if (S.kind === 'puppy' ? lx >= 22 && ly > -24 && ly < 14 : ly < -20) return 'ear';
       if (ly < 18) { if (lx < 6 && ly > 3 && ly < 12) return 'nose'; if (lx >= 8 && ly >= 2) return 'cheek'; return 'head'; }
       if (ly > 35) return 'foot';
       return lx >= 9 && ly < 33 ? 'hand' : 'belly';
@@ -1064,7 +1078,7 @@
   const HS_SVG = {
     box: '<svg viewBox="0 0 100 80" aria-hidden="true"><path d="M8 26 L2 12 L44 12 L50 26Z M92 26 L98 12 L56 12 L50 26Z" fill="#F2CA9C" stroke="#B9875A" stroke-width="3" stroke-linejoin="round"/><path d="M8 26 L92 26 L88 76 L12 76Z" fill="#E7B98A" stroke="#B9875A" stroke-width="3" stroke-linejoin="round"/><path d="M34 46 h32" stroke="#B9875A" stroke-width="3" stroke-linecap="round" opacity=".45"/></svg>',
     quilt: '<svg viewBox="0 0 160 70" aria-hidden="true"><path d="M6 66 C10 30 40 10 80 12 C120 10 150 30 154 66 Z" fill="#FFC7D9" stroke="#E5679A" stroke-width="3"/><path d="M30 42 q20 -8 40 0 q20 8 40 0 q10 -4 20 0" stroke="#fff" stroke-width="3" fill="none" stroke-dasharray="4 5"/><circle cx="48" cy="54" r="3" fill="#fff"/><circle cx="112" cy="54" r="3" fill="#fff"/></svg>',
-    curtain: () => { const f = S.kind === 'bunny' ? '#FFC7D9' : '#D9CCFF', k = S.kind === 'bunny' ? '#E5679A' : '#8F7BE0'; return `<svg viewBox="0 0 60 200" preserveAspectRatio="none" aria-hidden="true"><path d="M8 2 C2 60 14 120 4 196 Q30 188 56 196 C50 130 58 60 52 2Z" fill="${f}" stroke="${k}" stroke-width="2.4" opacity=".97"/><path d="M22 6 C18 70 26 130 20 190 M38 6 C42 70 34 130 40 190" stroke="${k}" stroke-width="1.6" fill="none" opacity=".35"/></svg>`; }
+    curtain: () => { const [f, k] = Scene.kcol(S.kind).bed; return `<svg viewBox="0 0 60 200" preserveAspectRatio="none" aria-hidden="true"><path d="M8 2 C2 60 14 120 4 196 Q30 188 56 196 C50 130 58 60 52 2Z" fill="${f}" stroke="${k}" stroke-width="2.4" opacity=".97"/><path d="M22 6 C18 70 26 130 20 190 M38 6 C42 70 34 130 40 190" stroke="${k}" stroke-width="1.6" fill="none" opacity=".35"/></svg>`; }
   };
   const canHide = () => level() === 'talk' && S.stage >= 5 && S.flv >= 2 && !sleeping && !S.sick && !sulking && !toyOn && !editing && !hiding && (S.roomId || 'main') === 'main' && !(S.hs && S.hs.day === S.day && S.hs.n >= 3) && !document.querySelector('.prepcard');
   function hideAsk() {
@@ -1247,7 +1261,7 @@
   // =====================================================================
   // 방 안 물건 놀이: 공 던지기, 책장 수수께끼, 창문 날씨, 침대·쿠션
   // =====================================================================
-  const L4 = (cat, v = {}) => level() === 'talk' ? fillJo(lineFrom(LINES4[S.kind][cat], 'l4' + cat), '{a}', v.a || '') : (cat === 'riddleNo' ? line('no', v) : cat === 'rain' && S.kind === 'bunny' ? L3('sulk') : L3('care'));
+  const L4 = (cat, v = {}) => level() === 'talk' ? fillJo(lineFrom(LINES4[S.kind][cat], 'l4' + cat), '{a}', v.a || '') : (cat === 'riddleNo' ? line('no', v) : cat === 'rain' && S.kind !== 'cloud' ? L3('sulk') : L3('care'));
   // 방 그림(1000×640, 아래 가운데 맞춤으로 잘림) 좌표 → 방 상자 안 픽셀
   function roomBox(x0, y0, x1, y1) {
     const r = $('room').getBoundingClientRect(), sc = Math.max(r.width / 1000, r.height / 640), ox = (r.width - 1000 * sc) / 2, oy = r.height - 640 * sc;
@@ -1334,7 +1348,7 @@
       // 창밖 구경: 오늘 날씨를 이야기한다 (날씨는 하루에 한 번 정해진다)
       goTo(Math.min(78, cx), () => {
         if (isNight()) { react('happy', 'hop'); speak('home', level() === 'talk' ? pick(['밤하늘에 별이 반짝반짝…', '달님, 안녕! 오늘도 고마웠어.', '깜깜한 밤이야. 별 세어 볼까? 하나, 둘…']) : L3('care')); return; }
-        const sad = S.kind === 'bunny' && S.weather === 'rain';
+        const sad = S.kind !== 'cloud' && S.weather === 'rain';
         react(sad ? 'sad' : 'happy', sad ? 'shake' : 'hop'); speak('home', L4(S.weather));
         if (S.kind === 'cloud' && S.weather === 'rain') addNeed('mood', 4);
         renderNeeds(); save();
@@ -1424,7 +1438,7 @@
     if (o.mood) setTimeout(() => drawPet('happy'), 1200);
     // 소리와 떠오르는 것
     if (o.snd === 'pop3') { Snd.pop(); setTimeout(() => Snd.pop(), 420); setTimeout(() => Snd.pop(), 840); }
-    else if (id === 'vase' && S.kind === 'bunny') setTimeout(() => Snd.sneeze(), 700);
+    else if (id === 'vase' && S.kind !== 'cloud') setTimeout(() => Snd.sneeze(), 700);
     else if (Snd[o.snd]) Snd[o.snd]();
     objFx(o.fx, b);
     if (o.cup) objCup(b, parseFloat(wk.style.left) < b.cx);
@@ -2138,7 +2152,7 @@
   function throwParty() {
     S.bdayDone = true; if (!S.items.includes('phat')) S.items.push('phat'); initWear(); S.wear.head = 'phat'; S.candy += 20; addFriend(20); S.log.push({ e: 'party' }); save();
     renderHome(); $('party-art').innerHTML = Art.draw(S.kind, S.stage, 'happy', S.stage >= 3 ? 'phat' : null);
-    $('party-line').innerHTML = level() === 'talk' ? (S.kind === 'bunny' ? '내 생일을 기억해 줬구나! 오늘이 세상에서 제일 행복한 날이야! 깡총!' : '내 생일을 챙겨 줘서 고마워… 구름 위로 날아갈 것 같아!') : line('ok');
+    $('party-line').innerHTML = level() === 'talk' ? kx('party') : line('ok');
     overlay('ov-party', true); Snd.level(); setTimeout(() => Snd.combo(), 900);
     const f = $('party-fx'); f.innerHTML = ''; const cols = ['#F7A0C1', '#FFD36E', '#8FE0C9', '#B9A7F5', '#9EC2F2'];
     for (let i = 0; i < (S.lowfx ? 10 : 40); i++) { const c = document.createElement('i'); c.className = 'confetti'; c.style.left = Math.random() * 100 + '%'; c.style.background = cols[i % 5]; c.style.animationDelay = Math.random() * 1.2 + 's'; c.style.animationDuration = (2 + Math.random() * 1.5) + 's'; f.appendChild(c); }
@@ -2614,7 +2628,7 @@
   // 옷장: 거울 앞에서 부위별로 입히기 · 코디 저장 · 몸 색 · 옷 만들기 · 주문
   // =====================================================================
   const SLOTS = [['head', '머리'], ['face', '얼굴'], ['neck', '목'], ['body', '몸'], ['hand', '손'], ['back', '등']];
-  const TINT_NAME = { base: '처음 색', sunset: '노을 분홍', sky: '하늘', mint: '민트', lav: '라벤더', rainbow: '무지개', cream: '크림', choco: '초코', berry: '딸기', gray: '구름 회색' };
+  const TINT_NAME = { snow: '눈처럼 하양', base: '처음 색', sunset: '노을 분홍', sky: '하늘', mint: '민트', lav: '라벤더', rainbow: '무지개', cream: '크림', choco: '초코', berry: '딸기', gray: '구름 회색' };
   const SEWABLE = ['apron', 'cape', 'pajama', 'dress', 'bag', 'tie'];
   let wdTab = 'wear', wdSlot = 'head', paintQ = null;
   function initWear() {
@@ -3148,14 +3162,14 @@
         S.foods[foodId]--; S.brushDue = Date.now(); S.log.push({ e: 'feed', id: foodId, ts }); fulfill('food', foodId, 'act'); if (foodId === 'cake') partyProgress('fed');
       } else if (id === 'balloon') {
         partyProgress('balloons'); addFriend(3);
-        ln = level() === 'talk' ? (S.kind === 'bunny' ? '와아, 풍선이다! 진짜 파티 같아! 깡총!' : '풍선이 둥실둥실! 나랑 닮았다!') : L3('care');
+        ln = level() === 'talk' ? kx('balloon') : L3('care');
       } else {
         if (id === 'bath') addNeed('clean', 100); if (id === 'nap') { addNeed('energy', 100); if (S.sick) { S.sick.lv--; setTimeout(checkWell, 2800); } }
         if (id === 'play') { addNeed('mood', 25); addNeed('energy', -10); } if (id === 'pet') addNeed('mood', 15);
         if (dayCap('care-' + id, 2)) addFriend(3); if (id === 'pet') S.petT = Date.now(); if (id === 'nap') S.napT = Date.now(); S.log.push({ e: 'care', id }); fulfill('care', id, 'act');
         ln = level() === 'talk' ? lineFrom(LINES[S.kind].talk.act[{ bath: 'bubble', play: 'bubble', nap: 'nap', pet: 'pet' }[id]], 'act' + id) : L3('care');
         if (id === 'play' && actGot) { S.candy += actGot; ln += `<br><small style="font-size:.8em;color:#7A6283">규칙에 맞는 방울 ${actGot}개! 별사탕 +${actGot}</small>`; }
-        if (id === 'bath' && level() === 'talk') ln = S.kind === 'bunny' ? '뽀송뽀송! 털이 보들보들해졌어!' : '뽀송뽀송! 하얀 구름으로 돌아왔어!';
+        if (id === 'bath' && level() === 'talk') ln = kx('bath');
       }
       actPet(mood); Snd.heart(); if (mood === 'happy') sparks(field, 14);
       actSay(ln); if (level() !== 'egg') Snd.babble(2, S.kind);

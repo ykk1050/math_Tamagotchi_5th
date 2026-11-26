@@ -9,8 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&family=Quicksand:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.063">
-<link rel="stylesheet" href="css/home.css?v=1.063">
+<link rel="stylesheet" href="css/style.css?v=1.064">
+<link rel="stylesheet" href="css/home.css?v=1.064">
 </head>
 <body>
 <div id="sky" aria-hidden="true">
@@ -34,7 +34,7 @@
 <!-- 알 고르기 -->
 <section id="scr-choose" class="screen">
   <div class="choose-wrap">
-    <h2 class="h2">구름 둥지에 알이 두 개 있어요</h2>
+    <h2 class="h2">구름 둥지에 알이 네 개 있어요</h2>
     <p class="sub">알을 눌러 보고, 함께 자랄 친구를 골라요</p>
     <div class="egg-cards">
       <button class="egg-card" data-kind="cloud" id="card-cloud">
@@ -46,6 +46,16 @@
         <div class="egg-art" id="egg-bunny"></div>
         <div class="egg-name">딸기 알</div>
         <div class="egg-desc">아기 토끼가 콩콩 움직여요<br>활발하고 애교 많은 친구</div>
+      </button>
+      <button class="egg-card" data-kind="puppy" id="card-puppy">
+        <div class="egg-art" id="egg-puppy"></div>
+        <div class="egg-name">점박이 알</div>
+        <div class="egg-desc">아기 강아지가 꼬리를 흔들어요<br>씩씩하고 다정한 친구</div>
+      </button>
+      <button class="egg-card" data-kind="kitty" id="card-kitty">
+        <div class="egg-art" id="egg-kitty"></div>
+        <div class="egg-name">줄무늬 알</div>
+        <div class="egg-desc">아기 고양이가 골골 소리를 내요<br>새침하지만 속정 깊은 친구</div>
       </button>
     </div>
     <button class="btn big primary" id="btn-pick" disabled>이 알로 할래요</button>
@@ -350,15 +360,15 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/version.js?v=1.063"></script>
-<script src="js/sound.js?v=1.063"></script>
-<script src="js/art.js?v=1.063"></script>
-<script src="js/data.js?v=1.063"></script>
-<script src="js/scene.js?v=1.063"></script>
-<script src="js/cookfx.js?v=1.063"></script>
-<script src="js/lines.js?v=1.063"></script>
-<script src="js/problems.js?v=1.063"></script>
-<script src="js/app.js?v=1.063"></script>
+<script src="js/version.js?v=1.064"></script>
+<script src="js/sound.js?v=1.064"></script>
+<script src="js/art.js?v=1.064"></script>
+<script src="js/data.js?v=1.064"></script>
+<script src="js/scene.js?v=1.064"></script>
+<script src="js/cookfx.js?v=1.064"></script>
+<script src="js/lines.js?v=1.064"></script>
+<script src="js/problems.js?v=1.064"></script>
+<script src="js/app.js?v=1.064"></script>
 <script>
 // 이 화면이 예전 것이면(배포 후 패드에 남은 저장본) 새 주소로 한 번 다시 연다
 (function () { try {

@@ -9,6 +9,10 @@ const Art = (() => {
     d.innerHTML = `<defs>
       <radialGradient id="cn-cloud" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".65" stop-color="#FBF9FF"/><stop offset="1" stop-color="#E7E0FF"/></radialGradient>
       <radialGradient id="cn-bun" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".7" stop-color="#FFF9FB"/><stop offset="1" stop-color="#FFE3EE"/></radialGradient>
+      <radialGradient id="cn-pup" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".65" stop-color="#FFF6E8"/><stop offset="1" stop-color="#F3DDBF"/></radialGradient>
+      <radialGradient id="cn-kit" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#FFFCF6"/><stop offset=".65" stop-color="#FFE9D0"/><stop offset="1" stop-color="#FFCB98"/></radialGradient>
+      <linearGradient id="cn-egg-p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFEFD8"/></linearGradient>
+      <linearGradient id="cn-egg-k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFE6CC"/></linearGradient>
       <linearGradient id="cn-egg-c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#ECE6FF"/></linearGradient>
       <linearGradient id="cn-egg-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFE6EF"/></linearGradient>
       <radialGradient id="cn-blush"><stop offset="0" stop-color="#F7A0C1" stop-opacity=".85"/><stop offset="1" stop-color="#F7A0C1" stop-opacity="0"/></radialGradient>
@@ -161,7 +165,7 @@ const Art = (() => {
     bunny: [[-15, -13, 20], [16, -9, -20], [-9, 31, 10], [8, 35, -15], [-14, 8, 30], [6, -18, -30], [12, 24, 15], [-4, 37, 0]] };
   function dirt(kind, lv) {
     if (!lv) return '';
-    const n = Math.max(1, Math.round(lv * 8)), P = DIRT_AT[kind].slice(0, n);
+    const n = Math.max(1, Math.round(lv * 8)), P = (DIRT_AT[kind] || DIRT_AT.bunny).slice(0, n);
     let s = P.map(([x, y, r], i) => `<g transform="translate(${x} ${y}) rotate(${r})" opacity="${(.35 + .35 * lv).toFixed(2)}"><ellipse rx="${4 + (i % 3)}" ry="${2.6 + (i % 2)}" fill="#8B6845"/><circle cx="${3 + (i % 3)}" cy="2.6" r="1.1" fill="#8B6845"/><circle cx="-4" cy="-2" r=".8" fill="#8B6845"/></g>`).join('');
     if (lv > .55) s += `<g class="dustfx" fill="none" stroke="#A8957F" stroke-width="1.6" stroke-linecap="round">${[[-40, -6], [40, -12], [-34, -26]].map(([x, y], i) => `<path class="df d${i}" d="M${x} ${y} q3 -4 0 -8 q-3 -4 0 -8"/>`).join('')}</g>`;
     return `<g class="dirt">${s}</g>`;
@@ -170,7 +174,7 @@ const Art = (() => {
   const TRAIT_AT = { cloud: [[-24, 14, -12], [26, 16, 14], [-6, 25, 0], [10, 23, 8], [-28, -2, -18], [29, 2, 18]], bunny: [[-8, 32, -10], [8, 27, 12], [1, 37, 0], [-19, 9, -15], [19, 9, 15], [-6, 22, 8]] };
   function traitDeco(kind, trait) {
     if (!trait) return '';
-    const P = TRAIT_AT[kind], C = ['#FFC24E', '#F28DB2', '#8FD3C0', '#9CC8FF', '#C9B8FF', '#FFB27A'];
+    const P = TRAIT_AT[kind] || TRAIT_AT.bunny, C = ['#FFC24E', '#F28DB2', '#8FD3C0', '#9CC8FF', '#C9B8FF', '#FFB27A'];
     const one = (x, y, r, i) => {
       if (trait === 'num') return `<g transform="translate(${x} ${y}) rotate(${r}) scale(.48)"><polygon points="0,-10 2.9,-3.4 10,-3.1 4.6,1.6 6.4,8.6 0,4.8 -6.4,8.6 -4.6,1.6 -10,-3.1 -2.9,-3.4" fill="${C[i]}" opacity=".9"/></g>`;
       if (trait === 'shape') return `<g transform="translate(${x} ${y}) rotate(${r}) scale(1.6)" fill="${C[i]}" opacity=".85">${i % 3 === 0 ? '<path d="M0 -3.4 L3.2 2.4 H-3.2Z"/>' : i % 3 === 1 ? '<rect x="-2.6" y="-2.6" width="5.2" height="5.2" rx=".8"/>' : '<circle r="2.8"/>'}</g>`;
@@ -208,11 +212,11 @@ const Art = (() => {
       <ellipse cx="${sx * 9}" cy="${cy + 1}" rx="3.2" ry="${ry - 6}" fill="${T.i}"/><path d="M${sx * 6.5} ${cy - ry + 5} q${sx * 1.5} -2 ${sx * 3} -1" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></g></g>`;
     return ear(-1) + ear(1);
   }
-  function bunnyBody(stage, mood) {
+  function bunnyBody(stage, mood, tail) {
     const foot = (x) => `<ellipse cx="${x}" cy="39" rx="7.5" ry="4.8" fill="${T.f}" stroke="${T.s}" stroke-width="${BW}"/><ellipse cx="${x}" cy="39.6" rx="2.8" ry="1.9" fill="${T.i}"/>`;
     const armR = mood === 'happy' ? `<ellipse cx="14" cy="19" rx="4" ry="5.5" transform="rotate(-40 14 19)" fill="${T.f}" stroke="${T.s}" stroke-width="2.2"/>` : `<ellipse cx="13" cy="26" rx="4" ry="5.4" fill="${T.f}" stroke="${T.s}" stroke-width="2.2"/>`;
     const armL = mood === 'happy' ? `<ellipse cx="-14" cy="19" rx="4" ry="5.5" transform="rotate(40 -14 19)" fill="${T.f}" stroke="${T.s}" stroke-width="2.2"/>` : `<ellipse cx="-13" cy="26" rx="4" ry="5.4" fill="${T.f}" stroke="${T.s}" stroke-width="2.2"/>`;
-    return `<g class="tail"><circle cx="16" cy="33" r="6" fill="${T.f}" stroke="${T.s}" stroke-width="2.2"/><circle cx="17.5" cy="31" r="2" fill="#fff" opacity=".8"/></g>
+    return `${tail || `<g class="tail"><circle cx="16" cy="33" r="6" fill="${T.f}" stroke="${T.s}" stroke-width="2.2"/><circle cx="17.5" cy="31" r="2" fill="#fff" opacity=".8"/></g>`}
       <ellipse cx="0" cy="28" rx="15" ry="12.5" fill="${T.f}" stroke="${T.s}" stroke-width="${BW}"/>
       <ellipse cx="0" cy="30" rx="8" ry="6.5" fill="#FFF3F7"/>${stage >= 8 ? `<path d="M0 33.5 C-4 30 -4.5 26.5 -2 26 C-.8 25.8 0 27 0 27.6 C0 27 .8 25.8 2 26 C4.5 26.5 4 30 0 33.5Z" fill="${T.i}" opacity=".9"/>` : ''}
       <ellipse cx="0" cy="37" rx="12" ry="2.4" fill="${T.s}" opacity=".14"/>
@@ -233,24 +237,93 @@ const Art = (() => {
 
 
 
-  function bunny(stage, mood = 'idle', look = null) {
-    if (stage <= 2) return wrap(eggB(stage, mood));
-    const L = normLook(look); setTint('bunny', L.tint);
+  // ---------- 강아지 · 고양이: 토끼와 같은 뼈대(머리·몸·팔·발)에 귀·꼬리·코·무늬만 다르다 ----------
+  // 그래서 토끼에게 맞춘 옷·모자·우산·날개 자리를 그대로 쓸 수 있다
+  const tailOf = (d, w = 7.2) => `<g class="tail"><path d="${d}" fill="none" stroke="${T.s}" stroke-width="${w}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${T.f}" stroke-width="${w - 2.6}" stroke-linecap="round"/>`;
+  const PUP_TAIL = 'M13 31 C21 31 26 24 24 15';
+  const KIT_TAIL = 'M13 33 C27 36 31 22 26 12 C23 6 26 1 30 2';
+  const PARTS = {
+    puppy: {
+      ink: '#4A3030', tip: [24, 14], earsFront: true,
+      tail: () => tailOf(PUP_TAIL) + '</g>',
+      ears: (stage, mood) => {
+        const len = stage >= 6 ? 1.12 : stage >= 4 ? 1.05 : .9, rot = mood === 'sad' || mood === 'cry' ? 10 : mood === 'happy' ? -14 : mood === 'wide' ? -20 : 0;
+        const ear = (sx) => `<g transform="scale(${sx} 1)"><g transform="rotate(${rot} -13 -17)"><g class="ear hang ${sx < 0 ? 'er' : 'el'}"><path transform="translate(-13 -17) scale(${len}) translate(13 17)" d="M-12 -18 C-24 -24 -33 -10 -30 5 C-28 14 -19 13 -18 4 C-17 -4 -14 -10 -10 -15 Z" fill="${T.e}" stroke="${T.s}" stroke-width="${BW}" stroke-linejoin="round"/><path transform="translate(-13 -17) scale(${len}) translate(13 17)" d="M-24 -10 q-3 6 -2 12" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".45"/></g></g></g>`;
+        return ear(-1) + ear(1);
+      },
+      head: (mood, st) => `<circle r="23" fill="${T.f}" stroke="${T.s}" stroke-width="${BW}"/>
+        <path d="M-4 -22.4 q1.2 -5.4 3.6 -1.2 q2 -4.6 4.2 .4" fill="${T.f}" stroke="${T.s}" stroke-width="1.6" stroke-linejoin="round"/>
+        ${st >= 6 ? `<path d="M-22.6 4 q-3.6 2 -1.4 4.6 q-3 2.6 .6 4.4 M22.6 4 q3.6 2 1.4 4.6 q3 2.6 -.6 4.4" fill="${T.f}" stroke="${T.s}" stroke-width="1.5" stroke-linejoin="round"/>` : ''}
+        <path d="M5 -11 C9 -16 18 -14 18.5 -6 C19 1 13 4 8.5 1 C5 -1 3 -7 5 -11Z" fill="${T.e}" opacity=".8"/>
+        <ellipse cx="0" cy="14" rx="15" ry="6" fill="${T.s}" opacity=".07"/><path d="M-15 -11 q5 -7 12 -8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        ${face(mood, '#4A3030').replace(/M-3\.2 9\.5 Q0 12\.8 3\.2 9\.5/, 'M-4 10.6 Q-2 13.2 0 10.6 Q2 13.2 4 10.6')}
+        <ellipse cx="0" cy="6.9" rx="3.3" ry="2.4" fill="#4A3030"/><ellipse cx="-1" cy="6.1" rx="1.1" ry=".7" fill="#fff" opacity=".8"/>`,
+      clip: `<g transform="translate(14 -18) rotate(-25)"><g fill="#fff" stroke="#C9A27E" stroke-width="1.2"><circle cx="-6.4" cy="-2" r="2.6"/><circle cx="-6.4" cy="2" r="2.6"/><circle cx="6.4" cy="-2" r="2.6"/><circle cx="6.4" cy="2" r="2.6"/></g><rect x="-6.6" y="-2.2" width="13.2" height="4.4" fill="#fff"/><path d="M-5.6 -2.2 h11.2 M-5.6 2.2 h11.2" stroke="#C9A27E" stroke-width="1.2"/></g>`,
+      mark: `<g fill="#F28DB2"><ellipse cx="0" cy="2" rx="3.4" ry="2.8"/><circle cx="-3.6" cy="-2.6" r="1.4"/><circle cx="0" cy="-4" r="1.4"/><circle cx="3.6" cy="-2.6" r="1.4"/></g>`
+    },
+    kitty: {
+      ink: '#4A3552', tip: [30, 2], earsFront: false,
+      tail: () => tailOf(KIT_TAIL, 6.6) + [[22, 33.5, 20], [28.6, 22, 80], [26, 11, 30]].map(([x, y, r]) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M0 -1.6 v3.2" stroke="${T.e}" stroke-width="2.2" stroke-linecap="round"/>`).join('') + '</g>',
+      ears: (stage, mood) => {
+        const h = stage >= 6 ? 3 : stage >= 4 ? 1.5 : 0, rot = mood === 'sad' || mood === 'cry' ? -30 : mood === 'pout' ? -18 : mood === 'wide' ? 6 : 0;
+        const ear = (sx) => `<g transform="scale(${sx} 1)"><g transform="rotate(${rot} -12 -17)"><g class="ear ${sx < 0 ? 'er' : 'el'}"><path d="M-21.5 -9 L${-17.5 - h * .3} ${-31 - h} L-4 -21 Z" fill="${T.f}" stroke="${T.s}" stroke-width="${BW}" stroke-linejoin="round"/><path d="M-17.8 -13 L${-16.4 - h * .3} ${-25.5 - h} L-8.5 -19.5 Z" fill="${T.i}"/></g></g></g>`;
+        return ear(-1) + ear(1);
+      },
+      head: (mood, st) => `<circle r="23" fill="${T.f}" stroke="${T.s}" stroke-width="${BW}"/>
+        ${st >= 6 ? `<path d="M-22.6 4 q-3.6 2 -1.4 4.6 q-3 2.6 .6 4.4 M22.6 4 q3.6 2 1.4 4.6 q3 2.6 -.6 4.4" fill="${T.f}" stroke="${T.s}" stroke-width="1.5" stroke-linejoin="round"/>` : ''}
+        <path d="M-5.5 -21.5 v6.5 M0 -22.8 v8 M5.5 -21.5 v6.5 M-21 -4 h5 M21 -4 h-5" stroke="${T.e}" stroke-width="2.4" stroke-linecap="round"/>
+        <ellipse cx="0" cy="14" rx="15" ry="6" fill="${T.s}" opacity=".07"/><path d="M-15 -11 q5 -7 12 -8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        ${face(mood, '#4A3552').replace(/M-3\.2 9\.5 Q0 12\.8 3\.2 9\.5/, 'M-4 10 Q-2 12.6 0 10 Q2 12.6 4 10')}
+        <path d="M-13.5 7.4 l-9.5 -2.2 M-13.5 10 l-9.5 1.2 M13.5 7.4 l9.5 -2.2 M13.5 10 l9.5 1.2" stroke="#4A3552" stroke-width="1.1" stroke-linecap="round" opacity=".55"/>
+        <path d="M-2 6.4 L2 6.4 L0 8.6 Z" fill="#F28DB2" stroke="#F28DB2" stroke-width="1" stroke-linejoin="round"/>`,
+      clip: `<g transform="translate(14 -18) rotate(-20)"><path d="M-7 0 C-4 -5 4 -5 6 0 C4 5 -4 5 -7 0Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.2"/><path d="M6 0 L11 -4 L11 4 Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.2" stroke-linejoin="round"/><circle cx="-3.6" cy="-.6" r="1" fill="#2F4A6E"/><path d="M-.5 -2.4 q1.4 2.4 0 4.8" stroke="#5D8FD0" stroke-width=".9" fill="none"/></g>`,
+      mark: `<path d="M0 3.6 C-5 0 -5 -4 -2.4 -4.4 C-1 -4.6 0 -3.4 0 -2.6 C0 -3.4 1 -4.6 2.4 -4.4 C5 -4 5 0 0 3.6Z" fill="#F28DB2"/>`
+    }
+  };
+  // 알: 강아지는 점박이 알(뼈다귀), 고양이는 줄무늬 알(물고기). 금이 가면 아기 얼굴과 귀가 빼꼼
+  const EGG_P = {
+    puppy: { g: 'cn-egg-p', s: '#DDB07C', ink: '#4A3030', crack: '#C99A64', f: '#FFF8EE', fs: '#D6A570', e: '#E2B07E',
+      low: [[-20, 14, 7, 5], [16, 8, 5, 4], [-2, 30, 8, 5.5], [22, 32, 4.5, 3.5], [-24, 38, 4, 3]].map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#EBC79C" opacity=".85"/>`).join(''),
+      top: `<g transform="translate(0 -40) rotate(-8)"><g fill="#fff" stroke="#C9A27E" stroke-width="1.6"><circle cx="-11" cy="-3" r="4"/><circle cx="-11" cy="3" r="4"/><circle cx="11" cy="-3" r="4"/><circle cx="11" cy="3" r="4"/></g><rect x="-11" y="-3.4" width="22" height="6.8" fill="#fff"/><path d="M-9 -3.4 h18 M-9 3.4 h18" stroke="#C9A27E" stroke-width="1.6"/></g><ellipse cx="-14" cy="-16" rx="5" ry="3.6" fill="#EBC79C" opacity=".85"/><path d="M-24 -22 q6 -14 18 -18" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+      ears: (s) => `<g fill="${s.e}" stroke="${s.fs}" stroke-width="2.4" stroke-linejoin="round"><path d="M-22 -24 C-36 -26 -44 -10 -38 2 C-34 8 -27 4 -27 -4 C-27 -12 -24 -18 -18 -22Z"/><path d="M22 -24 C36 -26 44 -10 38 2 C34 8 27 4 27 -4 C27 -12 24 -18 18 -22Z"/></g>`,
+      nose: '<ellipse cx="0" cy="-5.8" rx="2.8" ry="2" fill="#4A3030"/>' },
+    kitty: { g: 'cn-egg-k', s: '#F0B27A', ink: '#4A3552', crack: '#E39A5C', f: '#FFF6EC', fs: '#E39A5C', e: '#F0A060',
+      low: [[-26, 8, -20], [-8, 26, 0], [12, 14, 15], [26, 34, 25], [-18, 40, -10]].map(([x, y, r]) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M-7 0 q7 -5 14 0" stroke="#F7C99A" stroke-width="3.2" fill="none" stroke-linecap="round"/>`).join(''),
+      top: `<g transform="translate(2 -40) rotate(-10)"><path d="M-10 0 C-6 -6 5 -6 8 0 C5 6 -6 6 -10 0Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.6"/><path d="M8 0 L14 -5 L14 5 Z" fill="#9EC2F2" stroke="#5D8FD0" stroke-width="1.6" stroke-linejoin="round"/><circle cx="-5" cy="-1" r="1.3" fill="#2F4A6E"/></g><path d="M-18 -18 q7 -5 14 0" stroke="#F7C99A" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M-24 -22 q6 -14 18 -18" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+      ears: (s) => `<g fill="${s.f}" stroke="${s.fs}" stroke-width="2.4" stroke-linejoin="round"><path d="M-27 -20 L-30 -42 L-12 -31Z"/><path d="M27 -20 L30 -42 L12 -31Z"/></g><g fill="#FFC2C9"><path d="M-25 -24 L-27 -37 L-16 -30Z"/><path d="M25 -24 L27 -37 L16 -30Z"/></g>`,
+      nose: '<path d="M-2 -6.6 L2 -6.6 L0 -4.6 Z" fill="#F28DB2"/>' }
+  };
+  function eggP(kind, stage, mood) {
+    const E = EGG_P[kind], crack = stage >= 2, sh = `fill="url(#${E.g})" stroke="${E.s}" stroke-width="3" stroke-linejoin="round"`;
+    if (!crack) return `<g class="anim-egg"><ellipse cx="0" cy="8" rx="40" ry="50" ${sh}/>${E.low}${E.top}</g>`;
+    const feet = [-14, 14].map(x => `<ellipse cx="${x}" cy="58" rx="9" ry="5.6" fill="${E.f}" stroke="${E.fs}" stroke-width="${BW}"/><ellipse cx="${x}" cy="58.8" rx="3.2" ry="2.2" fill="#F9C9B4"/>`).join('');
+    const baby = `${kind === 'kitty' ? E.ears(E) : ''}<circle cx="0" cy="-6" r="28" fill="${E.f}" stroke="${E.fs}" stroke-width="2.4"/>${kind === 'puppy' ? E.ears(E) : ''}`;
+    return `<g class="anim-egg">${feet}${baby}${eggEyes(E.ink, mood, -13)}${E.nose}<ellipse cx="-17" cy="-8" rx="4.6" ry="2.6" fill="url(#cn-blush)"/><ellipse cx="17" cy="-8" rx="4.6" ry="2.6" fill="url(#cn-blush)"/>
+      <path d="${SHELL_LOW}" transform="translate(0 -2)" ${sh}/>${E.low}
+      <g transform="translate(0 -2) ${LID}"><path d="${SHELL_TOP}" ${sh}/>${E.top}</g>
+      <path d="M-34 -22 l-4 -3 M36 -28 l5 -2" stroke="${E.crack}" stroke-width="2" stroke-linecap="round"/></g>`;
+  }
+
+  function bunny(stage, mood = 'idle', look = null, kind = 'bunny') {
+    const K = PARTS[kind];
+    if (stage <= 2) return wrap(K ? eggP(kind, stage, mood) : eggB(stage, mood));
+    const L = normLook(look); setTint(kind, L.tint);
     const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2;
     const ty = 60 - 44 * s;
     // 머리 장식을 해도 자라며 얻은 표시(리본·네잎클로버·달)는 보이게: 겹치는 것만 자리를 옮긴다
     const hd = L.wear.head, hTop = hd && hd !== 'flower' && hd !== 'bow';
-    let extra = stage >= 5 && hd !== 'bow' ? ribbon : '', back = '';
+    let extra = stage >= 5 && hd !== 'bow' ? (K ? K.clip : ribbon) : '', back = '';
     if (stage >= 10) back += `<circle cy="4" r="48" fill="url(#cn-glow)"/>`;
     if (stage >= 8 && L.wear.back !== 'wings') back += `<g opacity=".95"><path d="M-12 18 C-30 4 -40 14 -34 24 C-30 30 -20 28 -12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/><path d="M12 18 C30 4 40 14 34 24 C30 30 20 28 12 24Z" fill="url(#cn-wing)" stroke="#9EC2F2" stroke-width="1.8"/></g>`;
-    let tail = stage >= 9 ? `<circle cx="24" cy="31" r="11" fill="url(#cn-glow)"/>` + star(25, 33, .6, 10) : '';
-    if (stage >= 6) extra += `<g transform="translate(${hd === 'flower' || hTop ? '-21 -2' : '-15 -15'}) rotate(-18)${hd === 'flower' || hTop ? ' scale(.85)' : ''}">${[0, 90, 180, 270].map(r => `<path transform="rotate(${r})" d="M0 0 C-4 -3 -4 -8 0 -6 C4 -8 4 -3 0 0Z" fill="#8ED79A" stroke="#4FAA6C" stroke-width=".9"/>`).join('')}<circle r="1.3" fill="#4FAA6C"/></g>`;
+    const tp = K ? K.tip : [24, 31]; let tail = stage >= 9 ? `<circle cx="${tp[0]}" cy="${tp[1]}" r="11" fill="url(#cn-glow)"/>` + star(tp[0] + 1, tp[1] + 2, .6, 10) : '';
+    if (stage >= 6) extra += `<g transform="translate(${hd === 'flower' || hTop ? '-21 -2' : '-15 -15'}) rotate(-18)${hd === 'flower' || hTop ? ' scale(.85)' : ''}">${K ? K.mark : [0, 90, 180, 270].map(r => `<path transform="rotate(${r})" d="M0 0 C-4 -3 -4 -8 0 -6 C4 -8 4 -3 0 0Z" fill="#8ED79A" stroke="#4FAA6C" stroke-width=".9"/>`).join('') + '<circle r="1.3" fill="#4FAA6C"/>'}</g>`;
     if (stage >= 7) extra += hTop ? moonMark(21, -2, .5) : moonMark(0, -16, .55);
     if (stage >= 10 && !L.wear.head) extra += crown(0, -26, .8);
     if (stage >= 7) extra += sparkle(-30, -8, .55) + sparkle(30, 20, .5);
-    const ws = (ly) => wearSVG('bunny', L.wear, ly, L.col);
-    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood)}${ws('body')}${bunnyEars(stage, mood)}${bunnyHead(mood)}${stage >= 6 ? traitDeco('bunny', L.trait) : ''}${dirt('bunny', L.dirt)}${ws('face')}${ws('neck')}${hTop && hd !== 'earmuff' ? ws('head') + extra : extra + ws('head')}${ws('hand')}</g></g>`;
-    setTint('bunny', 'base'); return wrap(out);
+    const ws = (ly) => wearSVG(kind, L.wear, ly, L.col);
+    const ears = K ? K.ears(stage, mood) : bunnyEars(stage, mood), head = K ? K.head(mood, stage) : bunnyHead(mood);
+    const out = `<g class="anim-breathe"><g transform="translate(0 ${ty}) scale(${s})">${back}${tail}${ws('back')}${bunnyBody(stage, mood, K && K.tail())}${ws('body')}${K && K.earsFront ? head + ears : ears + head}${stage >= 6 ? traitDeco(kind, L.trait) : ''}${dirt(kind, L.dirt)}${ws('face')}${ws('neck')}${hTop && hd !== 'earmuff' ? ws('head') + extra : extra + ws('head')}${ws('hand')}</g></g>`;
+    setTint(kind, 'base'); return wrap(out);
   }
 
   let CUR_MOOD = 'idle', CUR_STAGE = 3;
@@ -272,7 +345,7 @@ const Art = (() => {
   };
   function accSVG(kind, acc) {
     if (!acc || !ACC[acc]) return '';
-    const [x, y, sc] = ACC_POS[kind][acc];
+    const [x, y, sc] = (ACC_POS[kind] || ACC_POS.bunny)[acc];
     return `<g transform="translate(${x} ${y}) scale(${sc})">${ACC[acc]()}</g>`;
   }
   // ---------- 몸 색(물감) ----------
@@ -291,21 +364,33 @@ const Art = (() => {
       choco: { g: ['#F7E9DC', '#E2C2A4', '#C79C78'], s: '#A8724C', i: '#F0C9B0' },
       berry: { g: ['#FFF7FA', '#FFD9E6', '#FFB3CC'], s: '#E5679A', i: '#FF9CB8' },
       gray: { g: ['#FFFFFF', '#ECECF2', '#CFCFDA'], s: '#A6A6B8', i: '#F3C9D8' }
+    },
+    puppy: {
+      base: { f: 'url(#cn-pup)', s: '#D6A570', i: '#F9C9B4', e: '#E2B07E' },
+      choco: { g: ['#FBF1E6', '#E6C7A8', '#C99D76'], s: '#9C6A44', i: '#F0C9B0', e: '#8C5A3C' },
+      snow: { g: ['#FFFFFF', '#F8F8FC', '#E4E4EE'], s: '#B4B4C8', i: '#F7C9D6', e: '#D9D4E6' },
+      gray: { g: ['#FFFFFF', '#EBEBF1', '#CDCDDA'], s: '#9898AE', i: '#F3C9D8', e: '#A6A6BC' }
+    },
+    kitty: {
+      base: { f: 'url(#cn-kit)', s: '#E39A5C', i: '#FFC2C9', e: '#F0A060' },
+      gray: { g: ['#FFFFFF', '#E9E9F0', '#C9C9D6'], s: '#9A9AB0', i: '#F7C3D0', e: '#A3A3B8' },
+      snow: { g: ['#FFFFFF', '#FBF8F4', '#ECE4DA'], s: '#C2B4A4', i: '#FFC2C9', e: '#E0D2C2' },
+      choco: { g: ['#FBF1E6', '#E6C7A8', '#C99D76'], s: '#9C6A44', i: '#F7C3C3', e: '#8C5A3C' }
     }
   };
   function tintDefs() {
     let out = '';
-    for (const kind of ['cloud', 'bunny']) for (const [k, t] of Object.entries(TINT_DEF[kind])) {
+    for (const kind of Object.keys(TINT_DEF)) for (const [k, t] of Object.entries(TINT_DEF[kind])) {
       if (t.g) out += `<radialGradient id="cn-t-${kind}-${k}" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="${t.g[0]}"/><stop offset=".65" stop-color="${t.g[1]}"/><stop offset="1" stop-color="${t.g[2]}"/></radialGradient>`;
       if (t.lin) out += `<linearGradient id="cn-t-${kind}-${k}" x1="0" y1="0" x2="1" y2="1">${t.lin.map((c, i) => `<stop offset="${i / (t.lin.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`;
     }
     return out;
   }
   // 지금 그리는 친구의 색
-  let T = { f: 'url(#cn-cloud)', o: '#CFC4F6', s: '#EFA2C0', i: '#FAC9DB' };
+  let T = { f: 'url(#cn-cloud)', o: '#CFC4F6', s: '#EFA2C0', i: '#FAC9DB', e: '#EFA2C0' };
   function setTint(kind, tint) {
     const d = TINT_DEF[kind][tint] || TINT_DEF[kind].base;
-    T = kind === 'cloud' ? { f: d.f || `url(#cn-t-cloud-${tint})`, o: d.o } : { f: d.f || `url(#cn-t-bunny-${tint})`, s: d.s, i: d.i };
+    T = kind === 'cloud' ? { f: d.f || `url(#cn-t-cloud-${tint})`, o: d.o } : { f: d.f || `url(#cn-t-${kind}-${tint})`, s: d.s, i: d.i, e: d.e || d.s };
   }
 
   // ---------- 옷: 부위(slot)와 그리는 층(layer) ----------
@@ -320,7 +405,7 @@ const Art = (() => {
     berryhat: { slot: 'head', P: { cloud: [0, -24, 1.05], bunny: [0, -15, 1] }, g: () => ACC.berryhat() },
     phat: { cm: { '#9EC2F2': 'f', '#5D8FD0': 's' }, slot: 'head', P: { cloud: [-6, -28, 1.05], bunny: [0, -20, .95] }, g: () => ACC.phat() },
     bow: { cm: { 'url(#cn-rib)': 'f', '#C9578A': 's', '#D9628E': 's' }, slot: 'head', P: { cloud: [-16, -25, .9], bunny: [13, -18, 1] }, g: () => ACC.bow() },
-    earmuff: { cm: { '#F28DB2': 's', '#F7A0C1': 's', '#FFD3E4': 'l' }, slot: 'head', P: { cloud: [0, -10, 1.15], bunny: [0, 0, 1] }, g: (kind) => kind === 'bunny' ? `<path d="M-9 -19 Q0 -29 9 -19" stroke="#F28DB2" stroke-width="2.6" fill="none"/><circle cx="-9" cy="-18" r="6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="9" cy="-18" r="6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="-9" cy="-18" r="3" fill="#FFD3E4"/><circle cx="9" cy="-18" r="3" fill="#FFD3E4"/>` : `<path d="M-20 2 Q0 -22 20 2" stroke="#F28DB2" stroke-width="3" fill="none"/><circle cx="-20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="-20" cy="4" r="3.5" fill="#FFD3E4"/><circle cx="20" cy="4" r="3.5" fill="#FFD3E4"/>` },
+    earmuff: { cm: { '#F28DB2': 's', '#F7A0C1': 's', '#FFD3E4': 'l' }, slot: 'head', P: { cloud: [0, -10, 1.15], bunny: [0, 0, 1] }, g: (kind, real) => real === 'puppy' ? `<path d="M-22 -8 Q0 -40 22 -8" stroke="#F28DB2" stroke-width="2.8" fill="none"/>${[-1, 1].map(x => `<circle cx="${x * 23}" cy="-6" r="6.6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="${x * 23}" cy="-6" r="3.3" fill="#FFD3E4"/>`).join('')}` : real === 'kitty' ? `<path d="M-15 -21 Q0 -33 15 -21" stroke="#F28DB2" stroke-width="2.6" fill="none"/>${[-1, 1].map(x => `<circle cx="${x * 15.5}" cy="-20" r="6.2" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="${x * 15.5}" cy="-20" r="3.1" fill="#FFD3E4"/>`).join('')}` : kind === 'bunny' ? `<path d="M-9 -19 Q0 -29 9 -19" stroke="#F28DB2" stroke-width="2.6" fill="none"/><circle cx="-9" cy="-18" r="6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="9" cy="-18" r="6" fill="#fff" stroke="#F7A0C1" stroke-width="1.8"/><circle cx="-9" cy="-18" r="3" fill="#FFD3E4"/><circle cx="9" cy="-18" r="3" fill="#FFD3E4"/>` : `<path d="M-20 2 Q0 -22 20 2" stroke="#F28DB2" stroke-width="3" fill="none"/><circle cx="-20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="20" cy="4" r="7" fill="#fff" stroke="#F7A0C1" stroke-width="2"/><circle cx="-20" cy="4" r="3.5" fill="#FFD3E4"/><circle cx="20" cy="4" r="3.5" fill="#FFD3E4"/>` },
     beret: { cm: { '#B9A7F5': 'f', '#8F7BE0': 's' }, slot: 'head', P: { cloud: [5, -29, 1.15], bunny: [-5, -19, 1.05] }, g: () => `<ellipse rx="16" ry="6.5" fill="#B9A7F5" stroke="#8F7BE0" stroke-width="1.6" transform="rotate(-12)"/><path d="M-2 -6 q1 -4 3 -5" stroke="#8F7BE0" stroke-width="2" fill="none"/>` },
     strawhat: { cm: { '#F28DB2': 's' }, slot: 'head', P: { cloud: [0, -27, 1.2], bunny: [0, -17, 1.1] }, g: () => `<ellipse cx="0" cy="2" rx="24" ry="6" fill="#F7DCA0" stroke="#D9AE52" stroke-width="1.6"/><path d="M-12 2 q0 -16 12 -16 q12 0 12 16z" fill="#F9E3B0" stroke="#D9AE52" stroke-width="1.6"/><path d="M-12 -1 h24" stroke="#F28DB2" stroke-width="3.4"/><circle cx="9" cy="-2" r="3" fill="#FFD36E"/>` },
     // 얼굴
@@ -369,12 +454,13 @@ const Art = (() => {
   const layerOfW = (id) => W[id].layer || (W[id].slot === 'hand' ? 'hand' : W[id].slot);
   function wearSVG(kind, wear, layer, col) {
     if (!wear) return '';
-    const fr = layer === 'neck' ? Object.values(wear).filter(id => W[id] && W[id].kf && W[id].kf[kind]).map(id => recolor(W[id].kf[kind](), id, col)).join('') : '';
+    const fk = kind === 'cloud' ? 'cloud' : 'bunny', fr = layer === 'neck' ? Object.values(wear).filter(id => W[id] && W[id].kf && W[id].kf[fk]).map(id => recolor(W[id].kf[fk](), id, col)).join('') : '';
     return fr + Object.values(wear).filter(id => W[id] && layerOfW(id) === layer).map(id => recolor((() => {
       const w = W[id];
-      if (w.k) return w.k[kind]();
-      if (w.H) { const [x, y] = HAND_AT[kind]; return `<g transform="translate(${x} ${y}) rotate(${(w.rot && w.rot[kind]) || 0}) scale(${kind === 'bunny' ? .8 : 1})">${w.g(kind)}</g>`; }
-      const [x, y, sc] = w.P[kind]; return `<g transform="translate(${x} ${y}) scale(${sc})">${w.g(kind)}</g>`;
+      const bk = kind === 'cloud' ? 'cloud' : 'bunny';
+      if (w.k) return w.k[bk]();
+      if (w.H) { const [x, y] = HAND_AT[bk]; return `<g transform="translate(${x} ${y}) rotate(${(w.rot && w.rot[bk]) || 0}) scale(${bk === 'bunny' ? .8 : 1})">${w.g(bk)}</g>`; }
+      const [x, y, sc] = w.P[bk]; return `<g transform="translate(${x} ${y}) scale(${sc})">${w.g(bk, kind)}</g>`;
     })(), id, col)).join('');
   }
   // look: 예전 방식(장식 이름 문자열) 또는 { wear: {부위: 옷}, tint }
@@ -388,7 +474,7 @@ const Art = (() => {
     return recolor(wearIcon0(id, kind), id, col);
   }
   function wearIcon0(id, kind) {
-    installDefs(); const w = W[id]; if (!w) return '';
+    installDefs(); const w = W[id]; if (!w) return ''; if (kind !== 'cloud') kind = 'bunny';
     let inner;
     if (id === 'bag') inner = `<g transform="translate(0 -4) scale(2.3)"><path d="M-6 -7 Q0 -16 6 -7" fill="none" stroke="#D9776A" stroke-width="1.6"/><rect x="-8" y="-8" width="16" height="15" rx="5" fill="#FFB9A6" stroke="#D9776A" stroke-width="1.4"/><path d="M-8 -3 h16 v3 a5 5 0 0 1 -5 0 h-6 a5 5 0 0 1 -5 0z" fill="#FFD3C7" stroke="#D9776A" stroke-width="1.1"/>${rbn(0, 0, .55)}</g>`;
     else if (w.k) inner = `<g transform="translate(0 ${kind === 'bunny' ? -28 : -20}) scale(${kind === 'bunny' ? 1.6 : 1})">${w.k[kind]()}</g>`;
@@ -400,10 +486,10 @@ const Art = (() => {
   // 입 위치(그림 상자 안 비율, 0~1). 먹는 애니메이션이 여기에 간식을 놓는다
   function mouth(kind, stage) {
     if (stage <= 2) return [.5, .62];
-    if (kind === 'bunny') { const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2; const ty = 60 - 44 * s; return [.5, (ty + 10.5 * s + 92) / 156]; }
+    if (kind !== 'cloud') { const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2; const ty = 60 - 44 * s; return [.5, (ty + 10.5 * s + 92) / 156]; }
     const s = [0, 0, 0, 1.0, 1.16, 1.28, 1.34, 1.38, 1.42, 1.46, 1.5][stage] || 1.2; return [.5, (50 - 30 * s + 14 * s + 92) / 156];
   }
-  function draw(kind, stage, mood, look) { installDefs(); CUR_MOOD = mood || 'idle'; CUR_STAGE = stage; const r = kind === 'bunny' ? bunny(stage, mood, look) : cloud(stage, mood, look); setTint(kind, 'base'); return r; }
+  function draw(kind, stage, mood, look) { installDefs(); CUR_MOOD = mood || 'idle'; CUR_STAGE = stage; const r = kind === 'cloud' ? cloud(stage, mood, look) : bunny(stage, mood, look, PARTS[kind] ? kind : 'bunny'); setTint(kind, 'base'); return r; }
 
   // ---------- 작은 그림 ----------
   const icons = {
@@ -417,8 +503,9 @@ const Art = (() => {
 
   function frame(kind, stage) {
     if (stage <= 2) return { s: 1, ty: 0 };
-    if (kind === 'bunny') { const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2; return { s, ty: 60 - 44 * s }; }
+    if (kind !== 'cloud') { const s = [0, 0, 0, 1.05, 1.16, 1.24, 1.28, 1.32, 1.36, 1.4, 1.44][stage] || 1.2; return { s, ty: 60 - 44 * s }; }
     const s = [0, 0, 0, 1.0, 1.16, 1.28, 1.34, 1.38, 1.42, 1.46, 1.5][stage] || 1.2; return { s, ty: 50 - 30 * s };
   }
-  return { frame, draw, icon, star, ACC, installDefs, mouth, WEAR: W, wearIcon, TINT_DEF, PAL };
+  const KINDS = ['cloud', 'bunny', 'puppy', 'kitty'];
+  return { frame, draw, icon, star, ACC, installDefs, mouth, WEAR: W, wearIcon, TINT_DEF, PAL, KINDS };
 })();

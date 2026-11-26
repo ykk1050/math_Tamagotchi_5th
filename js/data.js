@@ -86,6 +86,16 @@ const DATA = (() => {
       food: { cake: 'love', milk: 'love', cookie: 'like', pudding: 'like', pancake: 'like', cotton: 'hate' },
       place: { berry: 'love', garden: 'like', beach: 'like', hill: 'like' },
       acc: { flower: 'love', berryhat: 'like', bow: 'like', scarf: 'like', crown: 'hate', phat: 'love', dress: 'love', bouquet: 'love', earmuff: 'hate' }
+    },
+    puppy: {
+      food: { cookie: 'love', pancake: 'love', milk: 'like', cake: 'like', pudding: 'like', cotton: 'hate' },
+      place: { garden: 'love', beach: 'like', berry: 'like', hill: 'like' },
+      acc: { scarf: 'love', phat: 'love', cape: 'love', bow: 'like', flower: 'like', crown: 'like', berryhat: 'like', earmuff: 'hate', glasses: 'hate' }
+    },
+    kitty: {
+      food: { milk: 'love', pudding: 'love', cookie: 'like', pancake: 'like', cake: 'like', cotton: 'hate' },
+      place: { beach: 'love', berry: 'like', garden: 'like', hill: 'like' },
+      acc: { bow: 'love', crown: 'love', pearl: 'love', dress: 'like', flower: 'like', scarf: 'like', umbrella: 'like', phat: 'hate', earmuff: 'hate' }
     }
   };
   const TASTE_LINE = {
@@ -98,6 +108,16 @@ const DATA = (() => {
       food: { love: ['꺄아, {x}! 내가 제일제일 좋아하는 거야!', '{x}… 귀가 저절로 쫑긋해져!'], like: ['냠냠, {x} 맛있다!', '{x} 좋아좋아!'], hate: ['으… {x}는 끈적끈적해서 싫어. 그래도 고마워.', '{x}는 수염에 붙어서 별로야…'] },
       place: { love: ['딸기밭이다! 여기 내 고향이야! 깡총깡총!'], like: ['{x} 좋다! 신나게 뛰어 볼래!'] },
       acc: { love: ['{x}! 너무 예쁘다, 거울 보여 줘!'], like: ['{x} 귀여워?'], hate: ['{x}는 귀 사이에서 자꾸 미끄러져…'] }
+    },
+    puppy: {
+      food: { love: ['멍멍! {x}! 내가 제일제일 좋아하는 거야!', '{x}… 꼬리가 저절로 빙글빙글 돌아!'], like: ['냠냠, {x} 맛있다!', '{x} 좋아좋아!'], hate: ['으… {x}는 털에 달라붙어서 싫어. 그래도 고마워.', '{x}는 끈적끈적해서 별로야…'] },
+      place: { love: ['꽃밭이다! 여기서 마음껏 뛰고 싶었어! 멍멍!'], like: ['{x} 좋다! 냄새 맡을 게 가득해!'] },
+      acc: { love: ['{x}! 나 진짜 멋지지? 거울 보여 줘!'], like: ['{x} 어울려?'], hate: ['{x}는 귀가 답답해서 싫어…'] }
+    },
+    kitty: {
+      food: { love: ['냥! {x}! 내가 제일 좋아하는 거야. 골골골!', '{x}… 수염이 파르르 떨릴 만큼 맛있어!'], like: ['냠냠, {x} 맛있다!', '{x} 좋아.'], hate: ['흥… {x}는 수염에 붙어서 싫어. 그래도 고마워.', '{x}는 끈적끈적해서 별로야…'] },
+      place: { love: ['바닷가다! 생선 냄새! 여기 너무 좋아!'], like: ['{x} 좋다! 바람이 상쾌해.'] },
+      acc: { love: ['{x}! 나 진짜 우아하지? 너무 마음에 들어!'], like: ['{x} 귀여워?'], hate: ['{x}는 귀 사이가 답답해서 싫어…'] }
     }
   };
   // 우정 단계에서 열리는 이야기
@@ -111,6 +131,16 @@ const DATA = (() => {
       { lv: 2, title: '딸기밭에서 온 알', lines: ['나 어디서 왔는지 알려 줄까?', '나는 커다란 딸기밭 한가운데서 굴러왔어.', '데굴데굴 굴러서 언덕을 넘고 개울을 건너서…', '이 둥지에 쏙 들어갔지!', '그래서 딸기 냄새만 맡으면 마음이 콩콩 뛰어.'] },
       { lv: 4, title: '천둥이 무서워', lines: ['음… 이건 너한테만 말하는 건데.', '나는 천둥소리가 엄청 무서워.', '우르릉 쾅 하면 귀를 접고 이불 속에 숨어.', '근데 너랑 있으면 이상하게 덜 무서워.', '다음에 천둥 치면… 옆에 있어 줄 거지?'] },
       { lv: 6, title: '제일 친한 친구', lines: ['나 오늘 깡총 연습 백 번 했어!', '왜냐면 너한테 보여 주고 싶었거든.', '나는 신나는 일이 생기면 제일 먼저 네 얼굴이 떠올라.', '그게 제일 친한 친구라는 뜻이래.', '너는 내 제일제일 친한 친구야!'] }
+    ],
+    puppy: [
+      { lv: 2, title: '꽃밭에서 온 알', lines: ['나 어디서 왔는지 알려 줄까?', '나는 꽃밭 한구석, 커다란 나무 아래에 있었어.', '데굴데굴 언덕을 넘다가 나비를 따라가고 싶었는데, 알이라서 못 쫓아갔지 뭐야.', '그러다 이 둥지에 쏙 들어갔어!', '그래서 꽃 냄새만 맡으면 꼬리가 저절로 흔들려.'] },
+      { lv: 4, title: '혼자 있는 건 싫어', lines: ['음… 이건 너한테만 말하는 건데.', '나는 혼자 있으면 조금 무서워.', '문밖에서 발소리가 나면 네가 왔나 하고 귀를 쫑긋 세워.', '그래서 네가 오면 꼬리가 멈추질 않는 거야.', '다음에도… 꼭 다시 와 줄 거지?'] },
+      { lv: 6, title: '제일 친한 친구', lines: ['나 오늘 공 물어 오기를 백 번 연습했어!', '왜냐면 너한테 보여 주고 싶었거든.', '강아지는 좋아하는 친구를 끝까지 기억한대.', '나는 너를 제일 오래, 제일 많이 기억할 거야.', '너는 내 제일제일 친한 친구야!'] }
+    ],
+    kitty: [
+      { lv: 2, title: '바닷가에서 온 알', lines: ['나 어디서 왔는지 궁금해?', '나는 바닷가 작은 배 안, 그물 사이에 있었어.', '파도가 출렁출렁 흔들어 줘서 계속 꾸벅꾸벅 잤지.', '눈을 떠 보니 이 둥지 안이었어!', '그래서 바다 냄새를 맡으면 마음이 편안해져.'] },
+      { lv: 4, title: '새침한 이유', lines: ['있잖아… 나 가끔 새침하게 굴잖아.', '사실은 부끄러워서 그래.', '좋아한다고 말하려고 하면 수염이 파르르 떨려.', '그래서 대신 골골 소리를 내는 거야.', '내가 골골거리면… 좋아한다는 뜻이야. 비밀이야!'] },
+      { lv: 6, title: '제일 친한 친구', lines: ['오늘은 꼭 하고 싶은 말이 있어.', '고양이는 아무한테나 배를 보여 주지 않아.', '그런데 나는 너한테 보여 줬잖아.', '그건 너를 제일 믿는다는 뜻이야.', '너는 내 제일 친한 친구야. 앞으로도 쭉!'] }
     ]
   };
   const FRIEND_XP = [0, 0, 30, 90, 180, 300, 450, 650, 900, 1200, 1600];
