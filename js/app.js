@@ -65,7 +65,7 @@
   function overlay(id, on) { $(id).classList.toggle('on', on); }
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { Snd.tap(); overlay(b.dataset.close, false); });
   function toast(t, ms = 2400) { const el = $('toast'); el.innerHTML = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), ms); }
-  function applyFx() { document.body.classList.toggle('lowfx', !!S.lowfx); Snd.set(!!S.sound); Snd.musicSet(S.music !== false); }
+  function applyFx() { document.body.classList.toggle('lowfx', !!S.lowfx); Snd.setLow(!!S.lowfx); Snd.set(!!S.sound); Snd.musicSet(S.music !== false); }
   function applyTime() { document.body.classList.toggle('night', isNight()); }
   applyFx(); applyTime();
   window.addEventListener('pointerdown', () => Snd.unlock(), { passive: true });

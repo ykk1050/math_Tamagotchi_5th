@@ -1,8 +1,35 @@
 구름 둥지 · 수학 친구 키우기 — 제3자 고지문 (THIRD-PARTY NOTICES)
 =====================================================================
 
-이 게임의 그림(캐릭터·알·배경·아이콘)과 소리(효과음·옹알이·자장가)는
-모두 코드로 직접 만들었습니다. 외부 그림 파일, 소리 파일, 프로그램 라이브러리는 쓰지 않았습니다.
+이 게임의 그림(캐릭터·알·배경·아이콘)과 대부분의 소리(효과음·옹알이·자장가·밤/산책/요리 음악)는
+코드로 직접 만들었습니다. 외부 그림 파일과 프로그램 라이브러리는 쓰지 않았습니다.
+
+아래 소리 파일(sounds/ 폴더)은 퍼블릭 도메인(CC0) 자료를 mp3로 바꾸어 넣었습니다.
+CC0는 표기 의무가 없지만 고마움을 담아 출처를 적습니다.
+
+---------------------------------------------------------------------
+[음악]
+- sounds/bgm-home.mp3
+  "Sketchbook 2024-06-05_02" by Abstraction (Abstraction Music / Tallbeard Studios)
+  License: CC0 1.0 Universal (Public Domain) - https://creativecommons.org/publicdomain/zero/1.0/
+  Source: https://tallbeard.itch.io/music-loop-bundle  (https://abstractionmusic.com/)
+  Changes: converted from OGG to MP3 (96 kbps).
+
+[효과음]
+- sounds/correct.mp3   (confirmation_001, Interface Sounds)
+- sounds/levelup.mp3   (jingles_PIZZI02, Music Jingles)
+  효과음: Kenney (www.kenney.nl), CC0 1.0
+  License: CC0 1.0 Universal (Public Domain)
+  Changes: converted from OGG to MP3 (96 kbps).
+
+[동물 소리] BigSoundBank, author Joseph SARDIN, License: CC0 (Public Domain)
+  Changes: trimmed short, pitched up, loudness matched, converted to MP3.
+- sounds/dog1.mp3  <- "Barking dog 3" (ID 2955)  https://bigsoundbank.com/barking-dog-3-s2955.html
+- sounds/dog2.mp3  <- "Barking of a spitz" (ID 0682)  https://bigsoundbank.com/barking-of-a-spitz-s0682.html
+- sounds/cat1.mp3  <- "Little meow of a cat" (ID 0494)  https://bigsoundbank.com/little-meow-of-a-cat-s0494.html
+- sounds/cat2.mp3  <- "Little meow of a cat 11" (ID 1481)  https://bigsoundbank.com/little-meow-of-a-cat-11-s1481.html
+- sounds/cat3.mp3  <- "Little meow of a cat 2" (ID 1472)  https://bigsoundbank.com/little-meow-of-a-cat-2-s1472.html
+---------------------------------------------------------------------
 
 게임은 아래 글꼴을 Google Fonts에서 불러와 씁니다.
 

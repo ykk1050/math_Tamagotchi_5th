@@ -1,7 +1,31 @@
-// 소리: 파일 없이 Web Audio로 직접 만든 짧은 소리들 (코드로 직접 만듦)
+// 소리: Web Audio로 직접 만든 짧은 소리들 (코드로 직접 만듦)
+// + sounds/ 폴더의 mp3 몇 개(정답·단계 오름 효과음, 강아지·고양이 울음, 방 배경음악). 출처는 credits.html
+// 파일을 못 불러오면 코드로 만든 소리로 대신한다.
 // 아이패드는 첫 터치 전에는 소리가 나지 않으므로 Snd.unlock()을 첫 터치에서 부른다.
 const Snd = (() => {
-  let ctx = null, on = true, master = null;
+  let ctx = null, on = true, master = null, low = false;
+  // ---------- mp3 파일 소리 ----------
+  const FILES = { correct: 'sounds/correct.mp3', levelup: 'sounds/levelup.mp3', dog1: 'sounds/dog1.mp3', dog2: 'sounds/dog2.mp3',
+    cat1: 'sounds/cat1.mp3', cat2: 'sounds/cat2.mp3', cat3: 'sounds/cat3.mp3', bgm: 'sounds/bgm-home.mp3' };
+  const buf = {}, loading = {};
+  function load(name) {
+    if (!ctx || buf[name] || loading[name] || !window.fetch) return;
+    loading[name] = true;
+    fetch(FILES[name]).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(a => new Promise((ok, no) => { const pr = ctx.decodeAudioData(a, ok, no); if (pr && pr.catch) pr.catch(no); }))
+      .then(b => { buf[name] = b; if (name === 'bgm' && mWant === 'home' && mOn && !mSrc && mPend !== 'home') music('home', true); })
+      .catch(() => {});
+  }
+  function loadAll() { Object.keys(FILES).forEach(n => { if (n !== 'bgm' || !low) load(n); }); }
+  // 파일 소리를 틀었으면 true, 아직 없으면 false (그때는 코드 소리로 대신)
+  function play(name, v = 1, rate = 1) {
+    if (!on || !ctx || !buf[name]) return false;
+    try {
+      const s = ctx.createBufferSource(), g = ctx.createGain();
+      s.buffer = buf[name]; s.playbackRate.value = rate; g.gain.value = v;
+      s.connect(g); g.connect(master); s.start(); return true;
+    } catch (e) { return false; }
+  }
   function unlock() {
     try {
       if (!ctx) {
@@ -11,7 +35,8 @@ const Snd = (() => {
         master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
       }
       if (ctx.state === 'suspended') ctx.resume();
-      if (mWant && !mTimer && mOn) music(mWant);
+      loadAll();
+      if (mWant && !mTimer && !mSrc && mOn) music(mWant);
     } catch (e) { ctx = null; }
   }
   function tone(f, d, type = 'sine', v = 0.25, t0 = 0, f2 = null) {
@@ -63,14 +88,15 @@ const Snd = (() => {
     wave() { tone(220, 1.1, 'sine', .12, 0, 140); tone(260, 1.1, 'sine', .08, .7, 150); },
     prick() { tone(1400, .07, 'square', .08); tone(500, .2, 'sine', .15, .08, 300); },
     sneeze() { tone(600, .15, 'triangle', .14, 0, 900); tone(900, .18, 'sawtooth', .07, .3, 300); },
-    ok() { tone(784, .14, 'triangle', .25); tone(988, .14, 'triangle', .25, .09); tone(1319, .28, 'triangle', .22, .18); },
+    ok() { if (play('correct', .9)) return; tone(784, .14, 'triangle', .25); tone(988, .14, 'triangle', .25, .09); tone(1319, .28, 'triangle', .22, .18); },
     combo() { [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, .16, 'triangle', .18, i * .06)); },
     no() { tone(392, .2, 'sine', .2, 0, 330); tone(330, .28, 'sine', .16, .16, 262); },
     pop() { tone(600, .09, 'sine', .25, 0, 1400); },
     munch() { tone(220, .07, 'square', .07); tone(200, .07, 'square', .07, .12); tone(240, .07, 'square', .07, .24); },
     heart() { tone(1175, .1, 'sine', .12); tone(1568, .16, 'sine', .1, .07); },
-    level() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .3, 'triangle', .2, i * .1)); tone(2093, .7, 'sine', .15, .65); },
+    level() { if (play('levelup', .9)) return; [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .3, 'triangle', .2, i * .1)); tone(2093, .7, 'sine', .15, .65); },
     babble(n = 2, kind = 'cloud') {
+      if (animal(kind)) return;
       const base = vc(kind)[0];
       for (let i = 0; i < n; i++) { const f = base + Math.random() * 260; tone(f, .09, 'sine', .14, i * .13, f * 1.25); }
     },
@@ -83,7 +109,16 @@ const Snd = (() => {
     },
     lullaby() { [659, 587, 523, 587, 659, 659, 659, 0, 587, 587, 587, 0, 659, 784, 784].forEach((f, i) => f && tone(f, .38, 'sine', .12, i * .32)); }
   };
-  // ---------- 배경 음악: 코드로 만든 오르골 곡 (방 · 밤 · 산책 · 요리) ----------
+  // 강아지·고양이는 가끔 진짜 울음소리(짧게 다듬음)로 말한다. 너무 자주 나면 시끄러우니 4초에 한 번까지
+  let lastCry = 0;
+  function animal(kind) {
+    const set = kind === 'puppy' ? ['dog1', 'dog2'] : kind === 'kitty' ? ['cat1', 'cat2', 'cat3'] : null;
+    if (!set || !ctx || Date.now() - lastCry < 4000) return false;
+    const name = set[Math.floor(Math.random() * set.length)];
+    if (!play(name, .8, .96 + Math.random() * .1)) return false;
+    lastCry = Date.now(); return true;
+  }
+  // ---------- 배경 음악: 방은 mp3 곡(Abstraction, CC0)을 되풀이, 나머지는 코드로 만든 오르골 곡 (방 · 밤 · 산책 · 요리) ----------
   // 마디마다 화음 하나, 8분음표 8칸. 숫자는 MIDI 음 번호, 0은 쉼표
   const SONGS = {
     home: { bpm: 84, chords: [[48, 0], [45, 1], [41, 0], [43, 0]],
@@ -96,7 +131,7 @@ const Snd = (() => {
       mel: [71, 74, 79, 74, 71, 74, 79, 0, 79, 78, 76, 0, 71, 0, 76, 0, 76, 79, 84, 79, 76, 0, 72, 0, 74, 78, 81, 78, 74, 0, 0, 0] }
   };
   const ARP = [0, 7, 12, 16, 12, 7, 0, 7]; // 화음 펼치기 (장3화음 기준, 단3화음은 16→15)
-  let mOn = true, mTheme = null, mWant = null, mStep = 0, mNext = 0, mTimer = null, mBus = null;
+  let mOn = true, mTheme = null, mWant = null, mStep = 0, mNext = 0, mTimer = null, mBus = null, mSrc = null, mPend = null;
   const mf = (n) => 440 * Math.pow(2, (n - 69) / 12);
   function mNote(n, t, d, type, v) {
     const o = ctx.createOscillator(), g = ctx.createGain();
@@ -117,25 +152,39 @@ const Snd = (() => {
       mStep++; mNext += e;
     }
   }
-  function music(theme) {
+  const useFile = (theme) => theme === 'home' && !low && !!buf.bgm;
+  function stopSrc() { if (mSrc) { try { mSrc.stop(); } catch (e) {} mSrc = null; } }
+  function music(theme, force) {
     mWant = theme;
     if (!ctx || !mOn) return;
     if (!mBus) { mBus = ctx.createGain(); mBus.gain.value = 0; mBus.connect(master); }
-    if (mTheme === theme && mTimer) return;
+    if (!force && (mPend === theme || (mTheme === theme && (mTimer || mSrc)))) return;
+    mPend = theme;
     // 곡이 바뀔 때는 살짝 줄였다가 다시 키운다
     const now = ctx.currentTime;
     mBus.gain.cancelScheduledValues(now); mBus.gain.setValueAtTime(mBus.gain.value, now); mBus.gain.linearRampToValueAtTime(0, now + .4);
     setTimeout(() => {
+      if (mPend === theme) mPend = null;
+      if (!mOn || mWant !== theme) return;
+      stopSrc(); clearInterval(mTimer); mTimer = null;
       mTheme = theme; mStep = 0; mNext = ctx.currentTime + 0.05;
-      const t = ctx.currentTime; mBus.gain.cancelScheduledValues(t); mBus.gain.setValueAtTime(0, t); mBus.gain.linearRampToValueAtTime(0.55, t + 1.2);
-      if (!mTimer) mTimer = setInterval(mTick, 60);
+      const t = ctx.currentTime; mBus.gain.cancelScheduledValues(t); mBus.gain.setValueAtTime(0, t);
+      if (useFile(theme)) {
+        mBus.gain.linearRampToValueAtTime(0.32, t + 1.5);
+        try { mSrc = ctx.createBufferSource(); mSrc.buffer = buf.bgm; mSrc.loop = true; mSrc.connect(mBus); mSrc.start(); } catch (e) { mSrc = null; }
+        if (mSrc) return;
+      }
+      mBus.gain.linearRampToValueAtTime(0.55, t + 1.2);
+      mTimer = setInterval(mTick, 60);
     }, 420);
   }
   function musicStop() {
-    clearInterval(mTimer); mTimer = null; mTheme = null;
+    clearInterval(mTimer); mTimer = null; mTheme = null; stopSrc(); mPend = null;
     if (mBus && ctx) { const t = ctx.currentTime; mBus.gain.cancelScheduledValues(t); mBus.gain.setValueAtTime(0, t); }
   }
   function musicSet(v) { mOn = v; if (!v) musicStop(); else if (mWant) music(mWant); }
 
-  return { unlock, set(v) { on = v; }, get on() { return on; }, music, musicSet, musicStop, ...S };
+  // 가볍게 모드: 큰 음악 파일을 쓰지 않고 코드 음악으로
+  function setLow(v) { v = !!v; if (v === low) return; low = v; if (!low) loadAll(); if (mWant && mOn && ctx && (mTimer || mSrc)) music(mWant, true); }
+  return { unlock, setLow, set(v) { on = v; }, get on() { return on; }, music, musicSet, musicStop, ...S };
 })();
